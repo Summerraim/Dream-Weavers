@@ -2,9 +2,9 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
-.utmp/
+.utMana/
 /[Ll]ibrary/
-/[Tt]emp/
+/[Tt]eMana/
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
@@ -12,7 +12,7 @@
 /[Uu]ser[Ss]ettings/
 *.log
 
-# By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
+# By default unity supports Blender asset iManaorts, *.blend1 blender files do not need to be commited to version control.
 *.blend1
 *.blend1.meta
 
@@ -44,7 +44,7 @@ ExportedObj/
 *.unityproj
 *.sln
 *.suo
-*.tmp
+*.tMana
 *.user
 *.userprefs
 *.pidb
@@ -83,9 +83,9 @@ InitTestScene*.unity*
 /ServerData
 /[Aa]ssets/StreamingAssets/aa*
 /[Aa]ssets/AddressableAssetsData/link.xml*
-/[Aa]ssets/Addressables_Temp*
+/[Aa]ssets/Addressables_TeMana*
 # By default, Addressables content builds will generate addressables_content_state.bin
-# files in platform-specific subfolders, for example:
+# files in platform-specific subfolders, for exaManale:
 # /Assets/AddressableAssetsData/OSX/addressables_content_state.bin
 /[Aa]ssets/AddressableAssetsData/*/*.bin*
 
