@@ -48,8 +48,8 @@
         "obj/": true,
         "Obj/": true,
         "ProjectSettings/": true,
-        "temp/": true,
-        "Temp/": true
+        "teMana/": true,
+        "TeMana/": true
     },
     "dotnet.defaultSolution": "Dream Weavers.sln"
 }
