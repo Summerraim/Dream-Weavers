@@ -4,8 +4,8 @@ using UnityEngine;
 
 public static class MapGenerator_cza
 {
-    // 调试开关
-    public static bool DebugEnabled = true;
+    // 调试开关（默认关闭，精简输出）
+    public static bool DebugEnabled = false;
 
     public static FloorMap_cza GenerateFloor(int floor, SeedRNG_cza rng)
     {
@@ -18,8 +18,7 @@ public static class MapGenerator_cza
         int restCount = 0;
         int propsCount = 0;
 
-        if (DebugEnabled)
-            Debug.Log($"[MapGen] 开始生成楼层 {floor}, 房间总数={totalRooms}");
+        Debug.Log($"[MapGen] 开始生成楼层 {floor}, 房间数={totalRooms}");
 
         // 按序生成房间类型 (最后一个为 Boss)
         for (int i = 1; i <= totalRooms; i++)
@@ -45,8 +44,7 @@ public static class MapGenerator_cza
                 if (type == RoomType_cza.Rest) restCount++;
                 else if (type == RoomType_cza.Props) propsCount++;
 
-                if (DebugEnabled)
-                    Debug.Log($"[MapGen] 房间 {i} 生成类型={type} 当前 Rest={restCount}/{restLimit} Props={propsCount}/{propsLimit}");
+                // 精简：不逐房输出类型
             }
 
             map.Rooms[i] = new RoomNode_cza(i, type);
@@ -68,30 +66,27 @@ public static class MapGenerator_cza
                 Debug.Log($"[MapGen] 没有生成 Rest，强制将房间 {forcedId} 从 {oldType} 改为 Rest 以满足最少1个要求");
         }
 
-        if (DebugEnabled)
-            Debug.Log($"[MapGen] 限制: RestLimit={restLimit}, PropsLimit={propsLimit} 实际: Rest={restCount}, Props={propsCount}");
+            // 精简：不输出限制统计
         // 路线生成 (恢复原逻辑)
         for (int i = 1; i <= totalRooms; i++)
         {
             RoomNode_cza node = map.Rooms[i];
             if (node.Type == RoomType_cza.Boss)
             {
-                if (DebugEnabled) Debug.Log($"[MapGen] 房间 {i} 为 Boss，跳过路径生成");
+                // 精简：不输出 Boss 路径日志
                 continue;
             }
             List<int> nextPossibleRooms = new List<int>();
             for (int j = i + 1; j <= totalRooms; j++)
                 nextPossibleRooms.Add(j);
-            if (DebugEnabled)
-                Debug.Log($"[MapGen] 房间 {i} 可选后继: {string.Join(",", nextPossibleRooms)}");
+            // 精简：不输出可选后继列表
             if (nextPossibleRooms.Count <= 1)
             {
                 int target = nextPossibleRooms[0];
                 node.NextRooms.Add(target);
                 node.NextRooms.Add(target);
                 node.NextRooms.Add(target);
-                if (DebugEnabled)
-                    Debug.Log($"[MapGen] 房间 {i} 只有一个后继 {target}，重复填充3次");
+                // 精简：不输出单后继填充日志
             }
             else
             {
@@ -105,13 +100,9 @@ public static class MapGenerator_cza
                 while (node.NextRooms.Count < 3)
                     node.NextRooms.Add(node.NextRooms[0]);
             }
-            if (DebugEnabled)
-                Debug.Log($"[MapGen] 房间 {i} 最终静态前向分支(基础图): {string.Join(",", node.NextRooms)}");
+            // 精简：不输出每房前向分支
         }
-
-        if (DebugEnabled)
-            Debug.Log($"[MapGen] 楼层 {floor} 生成完成");
-            Debug.Log($"[MapGen] Rooms.Count={map.Rooms.Count} Keys={string.Join(",", map.Rooms.Keys)}");
+        Debug.Log($"[MapGen] 楼层 {floor} 生成完成（Rooms={map.Rooms.Count}）");
         return map;
     }
 

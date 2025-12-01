@@ -1,10 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
-public class RoomNode_cza : MonoBehaviour
+public class RoomNode_cza
 {
-     public int Id;
+    public int Id;
     public RoomType_cza Type;
     public List<int> NextRooms;
 
