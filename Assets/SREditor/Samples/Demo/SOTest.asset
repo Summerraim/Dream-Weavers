@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debce2cbea6f5433689a7fa53f7811c6, type: 3}
+  m_Name: SOTest
+  m_EditorClassIdentifier: 
+  Title: Scriptable Object
+  List:
+  - rid: 8191843295340527619
+  - rid: 8191843295340527620
+  - rid: 8191843295340527621
+  TestData:
+    rid: 1023199525370068994
+  CustomData:
+    Data:
+      rid: 1023199408419241996
+  references:
+    version: 2
+    RefIds:
+    - rid: 1023199408419241996
+      type: {class: ComplexData, ns: Demo, asm: SRDemo}
+      data:
+        Data:
+          rid: 1023199408419241997
+        Demo:
+          rid: 1023199408419241998
+    - rid: 1023199408419241997
+      type: {class: FloatData, ns: Demo, asm: SRDemo}
+      data:
+        Float: 0.337
+    - rid: 1023199408419241998
+      type: {class: IntegerData, ns: Demo, asm: SRDemo}
+      data:
+        Int: 47
+    - rid: 1023199525370068994
+      type: {class: NewTestData, ns: Demo.NewTests, asm: NewTest}
+      data:
+        Value: 0
+        FloatValue: 0
+        BoolValue: 0
+    - rid: 8191843295340527619
+      type: {class: FloatData, ns: Demo, asm: SRDemo}
+      data:
+        Float: 0
+    - rid: 8191843295340527620
+      type: {class: IntegerData, ns: Demo, asm: SRDemo}
+      data:
+        Int: 0
+    - rid: 8191843295340527621
+      type: {class: StringData, ns: Demo, asm: SRDemo}
+      data:
+        Str: 
