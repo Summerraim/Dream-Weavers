@@ -7,12 +7,13 @@ using UnityEngine;
 public class EventCenterService : Singleton<EventCenterService>
 {
     // 事件字典：事件名 -> 回调列表
-    private Dictionary<string, List<Delegate>> eventDictionary = new Dictionary<string, List<Delegate>>();
-    
+    private Dictionary<string, List<Delegate>> eventDictionary =
+        new Dictionary<string, List<Delegate>>();
+
     // 延迟事件队列（避免在事件处理中触发新事件导致的循环）
     private Queue<DelayedEvent> delayedEvents = new Queue<DelayedEvent>();
     private bool isProcessingEvents = false;
-    
+
     [Header("Event Center Settings")]
     public bool enableDebug = false;
     public int maxEventsPerFrame = 100;
@@ -20,7 +21,8 @@ public class EventCenterService : Singleton<EventCenterService>
     // 初始化
     public override void Initialize()
     {
-        if (enableDebug) Debug.Log("EventCenterService initialized");
+        if (enableDebug)
+            Debug.Log("EventCenterService initialized");
     }
 
     #region 基础事件注册和触发
@@ -64,12 +66,14 @@ public class EventCenterService : Singleton<EventCenterService>
     // 触发延迟事件（下一帧执行）
     public void TriggerEventDelayed(string eventName, object eventData = null, int framesDelay = 1)
     {
-        delayedEvents.Enqueue(new DelayedEvent
-        {
-            eventName = eventName,
-            eventData = eventData,
-            framesDelay = framesDelay
-        });
+        delayedEvents.Enqueue(
+            new DelayedEvent
+            {
+                eventName = eventName,
+                eventData = eventData,
+                framesDelay = framesDelay,
+            }
+        );
     }
 
     #endregion
@@ -93,9 +97,11 @@ public class EventCenterService : Singleton<EventCenterService>
         if (!eventDictionary[eventName].Contains(callback))
         {
             eventDictionary[eventName].Add(callback);
-            
-            if (enableDebug) 
-                Debug.Log($"Event listener added: {eventName}, Total: {eventDictionary[eventName].Count}");
+
+            if (enableDebug)
+                Debug.Log(
+                    $"Event listener added: {eventName}, Total: {eventDictionary[eventName].Count}"
+                );
         }
     }
 
@@ -104,14 +110,14 @@ public class EventCenterService : Singleton<EventCenterService>
         if (eventDictionary.ContainsKey(eventName))
         {
             eventDictionary[eventName].Remove(callback);
-            
+
             // 如果没有监听器了，清理这个事件
             if (eventDictionary[eventName].Count == 0)
             {
                 eventDictionary.Remove(eventName);
             }
-            
-            if (enableDebug) 
+
+            if (enableDebug)
                 Debug.Log($"Event listener removed: {eventName}");
         }
     }
@@ -127,7 +133,7 @@ public class EventCenterService : Singleton<EventCenterService>
 
         if (!eventDictionary.ContainsKey(eventName))
         {
-            if (enableDebug) 
+            if (enableDebug)
                 Debug.LogWarning($"No listeners for event: {eventName}");
             return;
         }
@@ -138,7 +144,7 @@ public class EventCenterService : Singleton<EventCenterService>
         {
             // 复制列表以避免在迭代过程中修改
             var callbacks = new List<Delegate>(eventDictionary[eventName]);
-            
+
             foreach (var callback in callbacks)
             {
                 try
@@ -158,7 +164,9 @@ public class EventCenterService : Singleton<EventCenterService>
                         var parameters = method.GetParameters();
                         if (parameters.Length == 1 && parameters[0].ParameterType.IsValueType)
                         {
-                            callback.DynamicInvoke(Activator.CreateInstance(parameters[0].ParameterType));
+                            callback.DynamicInvoke(
+                                Activator.CreateInstance(parameters[0].ParameterType)
+                            );
                         }
                         else
                         {
@@ -177,7 +185,7 @@ public class EventCenterService : Singleton<EventCenterService>
             isProcessingEvents = false;
         }
 
-        if (enableDebug) 
+        if (enableDebug)
             Debug.Log($"Event triggered: {eventName}");
     }
 
@@ -200,8 +208,8 @@ public class EventCenterService : Singleton<EventCenterService>
         if (eventDictionary.ContainsKey(eventName))
         {
             eventDictionary.Remove(eventName);
-            
-            if (enableDebug) 
+
+            if (enableDebug)
                 Debug.Log($"All listeners removed for event: {eventName}");
         }
     }
@@ -210,8 +218,8 @@ public class EventCenterService : Singleton<EventCenterService>
     public void RemoveAllListeners()
     {
         eventDictionary.Clear();
-        
-        if (enableDebug) 
+
+        if (enableDebug)
             Debug.Log("All event listeners cleared");
     }
 
@@ -260,11 +268,11 @@ public class EventCenterService : Singleton<EventCenterService>
     private void ProcessDelayedEvents()
     {
         int processedCount = 0;
-        
+
         while (delayedEvents.Count > 0 && processedCount < maxEventsPerFrame)
         {
             var delayedEvent = delayedEvents.Peek();
-            
+
             if (delayedEvent.framesDelay <= 0)
             {
                 // 执行延迟事件
@@ -314,23 +322,23 @@ public static class GameEvents
     public const string GAME_RESUMED = "GameResumed";
     public const string GAME_OVER = "GameOver";
     public const string LEVEL_COMPLETED = "LevelCompleted";
-    
+
     // UI事件
     public const string UI_PANEL_SHOW = "UIPanelShow";
     public const string UI_PANEL_HIDE = "UIPanelHide";
     public const string UI_BUTTON_CLICK = "UIButtonClick";
-    
+
     // 战斗事件
     public const string BATTLE_START = "BattleStart";
     public const string BATTLE_END = "BattleEnd";
     public const string SKILL_USED = "SkillUsed";
     public const string UNIT_DEFEATED = "UnitDefeated";
-    
+
     // 资源事件
     public const string ITEM_ACQUIRED = "ItemAcquired";
     public const string SPRITE_ADDED = "SpriteAdded";
     public const string RESOURCE_CHANGED = "ResourceChanged";
-    
+
     // 地图和探索事件
     public const string MAP_NODE_SELECTED = "MapNodeSelected";
     public const string ROOM_ENTERED = "RoomEntered";

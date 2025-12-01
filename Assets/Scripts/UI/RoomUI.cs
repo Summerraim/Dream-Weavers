@@ -7,26 +7,44 @@ using UnityEngine.UI;
 public class RoomUIActions_cza : MonoBehaviour
 {
     [Header("显示")]
-    [SerializeField] private TextMeshProUGUI currentRoomText;
-    [SerializeField] private TextMeshProUGUI nextRoomsText;
+    [SerializeField]
+    private TextMeshProUGUI currentRoomText;
+
+    [SerializeField]
+    private TextMeshProUGUI nextRoomsText;
 
     [Header("按钮")]
-    [SerializeField] private Button btnComplete;
-    [SerializeField] private Button btnNext1;
-    [SerializeField] private Button btnNext2;
-    [SerializeField] private Button btnNext3;
+    [SerializeField]
+    private Button btnComplete;
+
+    [SerializeField]
+    private Button btnNext1;
+
+    [SerializeField]
+    private Button btnNext2;
+
+    [SerializeField]
+    private Button btnNext3;
+
     // [SerializeField] private Button btnRandom;
-    [SerializeField] private Button btnReInit; // 可选
+    [SerializeField]
+    private Button btnReInit; // 可选
 
     // [SerializeField] private int reinitFloor = 1;
 
     private void Awake()
     {
         // 绑定按钮
-        if (btnComplete) btnComplete.onClick.AddListener(() => RoomStateMachine_cza.Instance.CompleteCurrentRoom());
-        if (btnNext1) btnNext1.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(0));
-        if (btnNext2) btnNext2.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(1));
-        if (btnNext3) btnNext3.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(2));
+        if (btnComplete)
+            btnComplete.onClick.AddListener(() =>
+                RoomStateMachine_cza.Instance.CompleteCurrentRoom()
+            );
+        if (btnNext1)
+            btnNext1.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(0));
+        if (btnNext2)
+            btnNext2.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(1));
+        if (btnNext3)
+            btnNext3.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToNext(2));
         // if (btnRandom) btnRandom.onClick.AddListener(() => RoomStateMachine_cza.Instance.GoToRandomNext());
         // if (btnReInit) btnReInit.onClick.AddListener(() => RoomStateMachine_cza.Instance.InitFloor(reinitFloor));
     }
@@ -58,9 +76,12 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 按钮可用性
         bool hasNext = node.NextRooms != null && node.NextRooms.Count > 0;
-        if (btnNext1) btnNext1.interactable = hasNext && node.NextRooms.Count >= 1;
-        if (btnNext2) btnNext2.interactable = hasNext && node.NextRooms.Count >= 2;
-        if (btnNext3) btnNext3.interactable = hasNext && node.NextRooms.Count >= 3;
+        if (btnNext1)
+            btnNext1.interactable = hasNext && node.NextRooms.Count >= 1;
+        if (btnNext2)
+            btnNext2.interactable = hasNext && node.NextRooms.Count >= 2;
+        if (btnNext3)
+            btnNext3.interactable = hasNext && node.NextRooms.Count >= 3;
         // if (btnRandom) btnRandom.interactable = hasNext;
     }
 
