@@ -9,5 +9,5 @@ public class EnemyData : ScriptableObject
     public int Damage = 50;
     public int Defense = 10;
 
-    public Skill[] Skills;
+    public ScriptableObject[] Skills;
 }

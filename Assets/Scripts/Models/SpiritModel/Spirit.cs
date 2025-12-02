@@ -9,20 +9,47 @@ public class Spirit : IBattleUnit
     public int Mana { get; private set; }
     public int Damage { get; private set; }
     public int Defense { get; private set; }
+    private readonly int baseMaxHP;
+    private readonly int baseMaxMana;
+    private float bonusMaxHpPercent;
+    private readonly int baseDamage;
+    private readonly int baseDefense;
+    private readonly List<SynergyModel> synergyModels = new List<SynergyModel>();
     public string DisplayName =>
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
-    public int MaxHP => data?.MaxHP ?? 0;
-    public int MaxMana => data?.MaxMana ?? 0;
+    public int MaxHP => Mathf.CeilToInt(baseMaxHP * (1f + bonusMaxHpPercent));
+    public int MaxMana => baseMaxMana;
+    public float MaxHpBonusPercent => bonusMaxHpPercent;
+    public int BaseMaxHP => baseMaxHP;
+    public int BaseMaxMana => baseMaxMana;
+    public int BaseDamage => baseDamage;
+    public int BaseDefense => baseDefense;
+    public IReadOnlyList<SynergyModel> Synergies => synergyModels;
 
     public Spirit(SpiritData data)
     {
         this.data = data;
-        HP = data.MaxHP;
-        Mana = data.MaxMana;
-        Damage = Mathf.Max(0, data.Damage);
-        Defense = Mathf.Max(0, data.Defense);
+        baseMaxHP = data.MaxHP;
+        baseMaxMana = data.MaxMana;
+        HP = MaxHP;
+        Mana = baseMaxMana;
+        baseDamage = Mathf.Max(0, data.Damage);
+        baseDefense = Mathf.Max(0, data.Defense);
+        Damage = baseDamage;
+        Defense = baseDefense;
+
+        if (data.Synergies != null)
+        {
+            for (int i = 0; i < data.Synergies.Length; i++)
+            {
+                var synergy = data.Synergies[i];
+                if (synergy == null)
+                    continue;
+                synergyModels.Add(new SynergyModel(this, synergy));
+            }
+        }
     }
 
     public IReadOnlyList<ISkill> GetSkills()
@@ -60,6 +87,12 @@ public class Spirit : IBattleUnit
 
     public void ReceiveHeal(int v)
     {
-        HP = Mathf.Min(Data.MaxHP, HP + Mathf.Max(0, v));
+        HP = Mathf.Min(MaxHP, HP + Mathf.Max(0, v));
+    }
+
+    public void SetMaxHpBonusPercent(float percent)
+    {
+        bonusMaxHpPercent = Mathf.Max(0f, percent);
+        HP = Mathf.Min(HP, MaxHP);
     }
 }
