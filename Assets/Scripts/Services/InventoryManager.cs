@@ -93,7 +93,10 @@ public class InventoryManager : MonoBehaviour
 
         // 添加到背包
         items.Add(newItem);
-        itemDictionary[key] = newItem;
+        if (!itemDictionary.ContainsKey(key))
+        {
+            itemDictionary[key] = newItem;
+        }
 
         // 触发事件
         OnItemAdded?.Invoke(newItem);
@@ -108,26 +111,53 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public bool RemoveItem(string itemId, int quantity = 1)
     {
-        if (!itemDictionary.ContainsKey(itemId))
+        if (string.IsNullOrWhiteSpace(itemId) || quantity <= 0)
             return false;
 
-        InventoryItem item = itemDictionary[itemId];
-
-        if (item.quantity < quantity)
-            return false;
-
-        item.quantity -= quantity;
-
-        // 如果数量为0，完全移除
-        if (item.quantity <= 0)
+        int remaining = quantity;
+        for (int i = items.Count - 1; i >= 0 && remaining > 0; i--)
         {
-            items.Remove(item);
-            itemDictionary.Remove(itemId);
-            OnItemRemoved?.Invoke(item);
+            var item = items[i];
+            if (item.data == null || item.data.ItemId != itemId)
+                continue;
+
+            int removeCount = Mathf.Min(item.quantity, remaining);
+            item.quantity -= removeCount;
+            remaining -= removeCount;
+
+            if (item.quantity <= 0)
+            {
+                items.RemoveAt(i);
+                if (itemDictionary.TryGetValue(itemId, out var dictItem) && dictItem == item)
+                {
+                    itemDictionary.Remove(itemId);
+                }
+                OnItemRemoved?.Invoke(item);
+            }
+            else
+            {
+                NotifyItemChanged(item);
+            }
+        }
+
+        if (remaining > 0)
+        {
+            Debug.LogWarning($"移除物品失败: {itemId} 数量不足");
+            return false;
+        }
+
+        // 若还有同类物品，确保字典指向其中之一
+        if (!itemDictionary.ContainsKey(itemId))
+        {
+            var replacement = items.Find(inv => inv.data != null && inv.data.ItemId == itemId);
+            if (replacement != null)
+            {
+                itemDictionary[itemId] = replacement;
+            }
         }
 
         OnInventoryChanged?.Invoke();
-        Debug.Log($"移除物品: {item.data.DisplayName} x{quantity}");
+        Debug.Log($"移除物品: {itemId} x{quantity}");
         return true;
     }
 
@@ -137,6 +167,14 @@ public class InventoryManager : MonoBehaviour
     public void UseItem(string itemId, IBattleUnit user = null, IBattleUnit target = null)
     {
         if (!itemDictionary.TryGetValue(itemId, out var item))
+            return;
+
+        UseItem(item, user, target);
+    }
+
+    public void UseItem(InventoryItem item, IBattleUnit user = null, IBattleUnit target = null)
+    {
+        if (item == null || item.data == null)
             return;
 
         if (!item.data.CanUse(user, target))
@@ -150,7 +188,23 @@ public class InventoryManager : MonoBehaviour
         // 使用后更新数量
         if (item.quantity <= 0)
         {
-            RemoveItem(itemId);
+            string itemId = item.data.ItemId;
+            items.Remove(item);
+            if (itemDictionary.TryGetValue(itemId, out var dictItem) && dictItem == item)
+            {
+                itemDictionary.Remove(itemId);
+            }
+            // 若还有同类物品，重新指派字典引用
+            if (!string.IsNullOrEmpty(itemId) && !itemDictionary.ContainsKey(itemId))
+            {
+                var replacement = items.Find(inv => inv.data != null && inv.data.ItemId == itemId);
+                if (replacement != null)
+                {
+                    itemDictionary[itemId] = replacement;
+                }
+            }
+            OnItemRemoved?.Invoke(item);
+            OnInventoryChanged?.Invoke();
         }
         else
         {
@@ -163,10 +217,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public bool HasItem(string itemId, int quantity = 1)
     {
-        if (!itemDictionary.ContainsKey(itemId))
-            return false;
-
-        return itemDictionary[itemId].quantity >= quantity;
+        return GetItemCount(itemId) >= quantity;
     }
 
     /// <summary>
@@ -174,10 +225,18 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public int GetItemCount(string itemId)
     {
-        if (!itemDictionary.ContainsKey(itemId))
+        if (string.IsNullOrWhiteSpace(itemId))
             return 0;
 
-        return itemDictionary[itemId].quantity;
+        int total = 0;
+        foreach (var item in items)
+        {
+            if (item.data != null && item.data.ItemId == itemId)
+            {
+                total += item.quantity;
+            }
+        }
+        return total;
     }
 
     /// <summary>
