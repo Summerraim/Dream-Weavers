@@ -1,19 +1,19 @@
-<<<<<<< HEAD
+<<<<<<<< HEAD:Assets/Scripts/General/RoomController.meta
 fileFormatVersion: 2
-guid: 32f57c8107cae6d4cbad008086af3154
+guid: 13857c5f791633a40a70394f566b6506
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-=======
+========
 fileFormatVersion: 2
-guid: 240127efe713be243a43abca3dae3ab3
+guid: b91604a961edf2b49a0f65c57af5bab0
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
->>>>>>> main
+>>>>>>>> main:Assets/Scripts/Controllers/Room.meta
