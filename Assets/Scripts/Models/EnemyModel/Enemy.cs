@@ -22,8 +22,8 @@ public class Enemy : IBattleUnit
     public Enemy(EnemyData data)
     {
         this.data = data;
-        HP = data.MaxHP;
-        Mana = data.MaxMana;
+        HP = MaxHP;
+        Mana = MaxMana;
         Damage = Mathf.Max(0, data.Damage);
         Defense = Mathf.Max(0, data.Defense);
     }

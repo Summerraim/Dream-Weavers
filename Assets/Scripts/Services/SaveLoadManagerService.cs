@@ -12,9 +12,11 @@ public class SaveLoadManagerService : Singleton<SaveLoadManagerService>
     }
 
     // 保存任意可序列化的数据（使用 JsonUtility）
-    public void Save<T>(T data, string key = DefaultSaveKey) where T : class
+    public void Save<T>(T data, string key = DefaultSaveKey)
+        where T : class
     {
-        if (data == null) return;
+        if (data == null)
+            return;
         try
         {
             string json = JsonUtility.ToJson(data);
@@ -28,9 +30,11 @@ public class SaveLoadManagerService : Singleton<SaveLoadManagerService>
     }
 
     // 读取数据（若无返回 null）
-    public T Load<T>(string key = DefaultSaveKey) where T : class
+    public T Load<T>(string key = DefaultSaveKey)
+        where T : class
     {
-        if (!HasSaveData(key)) return null;
+        if (!HasSaveData(key))
+            return null;
         try
         {
             string json = PlayerPrefs.GetString(key);
