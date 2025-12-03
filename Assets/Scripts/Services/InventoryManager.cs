@@ -20,7 +20,7 @@ public class InventoryManager : MonoBehaviour
     public Action<InventoryItem> OnItemRemoved; // 物品移除事件
     public Action OnInventoryChanged; // 背包变化事件
 
-    private Dictionary<string, InventoryItem> itemDictionary =
+    private readonly Dictionary<string, InventoryItem> itemDictionary =
         new Dictionary<string, InventoryItem>();
 
     private void Awake()
@@ -53,17 +53,31 @@ public class InventoryManager : MonoBehaviour
         if (itemData == null || quantity <= 0)
             return false;
 
-        // 检查是否已有该物品且可堆叠
-        if (itemDictionary.ContainsKey(itemData.itemId))
+        string key = itemData.ItemId;
+        if (string.IsNullOrWhiteSpace(key))
         {
-            InventoryItem existingItem = itemDictionary[itemData.itemId];
+            Debug.LogWarning("[Inventory] 尝试添加缺少 ItemId 的物品");
+            return false;
+        }
 
+        // 检查是否已有该物品且可堆叠
+        if (itemDictionary.TryGetValue(key, out var existingItem))
+        {
             // 尝试堆叠
-            if (existingItem.CanStackWith(new InventoryItem(itemData, quantity)))
+            int maxStack = Mathf.Max(1, itemData.MaxStack);
+            int available = Mathf.Max(0, maxStack - existingItem.quantity);
+            if (available > 0)
             {
-                existingItem.quantity += quantity;
+                int toAdd = Mathf.Min(available, quantity);
+                existingItem.quantity += toAdd;
+                quantity -= toAdd;
                 NotifyItemChanged(existingItem);
-                return true;
+
+                if (quantity <= 0)
+                {
+                    Debug.Log($"添加物品: {itemData.DisplayName} x{toAdd}");
+                    return true;
+                }
             }
         }
 
@@ -79,13 +93,13 @@ public class InventoryManager : MonoBehaviour
 
         // 添加到背包
         items.Add(newItem);
-        itemDictionary[itemData.itemId] = newItem;
+        itemDictionary[key] = newItem;
 
         // 触发事件
         OnItemAdded?.Invoke(newItem);
         OnInventoryChanged?.Invoke();
 
-        Debug.Log($"添加物品: {itemData.itemName} x{quantity}");
+        Debug.Log($"添加物品: {itemData.DisplayName} x{quantity}");
         return true;
     }
 
@@ -113,20 +127,25 @@ public class InventoryManager : MonoBehaviour
         }
 
         OnInventoryChanged?.Invoke();
-        Debug.Log($"移除物品: {item.data.itemName} x{quantity}");
+        Debug.Log($"移除物品: {item.data.DisplayName} x{quantity}");
         return true;
     }
 
     /// <summary>
     /// 使用物品
     /// </summary>
-    public void UseItem(string itemId)
+    public void UseItem(string itemId, IBattleUnit user = null, IBattleUnit target = null)
     {
-        if (!itemDictionary.ContainsKey(itemId))
+        if (!itemDictionary.TryGetValue(itemId, out var item))
             return;
 
-        InventoryItem item = itemDictionary[itemId];
-        item.Use();
+        if (!item.data.CanUse(user, target))
+        {
+            Debug.LogWarning($"[Inventory] 道具当前不可使用: {item.data.DisplayName}");
+            return;
+        }
+
+        item.Use(user, target);
 
         // 使用后更新数量
         if (item.quantity <= 0)
@@ -204,13 +223,14 @@ public class InventoryManager : MonoBehaviour
     {
         // 创建测试物品数据
         ItemData healthPotion = ScriptableObject.CreateInstance<ItemData>();
-        healthPotion.itemId = "health_potion";
-        healthPotion.itemName = "生命药水";
-        healthPotion.description = "恢复50点生命值";
-        healthPotion.itemType = ItemData.ItemType.Consumable;
-        healthPotion.consumable = true;
-        healthPotion.healthEffect = 50f;
-        healthPotion.maxStack = 5;
+        healthPotion.ConfigureRuntime(
+            "health_potion",
+            "生命药水",
+            "恢复50点生命值",
+            null,
+            5,
+            true
+        );
 
         AddItem(healthPotion, 3);
     }
