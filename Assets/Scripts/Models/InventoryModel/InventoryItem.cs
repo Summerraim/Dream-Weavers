@@ -27,8 +27,8 @@ public class InventoryItem
         return other != null
             && other.data != null
             && data != null
-            && other.data.itemId == data.itemId
-            && quantity < data.maxStack;
+            && other.data.ItemId == data.ItemId
+            && quantity < data.MaxStack;
     }
 
     // 尝试堆叠
@@ -40,7 +40,7 @@ public class InventoryItem
             return false;
 
         int total = quantity + other.quantity;
-        if (total <= data.maxStack)
+        if (total <= data.MaxStack)
         {
             quantity = total;
             other.quantity = 0;
@@ -48,28 +48,28 @@ public class InventoryItem
         }
         else
         {
-            quantity = data.maxStack;
-            remaining = total - data.maxStack;
+            quantity = data.MaxStack;
+            remaining = total - data.MaxStack;
             return true;
         }
     }
 
-    // 使用物品
-    public void Use()
+    // 使用物品（适配 IItem）
+    public void Use(IBattleUnit user = null, IBattleUnit target = null)
     {
-        if (data != null)
-        {
-            data.Use();
+        if (data == null)
+            return;
 
-            // 如果是消耗品，使用后减少数量
-            if (data.consumable)
-            {
-                quantity--;
-                if (quantity <= 0)
-                {
-                    // 物品用完，从背包中移除（由背包管理器处理）
-                }
-            }
+        // 前置校验（与 UI 保持一致）
+        if (!data.CanUse(user, target))
+            return;
+
+        data.Use(user, target);
+
+        if (data.RemoveOnUse)
+        {
+            quantity--;
+            if (quantity < 0) quantity = 0;
         }
     }
 }
