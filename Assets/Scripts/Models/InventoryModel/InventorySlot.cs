@@ -34,8 +34,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (item != null && item.data != null && item.quantity > 0)
         {
             // 显示物品
-            iconImage.sprite = item.data.icon;
-            iconImage.color = Color.white;
+            iconImage.sprite = item.data.Icon;
+            iconImage.color = item.data.Icon != null ? Color.white : new Color(0, 0, 0, 0);
             quantityText.text = item.quantity > 1 ? item.quantity.ToString() : "";
             item.slotIndex = slotIndex;
         }
@@ -86,7 +86,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             // 左键点击：使用物品
             if (currentItem != null)
             {
-                InventoryManager.Instance.UseItem(currentItem.data.itemId);
+                InventoryManager.Instance.UseItem(currentItem);
             }
         }
         else if (eventData.button == PointerEventData.InputButton.Right)

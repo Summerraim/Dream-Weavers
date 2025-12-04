@@ -153,7 +153,8 @@ public class InventoryUIController : MonoBehaviour
         {
             dragItemIcon.SetActive(true);
             Image icon = dragItemIcon.GetComponent<Image>();
-            icon.sprite = item.data.icon;
+            icon.sprite = item.data.Icon;
+            icon.color = item.data.Icon != null ? Color.white : new Color(0, 0, 0, 0);
 
             // 跟随鼠标
             dragItemIcon.transform.position = Input.mousePosition;
@@ -202,31 +203,18 @@ public class InventoryUIController : MonoBehaviour
             itemInfoPanel.SetActive(true);
 
         // 更新UI
-        itemNameText.text = item.data.itemName;
-        itemDescriptionText.text = item.data.description;
+        itemNameText.text = item.data.DisplayName;
+        itemDescriptionText.text = item.data.Description;
 
         // 显示物品属性
-        string stats = $"类型: {item.data.itemType}\n";
-        stats += $"重量: {item.data.weight}\n";
-        stats += $"价值: {item.data.value}\n";
-        stats += $"数量: {item.quantity}/{item.data.maxStack}";
-
-        if (item.data.consumable)
-        {
-            stats += $"\n\n使用效果:\n";
-            if (item.data.healthEffect != 0)
-                stats += $"生命值: {item.data.healthEffect}\n";
-            if (item.data.manaEffect != 0)
-                stats += $"魔法值: {item.data.manaEffect}\n";
-        }
+        string stats = $"可堆叠上限: {item.data.MaxStack}\n";
+        stats += $"使用后消耗: {(item.data.RemoveOnUse ? "是" : "否")}\n";
+        stats += $"数量: {item.quantity}/{item.data.MaxStack}";
 
         itemStatsText.text = stats;
 
         // 设置按钮状态
-        useButton.interactable =
-            item.data.consumable
-            || item.data.itemType == ItemData.ItemType.Weapon
-            || item.data.itemType == ItemData.ItemType.Armor;
+        useButton.interactable = item.data.CanUse(null, null);
         dropButton.interactable = true;
     }
 
@@ -240,7 +228,7 @@ public class InventoryUIController : MonoBehaviour
             InventoryItem item = selectedSlot.GetItem();
             if (item != null)
             {
-                InventoryManager.Instance.UseItem(item.data.itemId);
+                InventoryManager.Instance.UseItem(item);
 
                 // 隐藏信息面板
                 if (itemInfoPanel != null)
@@ -260,7 +248,7 @@ public class InventoryUIController : MonoBehaviour
             if (item != null)
             {
                 // 弹出确认窗口（简化版直接丢弃）
-                InventoryManager.Instance.RemoveItem(item.data.itemId, 1);
+                InventoryManager.Instance.RemoveItem(item.data.ItemId, 1);
 
                 // 隐藏信息面板
                 if (itemInfoPanel != null)
@@ -280,14 +268,16 @@ public class InventoryUIController : MonoBehaviour
     {
         // 创建测试物品
         ItemData testItem = ScriptableObject.CreateInstance<ItemData>();
-        testItem.itemId = "test_" + Random.Range(1000, 9999);
-        testItem.itemName = "测试物品" + Random.Range(1, 100);
-        testItem.description = "这是一个测试物品";
-        testItem.itemType = (ItemData.ItemType)Random.Range(0, 5);
-        testItem.maxStack = Random.Range(1, 10);
-        testItem.consumable = Random.value > 0.5f;
+        testItem.ConfigureRuntime(
+            "test_" + UnityEngine.Random.Range(1000, 9999),
+            "测试物品" + UnityEngine.Random.Range(1, 100),
+            "这是一个测试物品",
+            null,
+            UnityEngine.Random.Range(1, 10),
+            true
+        );
 
-        InventoryManager.Instance.AddItem(testItem, Random.Range(1, 5));
+        InventoryManager.Instance.AddItem(testItem, UnityEngine.Random.Range(1, 5));
     }
 
     /// <summary>
@@ -296,7 +286,9 @@ public class InventoryUIController : MonoBehaviour
     public void SortInventory()
     {
         // 实现排序逻辑
-        InventoryManager.Instance.items.Sort((a, b) => a.data.itemType.CompareTo(b.data.itemType));
+        InventoryManager.Instance.items.Sort(
+            (a, b) => System.StringComparer.Ordinal.Compare(a.data.DisplayName, b.data.DisplayName)
+        );
 
         InventoryManager.Instance.OnInventoryChanged?.Invoke();
     }
