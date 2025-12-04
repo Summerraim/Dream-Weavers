@@ -35,6 +35,20 @@ public class RoomUIActions_cza : MonoBehaviour
     private bool subscribed;
     private Coroutine waitCo;
 
+    [Header("面板切换")]
+    [Tooltip("房间类型到UI面板名的映射，用于进入房间时切换UI。")]
+    [SerializeField] private List<TypePanelMapping> typePanelMappings = new List<TypePanelMapping>();
+    [Tooltip("分支选择时显示的面板名（例如包含三个Next按钮的面板）")]
+    [SerializeField] private string choosePanelName = "Panel_ChooseNext";
+    private Dictionary<RoomType_cza, string> typePanelMap;
+
+    [Serializable]
+    public struct TypePanelMapping
+    {
+        public RoomType_cza type;
+        public string panelName;
+    }
+
     private void Awake()
     {
         // 强校验：关键引用不能为空
@@ -105,6 +119,9 @@ public class RoomUIActions_cza : MonoBehaviour
             if (btnNext3)
                 btnNext3.interactable = false;
         }
+
+        // 构建类型映射字典
+        BuildTypePanelMap();
     }
 
     private void OnEnable()
@@ -206,6 +223,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 进入房间后统一应用交互状态
         ApplyInteractableState("OnRoomEntered");
+
+        // 进入房间时进行UI面板切换
+        SwitchToRoomTypePanel(node.Type);
     }
 
     private string FormatList(System.Collections.Generic.List<int> list)
@@ -232,6 +252,16 @@ public class RoomUIActions_cza : MonoBehaviour
             if (selecting)
                 nextRoomsText.text = count > 0 ? $"可选: {string.Join(", ", choices)}" : "可选: 无";
             // 非选择阶段保留 RefreshRoomInfo 的静态提示
+        }
+
+        // 选择阶段显示选择面板；非选择阶段隐藏选择面板
+        if (selecting)
+        {
+            ShowPanel(choosePanelName, true);
+        }
+        else
+        {
+            ShowPanel(choosePanelName, false);
         }
     }
 
@@ -283,5 +313,57 @@ public class RoomUIActions_cza : MonoBehaviour
         RefreshChoiceUI(RoomStateMachine_cza.Instance.GetCurrentBranchChoices());
         if (RoomStateMachine_cza.Instance.IsReady)
             OnStateReady();
+    }
+
+    private void BuildTypePanelMap()
+    {
+        typePanelMap = new Dictionary<RoomType_cza, string>();
+        foreach (var m in typePanelMappings)
+        {
+            if (!string.IsNullOrEmpty(m.panelName))
+                typePanelMap[m.type] = m.panelName;
+        }
+    }
+
+    private void SwitchToRoomTypePanel(RoomType_cza type)
+    {
+        if (UIManagerService.Instance == null) return;
+        if (typePanelMap == null || typePanelMap.Count == 0) BuildTypePanelMap();
+        if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName))//通过传入的房间类型找到对应面板
+        {
+            // 简单策略：隐藏所有已注册面板，再显示目标面板；选择面板按需叠加
+            HideAllRegisteredPanels();
+            ShowPanel(panelName, true);
+
+            // 进入房间后按楼层应用美术皮肤（复用交互UI，仅替换背景/装饰）
+            var panelGO = UIManagerService.Instance.GetPanel(panelName);
+            if (panelGO != null)
+            {
+                var skinCtl = panelGO.GetComponentInChildren<RoomUISkinController>(true);
+                int floor = 0;
+                var sm = RoomStateMachine_cza.Instance;
+                if (sm != null && sm.CurrentMap != null) floor = sm.CurrentMap.FloorIndex;
+                if (skinCtl != null) skinCtl.ApplySkin(floor);
+            }
+        }
+    }
+
+    private void HideAllRegisteredPanels()
+    {
+        var ui = UIManagerService.Instance;
+        var root = ui != null ? ui.panelsRoot : null;
+        if (root == null) return;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var name = root.GetChild(i).name;
+            ui.HidePanel(name);
+        }
+    }
+
+    private void ShowPanel(string panelName, bool active)
+    {
+        if (UIManagerService.Instance == null || string.IsNullOrEmpty(panelName)) return;
+        if (active) UIManagerService.Instance.ShowPanel(panelName);
+        else UIManagerService.Instance.HidePanel(panelName);
     }
 }

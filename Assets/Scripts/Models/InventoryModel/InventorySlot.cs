@@ -35,7 +35,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         {
             // 显示物品
             iconImage.sprite = item.data.Icon;
-            iconImage.color = Color.white;
+            iconImage.color = item.data.Icon != null ? Color.white : new Color(0, 0, 0, 0);
             quantityText.text = item.quantity > 1 ? item.quantity.ToString() : "";
             item.slotIndex = slotIndex;
         }
