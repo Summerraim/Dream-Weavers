@@ -33,6 +33,12 @@ public class AIController
         if (skill == null)
             return;
 
+        // 扣除敌人蓝量
+        enemy.ConsumeMana(skill.ManaCost);
+        
+        // 执行技能
         skill.Execute(enemy, player);
+        
+        UnityEngine.Debug.Log($"AIController: Enemy used skill. Mana remaining: {enemy.Mana}");
     }
 }

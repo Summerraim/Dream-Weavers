@@ -33,12 +33,32 @@ public class Enemy : IBattleUnit
         var list = new List<ISkill>();
         if (data != null && data.Skills != null)
         {
+            UnityEngine.Debug.Log($"Enemy.GetSkills: Found {data.Skills.Length} skill objects");
             for (int i = 0; i < data.Skills.Length; i++)
             {
-                if (data.Skills[i] is ISkill skill)
+                var skillObj = data.Skills[i];
+                UnityEngine.Debug.Log($"Enemy.GetSkills[{i}]: Type={skillObj?.GetType().Name ?? "null"}, IsISkill={(skillObj is ISkill)}, IsSkillData={(skillObj is SkillData)}");
+                
+                if (skillObj == null)
+                    continue;
+
+                // 尝试直接作为 ISkill
+                if (skillObj is ISkill skill)
+                {
+                    UnityEngine.Debug.Log($"Enemy.GetSkills[{i}]: Added as direct ISkill");
                     list.Add(skill);
+                    continue;
+                }
+
+                // 如果是 SkillData，用 Skill 类包装
+                if (skillObj is SkillData skillData)
+                {
+                    UnityEngine.Debug.Log($"Enemy.GetSkills[{i}]: Wrapping SkillData with Skill class");
+                    list.Add(new Skill(skillData));
+                }
             }
         }
+        UnityEngine.Debug.Log($"Enemy.GetSkills: Returning {list.Count} skills");
         return list;
     }
 
@@ -64,5 +84,10 @@ public class Enemy : IBattleUnit
     public void ReceiveHeal(int v)
     {
         HP = Mathf.Min(MaxHP, HP + Mathf.Max(0, v));
+    }
+
+    public void ConsumeMana(int amount)
+    {
+        Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
 }
