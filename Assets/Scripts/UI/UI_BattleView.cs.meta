@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Scripts/UI/RoomUISkinController.cs.meta
-guid: cc853f53196847542ae1d14a0caecd4f
-========
-guid: afcfd9586107cd34ea9f8bd200bfc346
->>>>>>>> origin/main:Assets/Scripts/UI/ImageBar.cs.meta
+guid: 0bcb0510d5d24aa418d941348cb9b97e
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

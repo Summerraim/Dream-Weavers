@@ -206,7 +206,7 @@ public class InventoryUIController : MonoBehaviour
         itemNameText.text = item.data.DisplayName;
         itemDescriptionText.text = item.data.Description;
 
-        // 显示物品属性
+        // 显示物品属性（适配 IItem）
         string stats = $"可堆叠上限: {item.data.MaxStack}\n";
         stats += $"使用后消耗: {(item.data.RemoveOnUse ? "是" : "否")}\n";
         stats += $"数量: {item.quantity}/{item.data.MaxStack}";
@@ -228,6 +228,7 @@ public class InventoryUIController : MonoBehaviour
             InventoryItem item = selectedSlot.GetItem();
             if (item != null)
             {
+                // 直接使用选中实例，内部会处理数量与事件
                 InventoryManager.Instance.UseItem(item);
 
                 // 隐藏信息面板
@@ -286,6 +287,7 @@ public class InventoryUIController : MonoBehaviour
     public void SortInventory()
     {
         // 实现排序逻辑
+        // 改为按名称排序，避免旧枚举引用
         InventoryManager.Instance.items.Sort(
             (a, b) => System.StringComparer.Ordinal.Compare(a.data.DisplayName, b.data.DisplayName)
         );

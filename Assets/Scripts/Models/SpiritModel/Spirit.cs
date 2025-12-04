@@ -57,12 +57,32 @@ public class Spirit : IBattleUnit
         var list = new List<ISkill>();
         if (Data != null && Data.Skills != null)
         {
+            UnityEngine.Debug.Log($"Spirit.GetSkills: Found {Data.Skills.Length} skill objects");
             for (int i = 0; i < Data.Skills.Length; i++)
             {
-                if (Data.Skills[i] is ISkill skill)
+                var skillObj = Data.Skills[i];
+                UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Type={skillObj?.GetType().Name ?? "null"}, IsISkill={(skillObj is ISkill)}, IsSkillData={(skillObj is SkillData)}");
+                
+                if (skillObj == null)
+                    continue;
+
+                // 尝试直接作为 ISkill
+                if (skillObj is ISkill skill)
+                {
+                    UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Added as direct ISkill");
                     list.Add(skill);
+                    continue;
+                }
+
+                // 如果是 SkillData，用 Skill 类包装
+                if (skillObj is SkillData skillData)
+                {
+                    UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Wrapping SkillData with Skill class");
+                    list.Add(new Skill(skillData));
+                }
             }
         }
+        UnityEngine.Debug.Log($"Spirit.GetSkills: Returning {list.Count} skills");
         return list;
     }
 
@@ -88,6 +108,11 @@ public class Spirit : IBattleUnit
     public void ReceiveHeal(int v)
     {
         HP = Mathf.Min(MaxHP, HP + Mathf.Max(0, v));
+    }
+
+    public void ConsumeMana(int amount)
+    {
+        Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
 
     public void SetMaxHpBonusPercent(float percent)
