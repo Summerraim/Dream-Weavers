@@ -28,12 +28,14 @@ public class BattleModel
 
     private readonly List<Enemy> enemyUnits;
     private readonly List<SynergyModel> activeSynergies;
+    private readonly Dictionary<int, int> skillCooldowns; // 技能索引 -> 剩余冷却回合数
 
     public BattleModel()
     {
         CurrentTurn = 0;
         enemyUnits = new List<Enemy>();
         activeSynergies = new List<SynergyModel>();
+        skillCooldowns = new Dictionary<int, int>();
     }
 
     /// <summary>
@@ -53,11 +55,59 @@ public class BattleModel
     }
 
     /// <summary>
-    /// 增加回合数
+    /// 增加回合数，并更新技能冷却
     /// </summary>
     public void IncrementTurn()
     {
         CurrentTurn++;
+        UpdateSkillCooldowns();
+    }
+
+    /// <summary>
+    /// 更新所有技能的冷却时间（每回合减1）
+    /// </summary>
+    private void UpdateSkillCooldowns()
+    {
+        var keys = new List<int>(skillCooldowns.Keys);
+        foreach (var skillIndex in keys)
+        {
+            skillCooldowns[skillIndex] = Mathf.Max(0, skillCooldowns[skillIndex] - 1);
+            if (skillCooldowns[skillIndex] == 0)
+            {
+                skillCooldowns.Remove(skillIndex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 设置技能冷却
+    /// </summary>
+    public void SetSkillCooldown(int skillIndex, int cooldownTurns)
+    {
+        if (cooldownTurns > 0)
+        {
+            skillCooldowns[skillIndex] = cooldownTurns;
+        }
+        else
+        {
+            skillCooldowns.Remove(skillIndex);
+        }
+    }
+
+    /// <summary>
+    /// 获取技能剩余冷却回合数
+    /// </summary>
+    public int GetSkillCooldown(int skillIndex)
+    {
+        return skillCooldowns.TryGetValue(skillIndex, out var cooldown) ? cooldown : 0;
+    }
+
+    /// <summary>
+    /// 检查技能是否在冷却中
+    /// </summary>
+    public bool IsSkillOnCooldown(int skillIndex)
+    {
+        return GetSkillCooldown(skillIndex) > 0;
     }
 
     /// <summary>
@@ -123,5 +173,6 @@ public class BattleModel
         PlayerUnit = null;
         enemyUnits.Clear();
         activeSynergies.Clear();
+        skillCooldowns.Clear();
     }
 }

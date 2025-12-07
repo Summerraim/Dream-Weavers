@@ -69,10 +69,24 @@ public class BattleController : MonoBehaviour
 
     public void PlayerUseSkill(ISkill skill)
     {
+        PlayerUseSkill(skill, -1); // -1 表示不追踪冷却（旧版本兼容）
+    }
+
+    private void PlayerUseSkill(ISkill skill, int skillIndex)
+    {
         if (State != BattleState.PlayerTurn || skill == null || player == null || enemy == null)
         {
             Debug.Log(
                 $"BattleController: PlayerUseSkill failed - State check failed or null units"
+            );
+            return;
+        }
+
+        // 检查冷却（如果提供了技能索引）
+        if (skillIndex >= 0 && model != null && model.IsSkillOnCooldown(skillIndex))
+        {
+            Debug.Log(
+                $"BattleController: Skill {skillIndex} is on cooldown for {model.GetSkillCooldown(skillIndex)} more turns"
             );
             return;
         }
@@ -98,6 +112,13 @@ public class BattleController : MonoBehaviour
         skill.Execute(player, enemy);
         Debug.Log($"BattleController: Enemy HP after skill: {enemy.HP}");
 
+        // 设置冷却（如果提供了技能索引）
+        if (skillIndex >= 0 && model != null && skill.CooldownTurns > 0)
+        {
+            model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
+            Debug.Log($"BattleController: Skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns");
+        }
+
         // 更新模型中的羁绊/状态并刷新 UI
         model?.UpdateActiveSynergies();
         UpdateBattleStateAfterAction();
@@ -106,31 +127,52 @@ public class BattleController : MonoBehaviour
     }
 
     /// <summary>
-    /// 尝试使用玩家的第一个技能（由 UI 调用）。
+    /// 尝试使用玩家的指定索引的技能（由 UI 调用）。
     /// </summary>
-    public void UseFirstPlayerSkill()
+    /// <param name="skillIndex">技能索引（0-2）</param>
+    public void UsePlayerSkill(int skillIndex)
     {
-        Debug.Log("BattleController: UseFirstPlayerSkill called");
+        Debug.Log($"BattleController: UsePlayerSkill called with index {skillIndex}");
 
         if (player == null)
         {
-            Debug.Log("BattleController: Player is null!");
+            Debug.LogWarning("BattleController: Player is null!");
             return;
         }
 
         var skills = player.GetSkills();
         Debug.Log($"BattleController: Found {skills?.Count ?? 0} skills");
 
-        if (skills != null && skills.Count > 0)
+        if (skills == null || skills.Count == 0)
         {
-            var skill = skills[0];
-            Debug.Log($"BattleController: Using skill: {skill?.DisplayName ?? "null"}");
-            PlayerUseSkill(skill);
+            Debug.LogWarning("BattleController: No skills available!");
+            return;
         }
-        else
+
+        if (skillIndex < 0 || skillIndex >= skills.Count)
         {
-            Debug.Log("BattleController: No skills available!");
+            Debug.LogWarning($"BattleController: Skill index {skillIndex} out of range (0-{skills.Count - 1})");
+            return;
         }
+
+        var skill = skills[skillIndex];
+        if (skill == null)
+        {
+            Debug.LogWarning($"BattleController: Skill at index {skillIndex} is null!");
+            return;
+        }
+
+        Debug.Log($"BattleController: Using skill {skillIndex}: {skill.DisplayName}");
+        PlayerUseSkill(skill, skillIndex);
+    }
+
+    /// <summary>
+    /// 尝试使用玩家的第一个技能（由 UI 调用）。保留用于向后兼容。
+    /// </summary>
+    [System.Obsolete("Use UsePlayerSkill(int skillIndex) instead")]
+    public void UseFirstPlayerSkill()
+    {
+        UsePlayerSkill(0);
     }
 
     public void EndPlayerTurn()
