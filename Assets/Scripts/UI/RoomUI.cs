@@ -41,6 +41,8 @@ public class RoomUIActions_cza : MonoBehaviour
     [Tooltip("分支选择时显示的面板名（例如包含三个Next按钮的面板）")]
     [SerializeField] private string choosePanelName = "Panel_ChooseNext";
     private Dictionary<RoomType_cza, string> typePanelMap;
+    // 当前已显示的房间类型面板名，用于在进入选择阶段时立刻隐藏
+    private string currentRoomPanelName;
 
     [Serializable]
     public struct TypePanelMapping
@@ -74,9 +76,16 @@ public class RoomUIActions_cza : MonoBehaviour
             {
                 Debug.Log("[RoomUI] Click Complete");
                 if (RoomStateMachine_cza.Instance != null)
+                {
+                    // 触发当前房间完成，状态机会生成分支并标记选择阶段
                     RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+                    // 立即显式显示选择面板，确保 UI 及时可见
+                    ShowPanel(choosePanelName, true);
+                }
                 else
+                {
                     Debug.LogWarning("[RoomUI] RoomStateMachine Instance 为空，未挂载或未初始化");
+                }
             });
         if (btnNext1)
             btnNext1.onClick.AddListener(() =>
@@ -199,6 +208,7 @@ public class RoomUIActions_cza : MonoBehaviour
             RoomStateMachine_cza.Instance.OnRoomEntered -= RefreshRoomInfo;
             RoomStateMachine_cza.Instance.OnBranchChoicesUpdated -= RefreshChoiceUI;
             RoomStateMachine_cza.Instance.OnReady -= OnStateReady;
+            RoomStateMachine_cza.Instance.OnRoomCompleted -= OnRoomCompletedHideCurrent;
             subscribed = false;
         }
         if (waitCo != null)
@@ -257,11 +267,17 @@ public class RoomUIActions_cza : MonoBehaviour
         // 选择阶段显示选择面板；非选择阶段隐藏选择面板
         if (selecting)
         {
+            // 立即隐藏当前房间的类型面板，实现进入选择阶段就遮蔽上一房间UI
+            if (!string.IsNullOrEmpty(currentRoomPanelName))
+            {
+                ShowPanel(currentRoomPanelName, false);
+            }
             ShowPanel(choosePanelName, true);
         }
         else
         {
             ShowPanel(choosePanelName, false);
+            
         }
     }
 
@@ -286,10 +302,10 @@ public class RoomUIActions_cza : MonoBehaviour
         bool selecting = sm != null && sm.IsAwaitingChoice;
         if (btnComplete)
         {
-            // 业务规则：有当前房间且不在选择阶段 -> 可点击 Complete
-            btnComplete.interactable = ready && !selecting;
+            // 始终保持 Complete 可点击并暴露在外，由点击行为触发选择面板显隐
+            btnComplete.interactable = true;
             Debug.Log(
-                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
+                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable=true"
             );
         }
         // Next 按钮的交互由 RefreshChoiceUI 设置，这里不重复处理
@@ -309,10 +325,21 @@ public class RoomUIActions_cza : MonoBehaviour
         RoomStateMachine_cza.Instance.OnRoomEntered += RefreshRoomInfo;
         RoomStateMachine_cza.Instance.OnBranchChoicesUpdated += RefreshChoiceUI;
         RoomStateMachine_cza.Instance.OnReady += OnStateReady;
+        RoomStateMachine_cza.Instance.OnRoomCompleted += OnRoomCompletedHideCurrent;
         subscribed = true;
         RefreshChoiceUI(RoomStateMachine_cza.Instance.GetCurrentBranchChoices());
         if (RoomStateMachine_cza.Instance.IsReady)
             OnStateReady();
+    }
+
+    // 房间完成时（包括Boss房触发楼层切换前），立即隐藏当前房间UI，避免跨楼层残留
+    private void OnRoomCompletedHideCurrent(RoomNode_cza _)
+    {
+        // 防御性处理：隐藏所有已注册的类型面板，避免跨楼层残留
+        HideAllRegisteredPanels();
+        currentRoomPanelName = null;
+        // 同时确保选择面板关闭
+        ShowPanel(choosePanelName, false);
     }
 
     private void BuildTypePanelMap()
@@ -334,6 +361,7 @@ public class RoomUIActions_cza : MonoBehaviour
             // 简单策略：隐藏所有已注册面板，再显示目标面板；选择面板按需叠加
             HideAllRegisteredPanels();
             ShowPanel(panelName, true);
+            currentRoomPanelName = panelName;
 
             // 进入房间后按楼层应用美术皮肤（复用交互UI，仅替换背景/装饰）
             var panelGO = UIManagerService.Instance.GetPanel(panelName);
