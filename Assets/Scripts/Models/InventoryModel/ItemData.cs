@@ -1,13 +1,17 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+
 /// <summary>
 /// 物品基础数据（ScriptableObject，可在编辑器中创建）
 /// </summary>
 [CreateAssetMenu(fileName = "NewItem", menuName = "Data/ItemData")]
 public class ItemData : ScriptableObject, IItem
 {
-    [SerializeField] private string itemId;
-    [SerializeField] private string displayNameOverride;
+    [SerializeField]
+    private string itemId;
+
+    [SerializeField]
+    private string displayNameOverride;
 
     [field: SerializeField]
     public string Description { get; private set; }
@@ -20,12 +24,14 @@ public class ItemData : ScriptableObject, IItem
 
     [field: SerializeField]
     public Sprite Icon { get; private set; }
+
     [SerializeField]
     private List<Effect> effects = new();
 
     public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;
 
-    public string DisplayName => string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
+    public string DisplayName =>
+        string.IsNullOrWhiteSpace(displayNameOverride) ? name : displayNameOverride;
 
     public bool CanUse(IBattleUnit user, IBattleUnit target)
     {
@@ -55,7 +61,8 @@ public class ItemData : ScriptableObject, IItem
         for (int i = 0; i < effects.Count; i++)
         {
             var effect = effects[i];
-            if (effect == null) continue;
+            if (effect == null)
+                continue;
             effect.Apply(user, target);
         }
     }
@@ -63,7 +70,14 @@ public class ItemData : ScriptableObject, IItem
     /// <summary>
     /// 运行时配置道具（用于测试或动态生成）
     /// </summary>
-    public void ConfigureRuntime(string id, string displayName, string description, Sprite icon, int maxStack, bool removeOnUse)
+    public void ConfigureRuntime(
+        string id,
+        string displayName,
+        string description,
+        Sprite icon,
+        int maxStack,
+        bool removeOnUse
+    )
     {
         itemId = id;
         displayNameOverride = displayName;

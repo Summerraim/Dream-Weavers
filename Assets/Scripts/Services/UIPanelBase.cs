@@ -12,10 +12,13 @@ public abstract class UIPanelBase : MonoBehaviour
     public bool isPersistent = false; // 是否持久化（不随场景切换销毁）
     public bool hideUnderlying = true; // 是否隐藏下层面板
     public int sortOrder = 0; // 渲染顺序
-    
+
     public virtual void Initialize() { }
+
     public virtual void OnShow() { }
+
     public virtual void OnHide() { }
+
     public virtual void OnBackButton() { }
 }
 
@@ -25,7 +28,7 @@ public enum UIPanelState
     Hidden,
     Showing,
     Visible,
-    Hiding
+    Hiding,
 }
 
 // UI事件定义

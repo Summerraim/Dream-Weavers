@@ -7,12 +7,13 @@ using UnityEngine;
 /// 背包中的单个物品实例
 /// </summary>
 [System.Serializable]
-public class InventoryItem 
+public class InventoryItem
 {
     public ItemData data; // 物品数据
     public SpiritData spiritData; // 敌人数据
     public int quantity; // 数量
     public int slotIndex; // 所在槽位索引
+
     //  public int HP { get; private set; }
     // public int Mana { get; private set; }
     // public int Damage { get; private set; }
@@ -94,7 +95,8 @@ public class InventoryItem
         if (data.RemoveOnUse)
         {
             quantity--;
-            if (quantity < 0) quantity = 0;
+            if (quantity < 0)
+                quantity = 0;
         }
     }
 }
