@@ -8,5 +8,5 @@ public enum RoomType_cza
     Rest,
     Props,
     Events,
-    Boss
+    Boss,
 }
