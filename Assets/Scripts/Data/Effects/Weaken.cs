@@ -1,6 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Data/Effects/Weaken")]
+[CreateAssetMenu(menuName = "Data/Effects/Debuff/Weaken")]
+//虚弱：伤害 = 目标最大HP × value
 public class Weaken : Effect
 {
     [SerializeField, Range(0f, 1f)]

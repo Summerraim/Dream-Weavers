@@ -16,6 +16,7 @@ public class Enemy : IBattleUnit
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
 
+    public Sprite Image => data?.Image;
     public int MaxHP => data?.MaxHP ?? 0;
     public int MaxMana => data?.MaxMana ?? 0;
 
