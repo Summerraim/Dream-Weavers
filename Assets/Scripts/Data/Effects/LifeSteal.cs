@@ -1,10 +1,15 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Data/Effects/Life Steal")]
+[CreateAssetMenu(menuName = "Data/Effects/Base/Life Steal")]
+/*生命偷取
+总伤害 = flatDamage + (施法者攻击力 × casterDamageMultiplier)
+实际造成伤害 = 目标受伤前HP - 目标受伤后HP
+治疗量 = 实际造成伤害 × stealPercent
+*/
 public class LifeSteal : Effect
 {
     [SerializeField, Min(0)]
-    private int flatDamage = 30;
+    private int initDamage = 30;
 
     [SerializeField, Min(0f)]
     private float casterDamageMultiplier = 1f;
@@ -17,7 +22,7 @@ public class LifeSteal : Effect
         if (target == null)
             return;
 
-        int totalDamage = flatDamage;
+        int totalDamage = initDamage;
         if (caster != null && casterDamageMultiplier > 0f)
         {
             totalDamage += Mathf.RoundToInt(caster.Damage * casterDamageMultiplier);

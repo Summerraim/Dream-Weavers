@@ -19,6 +19,7 @@ public class Spirit : IBattleUnit
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
+    public Sprite Image => data?.Image;
     public int MaxHP => Mathf.CeilToInt(baseMaxHP * (1f + bonusMaxHpPercent));
     public int MaxMana => baseMaxMana;
     public float MaxHpBonusPercent => bonusMaxHpPercent;
