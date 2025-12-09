@@ -16,6 +16,7 @@ public interface IBattleUnit
     IReadOnlyList<ISkill> GetSkills();
     void ReceiveDamage(int amount);
     void ReceiveHeal(int amount);
+    void ConsumeMana(int amount);
 }
 
 public interface ISkill

@@ -10,10 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 40e347803c34a9f4399f76e2ae5533ee, type: 3}
-  m_Name: NewPlayerData
+  m_Name: Player1
   m_EditorClassIdentifier: 
   PlayerName: Player
-  InitialItems: []
-  OwnedSpirits: []
-  DeployedSpirits: []
+  InitialItems:
+  - Item: {fileID: 11400000, guid: 03d8d8696f972b34ba0645cb7513997c, type: 2}
+    Count: 1
+  OwnedSpirits:
+  - {fileID: 11400000, guid: 8bfe84823f5ec6c4abff1fd24d54cad0, type: 2}
+  DeployedSpirits:
+  - {fileID: 11400000, guid: 8bfe84823f5ec6c4abff1fd24d54cad0, type: 2}
   MaxDeployedSpirits: 6
