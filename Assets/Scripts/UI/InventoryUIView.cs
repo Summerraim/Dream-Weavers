@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 背包UI控制器
 /// </summary>
-public class InventoryUIController : MonoBehaviour
+public class InventoryUIView : MonoBehaviour
 {
     [Header("UI引用")]
     public GameObject inventoryPanel; // 背包面板

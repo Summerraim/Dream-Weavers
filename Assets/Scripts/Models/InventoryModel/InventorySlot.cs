@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
-
+using UnityEngine.UI;
 /// <summary>
 /// 背包槽位UI
 /// </summary>
