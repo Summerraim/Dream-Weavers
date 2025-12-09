@@ -395,4 +395,59 @@ public class BattleModel
         }
         return total;
     }
+
+    /// <summary>
+    /// 检查单位是否被控制（无法行动）
+    /// </summary>
+    public bool IsUnitControlled(IBattleUnit unit)
+    {
+        if (unit == null)
+            return false;
+
+        foreach (var buff in GetBuffsForUnit(unit))
+        {
+            // 检查是否有控制型Debuff
+            if (buff is FrozenDebuff || buff is SleepDebuff)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 获取单位的控制效果名称（用于显示）
+    /// </summary>
+    public string GetControlEffectName(IBattleUnit unit)
+    {
+        if (unit == null)
+            return string.Empty;
+
+        foreach (var buff in GetBuffsForUnit(unit))
+        {
+            if (buff is FrozenDebuff || buff is SleepDebuff )
+            {
+                return buff.DisplayName;
+            }
+        }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// 检查单位是否混乱（可能攻击自己）
+    /// </summary>
+    public bool CheckConfusion(IBattleUnit unit)
+    {
+        if (unit == null)
+            return false;
+
+        foreach (var buff in GetBuffsForUnit(unit))
+        {
+            if (buff is ConfusionDebuff confusion)
+            {
+                return confusion.CheckConfusion();
+            }
+        }
+        return false;
+    }
 }

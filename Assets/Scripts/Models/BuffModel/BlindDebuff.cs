@@ -19,7 +19,9 @@ public class BlindDebuff : Buff
     public override void OnApplied()
     {
         base.OnApplied();
-        Debug.Log($"{Owner?.DisplayName} is blinded for {RemainingTurns} turns (miss chance: {(missChance * 100):F0}%)");
+        Debug.Log(
+            $"{Owner?.DisplayName} is blinded for {RemainingTurns} turns (miss chance: {(missChance * 100):F0}%)"
+        );
     }
 
     /// <summary>
@@ -33,7 +35,9 @@ public class BlindDebuff : Buff
 
         if (!hit)
         {
-            Debug.Log($"{Owner?.DisplayName} missed due to Blind! (rolled {roll:F2}, needed {missChance:F2})");
+            Debug.Log(
+                $"{Owner?.DisplayName} missed due to Blind! (rolled {roll:F2}, needed {missChance:F2})"
+            );
         }
 
         return hit;

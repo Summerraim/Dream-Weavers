@@ -1976,7 +1976,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bebd2c9814b0ec142a8b32b9ea5ef751, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 0}
+  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
   enemyData: {fileID: 11400000, guid: 71dd53f462ea09847a9a4f62bbe0104b, type: 2}
   battleView: {fileID: 1896369821}
 --- !u!1 &1897228316
