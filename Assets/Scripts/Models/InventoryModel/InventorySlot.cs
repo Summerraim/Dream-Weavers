@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 
@@ -15,11 +14,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public Sprite fallbackIcon; // 当物品没有图标时的占位图标（可选）
     
     [Header("槽位设置")]
-    public int slotIndex = -1;        // 槽位索引
+    public int slotIndex = -1; // 槽位索引
     public bool isEquipmentSlot = false; // 是否是装备槽
-    
+
     private InventoryItem currentItem; // 当前物品
-    
+
     // 事件
     public System.Action<InventorySlot> OnSlotClicked;
     public System.Action<InventorySlot> OnSlotBeginDrag;
@@ -34,7 +33,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public void UpdateSlot(InventoryItem item)
     {
         currentItem = item;
-        
+
         if (item != null && item.data != null && item.quantity > 0)
         {
             // 显示物品
@@ -50,7 +49,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             ClearSlot();
         }
     }
-    
+
     /// <summary>
     /// 清空槽位
     /// </summary>
@@ -60,11 +59,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         iconImage.sprite = null;
         iconImage.color = new Color(0, 0, 0, 0);
         quantityText.text = "";
-        
+
         if (selectedIndicator != null)
             selectedIndicator.SetActive(false);
     }
-    
+
     /// <summary>
     /// 设置选中状态
     /// </summary>
@@ -73,7 +72,7 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         if (selectedIndicator != null)
             selectedIndicator.SetActive(selected);
     }
-    
+
     /// <summary>
     /// 获取当前物品
     /// </summary>
@@ -81,9 +80,9 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     {
         return currentItem;
     }
-    
+
     #region UI事件处理
-    
+
     public void OnPointerClick(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
@@ -100,31 +99,32 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
             OnSlotClicked?.Invoke(this);
         }
     }
-    
+
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (currentItem == null) return;
-        
+        if (currentItem == null)
+            return;
+
         OnSlotBeginDrag?.Invoke(this);
-        
+
         // 开始拖拽时隐藏原始图标
         iconImage.color = new Color(1, 1, 1, 0.3f);
     }
-    
+
     public void OnDrag(PointerEventData eventData)
     {
         // 拖拽逻辑在InventoryUIController中处理
     }
-    
+
     public void OnEndDrag(PointerEventData eventData)
     {
         OnSlotEndDrag?.Invoke(this);
-        
+
         // 恢复图标显示
         if (currentItem != null)
             iconImage.color = Color.white;
     }
-    
+
     public void OnDrop(PointerEventData eventData)
     {
         // 处理物品放入槽位

@@ -716,6 +716,8 @@ MonoBehaviour:
     panelName: EventsPanel
   - type: 4
     panelName: CombatPanel
+  - type: 4
+    panelName: CombatPanel
   choosePanelName: Panel_Routes
 --- !u!1 &207116463
 GameObject:
@@ -3369,7 +3371,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a98c0b0e9b46144b84d5e201ee1cf1c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  panelsRoot: {fileID: 190698857}
+  panelsRoot: {fileID: 702842108}
   debugMode: 1
 --- !u!114 &1243239389
 MonoBehaviour:

@@ -19,6 +19,7 @@ public class Spirit : IBattleUnit
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
+    public Sprite Image => data?.Image;
     public int MaxHP => Mathf.CeilToInt(baseMaxHP * (1f + bonusMaxHpPercent));
     public int MaxMana => baseMaxMana;
     public float MaxHpBonusPercent => bonusMaxHpPercent;
@@ -61,8 +62,10 @@ public class Spirit : IBattleUnit
             for (int i = 0; i < Data.Skills.Length; i++)
             {
                 var skillObj = Data.Skills[i];
-                UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Type={skillObj?.GetType().Name ?? "null"}, IsISkill={(skillObj is ISkill)}, IsSkillData={(skillObj is SkillData)}");
-                
+                UnityEngine.Debug.Log(
+                    $"Spirit.GetSkills[{i}]: Type={skillObj?.GetType().Name ?? "null"}, IsISkill={(skillObj is ISkill)}, IsSkillData={(skillObj is SkillData)}"
+                );
+
                 if (skillObj == null)
                     continue;
 
@@ -77,7 +80,9 @@ public class Spirit : IBattleUnit
                 // 如果是 SkillData，用 Skill 类包装
                 if (skillObj is SkillData skillData)
                 {
-                    UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Wrapping SkillData with Skill class");
+                    UnityEngine.Debug.Log(
+                        $"Spirit.GetSkills[{i}]: Wrapping SkillData with Skill class"
+                    );
                     list.Add(new Skill(skillData));
                 }
             }

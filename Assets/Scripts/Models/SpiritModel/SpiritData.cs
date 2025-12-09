@@ -4,6 +4,7 @@ using UnityEngine;
 public class SpiritData : ScriptableObject
 {
     public string DisplayName;
+    public Sprite Image;
     public int MaxHP = 1000;
     public int MaxMana = 100;
     public int Damage = 50;
