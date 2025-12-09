@@ -51,7 +51,10 @@ public class InventoryManager : MonoBehaviour
     public bool AddItem(ItemData itemData, int quantity = 1)
     {
         if (itemData == null || quantity <= 0)
+        {
+            Debug.LogWarning($"[Inventory] AddItem 参数非法: itemData={(itemData==null?"null":"ok")}, quantity={quantity}");
             return false;
+        }
 
         string key = itemData.ItemId;
         if (string.IsNullOrWhiteSpace(key))

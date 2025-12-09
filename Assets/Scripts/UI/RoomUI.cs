@@ -82,13 +82,20 @@ public class RoomUIActions_cza : MonoBehaviour
                 if (RoomStateMachine_cza.Instance != null)
                 {
                     // 触发当前房间完成，状态机会生成分支并标记选择阶段
+                {
+                    // 触发当前房间完成，状态机会生成分支并标记选择阶段
                     RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+                    // 立即显式显示选择面板，确保 UI 及时可见
+                    ShowPanel(choosePanelName, true);
+                }
                     // 立即显式显示选择面板，确保 UI 及时可见
                     ShowPanel(choosePanelName, true);
                 }
                 else
                 {
+                {
                     Debug.LogWarning("[RoomUI] RoomStateMachine Instance 为空，未挂载或未初始化");
+                }
                 }
             });
         if (btnNext1)
@@ -386,13 +393,27 @@ public class RoomUIActions_cza : MonoBehaviour
     private void HideAllRegisteredPanels()
     {
         var ui = UIManagerService.Instance;
-        var root = ui != null ? ui.panelsRoot : null;
-        if (root == null)
-            return;
-        for (int i = 0; i < root.childCount; i++)
+        if (ui == null) return;
+
+        if (typePanelMap == null || typePanelMap.Count == 0)
+            BuildTypePanelMap();
+
+        var namesToHide = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in typePanelMap)
         {
-            var name = root.GetChild(i).name;
-            ui.HidePanel(name);
+            if (!string.IsNullOrEmpty(kv.Value))
+                namesToHide.Add(kv.Value);
+        }
+        if (!string.IsNullOrEmpty(choosePanelName))
+            namesToHide.Add(choosePanelName);
+
+        foreach (var name in namesToHide)
+        {
+            var go = ui.GetPanel(name);
+            if (go != null)
+            {
+                ui.HidePanel(name);
+            }
         }
     }
 
