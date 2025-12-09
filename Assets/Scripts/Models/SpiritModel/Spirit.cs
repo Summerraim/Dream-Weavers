@@ -7,8 +7,8 @@ public class Spirit : IBattleUnit
     public SpiritData Data => data;
     public int HP { get; private set; }
     public int Mana { get; private set; }
-    public int Damage { get; private set; }
-    public int Defense { get; private set; }
+    public float Damage { get; private set; }
+    public float Defense { get; private set; }
     private readonly int baseMaxHP;
     private readonly int baseMaxMana;
     private float bonusMaxHpPercent;
@@ -19,6 +19,7 @@ public class Spirit : IBattleUnit
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
+    public Sprite Image => data?.Image;
     public int MaxHP => Mathf.CeilToInt(baseMaxHP * (1f + bonusMaxHpPercent));
     public int MaxMana => baseMaxMana;
     public float MaxHpBonusPercent => bonusMaxHpPercent;
@@ -118,10 +119,22 @@ public class Spirit : IBattleUnit
     {
         Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
+    public void ReceiveMana(int amount)
+    {
+        Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
+    }
 
     public void SetMaxHpBonusPercent(float percent)
     {
         bonusMaxHpPercent = Mathf.Max(0f, percent);
         HP = Mathf.Min(HP, MaxHP);
+    }
+    public void EnhanceDamage(int amount)
+    {
+        Damage = baseDamage + Mathf.Max(0, amount)*0.1f;
+    }
+    public void EnhanceDefense(int amount)
+    {
+        Defense = baseDefense + Mathf.Max(0, amount);
     }
 }

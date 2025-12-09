@@ -16,6 +16,9 @@ public class SkillData : ScriptableObject, ISkill
     [field: SerializeField, Min(0)]
     public int CooldownTurns { get; private set; }
 
+    [field: SerializeField, Min(0)]
+    public int MaxUsesPerBattle { get; private set; } = 0; // 0表示无限制
+
     [field: SerializeField]
     public Sprite Image { get; private set; }
 

@@ -1,26 +1,31 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public interface IBattleUnit
 {
     string DisplayName { get; }
+    Sprite Image { get; }
     int MaxHP { get; }
     int HP { get; }
     int MaxMana { get; }
     int Mana { get; }
-    int Damage { get; }
-    int Defense { get; }
+    float Damage { get; }
+    float Defense { get; }
     bool IsDead { get; }
     IReadOnlyList<ISkill> GetSkills();
     void ReceiveDamage(int amount);
     void ReceiveHeal(int amount);
+    void ConsumeMana(int amount);
 }
 
 public interface ISkill
 {
     string DisplayName { get; }
+    string Description { get; }
     int ManaCost { get; }
     int CooldownTurns { get; }
+    int MaxUsesPerBattle { get; } // 每场战斗最大使用次数，0表示无限制
     void Execute(IBattleUnit caster, IBattleUnit target);
 }
 
@@ -41,5 +46,5 @@ public interface IItem
 }
 
 // 兼容旧命名：建议改用 IItem
-[Obsolete("Use IItem instead")] 
+[Obsolete("Use IItem instead")]
 public interface Items : IItem { }

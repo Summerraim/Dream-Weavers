@@ -37,10 +37,14 @@ public class RoomUIActions_cza : MonoBehaviour
 
     [Header("面板切换")]
     [Tooltip("房间类型到UI面板名的映射，用于进入房间时切换UI。")]
-    [SerializeField] private List<TypePanelMapping> typePanelMappings = new List<TypePanelMapping>();
+    [SerializeField]
+    private List<TypePanelMapping> typePanelMappings = new List<TypePanelMapping>();
+
     [Tooltip("分支选择时显示的面板名（例如包含三个Next按钮的面板）")]
-    [SerializeField] private string choosePanelName = "Panel_ChooseNext";
+    [SerializeField]
+    private string choosePanelName = "Panel_ChooseNext";
     private Dictionary<RoomType_cza, string> typePanelMap;
+
     // 当前已显示的房间类型面板名，用于在进入选择阶段时立刻隐藏
     private string currentRoomPanelName;
 
@@ -78,13 +82,20 @@ public class RoomUIActions_cza : MonoBehaviour
                 if (RoomStateMachine_cza.Instance != null)
                 {
                     // 触发当前房间完成，状态机会生成分支并标记选择阶段
+                {
+                    // 触发当前房间完成，状态机会生成分支并标记选择阶段
                     RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+                    // 立即显式显示选择面板，确保 UI 及时可见
+                    ShowPanel(choosePanelName, true);
+                }
                     // 立即显式显示选择面板，确保 UI 及时可见
                     ShowPanel(choosePanelName, true);
                 }
                 else
                 {
+                {
                     Debug.LogWarning("[RoomUI] RoomStateMachine Instance 为空，未挂载或未初始化");
+                }
                 }
             });
         if (btnNext1)
@@ -277,7 +288,6 @@ public class RoomUIActions_cza : MonoBehaviour
         else
         {
             ShowPanel(choosePanelName, false);
-            
         }
     }
 
@@ -354,9 +364,11 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private void SwitchToRoomTypePanel(RoomType_cza type)
     {
-        if (UIManagerService.Instance == null) return;
-        if (typePanelMap == null || typePanelMap.Count == 0) BuildTypePanelMap();
-        if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName))//通过传入的房间类型找到对应面板
+        if (UIManagerService.Instance == null)
+            return;
+        if (typePanelMap == null || typePanelMap.Count == 0)
+            BuildTypePanelMap();
+        if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName)) //通过传入的房间类型找到对应面板
         {
             // 简单策略：隐藏所有已注册面板，再显示目标面板；选择面板按需叠加
             HideAllRegisteredPanels();
@@ -370,8 +382,10 @@ public class RoomUIActions_cza : MonoBehaviour
                 var skinCtl = panelGO.GetComponentInChildren<RoomUISkinController>(true);
                 int floor = 0;
                 var sm = RoomStateMachine_cza.Instance;
-                if (sm != null && sm.CurrentMap != null) floor = sm.CurrentMap.FloorIndex;
-                if (skinCtl != null) skinCtl.ApplySkin(floor);
+                if (sm != null && sm.CurrentMap != null)
+                    floor = sm.CurrentMap.FloorIndex;
+                if (skinCtl != null)
+                    skinCtl.ApplySkin(floor);
             }
         }
     }
@@ -379,19 +393,37 @@ public class RoomUIActions_cza : MonoBehaviour
     private void HideAllRegisteredPanels()
     {
         var ui = UIManagerService.Instance;
-        var root = ui != null ? ui.panelsRoot : null;
-        if (root == null) return;
-        for (int i = 0; i < root.childCount; i++)
+        if (ui == null) return;
+
+        if (typePanelMap == null || typePanelMap.Count == 0)
+            BuildTypePanelMap();
+
+        var namesToHide = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in typePanelMap)
         {
-            var name = root.GetChild(i).name;
-            ui.HidePanel(name);
+            if (!string.IsNullOrEmpty(kv.Value))
+                namesToHide.Add(kv.Value);
+        }
+        if (!string.IsNullOrEmpty(choosePanelName))
+            namesToHide.Add(choosePanelName);
+
+        foreach (var name in namesToHide)
+        {
+            var go = ui.GetPanel(name);
+            if (go != null)
+            {
+                ui.HidePanel(name);
+            }
         }
     }
 
     private void ShowPanel(string panelName, bool active)
     {
-        if (UIManagerService.Instance == null || string.IsNullOrEmpty(panelName)) return;
-        if (active) UIManagerService.Instance.ShowPanel(panelName);
-        else UIManagerService.Instance.HidePanel(panelName);
+        if (UIManagerService.Instance == null || string.IsNullOrEmpty(panelName))
+            return;
+        if (active)
+            UIManagerService.Instance.ShowPanel(panelName);
+        else
+            UIManagerService.Instance.HidePanel(panelName);
     }
 }

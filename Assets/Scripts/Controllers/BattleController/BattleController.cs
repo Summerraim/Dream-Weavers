@@ -12,7 +12,7 @@ public enum BattleState
 public class BattleController : MonoBehaviour
 {
     [SerializeField]
-    private SpiritData playerData;
+    private PlayerData playerData;
 
     [SerializeField]
     private EnemyData enemyData;
@@ -25,6 +25,10 @@ public class BattleController : MonoBehaviour
     private UI_BattleView battleView;
 
     private BattleModel model;
+
+    // Spirit队列系统
+    private System.Collections.Generic.List<SpiritData> spiritQueue;
+    private int currentSpiritIndex = 0;
 
     // 缓存的 HP/Mana 值，用于检测变化
     private int lastPlayerHP;
@@ -43,13 +47,67 @@ public class BattleController : MonoBehaviour
 
     public void InitializeBattle()
     {
-        player = new Spirit(playerData);
+        // 从PlayerData获取出场的Spirit队列
+        if (playerData == null)
+        {
+            Debug.LogError("BattleController: PlayerData is null!");
+            return;
+        }
+
+        spiritQueue = playerData.GetDeployedSpirits();
+        if (spiritQueue == null || spiritQueue.Count == 0)
+        {
+            Debug.LogError("BattleController: No spirits deployed in PlayerData!");
+            return;
+        }
+
+        currentSpiritIndex = 0;
+
+        // 创建第一个Spirit
+        player = new Spirit(spiritQueue[currentSpiritIndex]);
+        Debug.Log(
+            $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
+        );
+
         enemy = new Enemy(enemyData);
         enemyAI = new AIController();
 
         // 创建并初始化战斗模型，由本 Controller 管理
         model = new BattleModel();
         model.InitializeBattle(player, enemy);
+
+        // 设置Buff系统的静态引用
+        Strengthen.CurrentBattle = model;
+        ToughSkin.CurrentBattle = model;
+        ManaRegeneration.CurrentBattle = model;
+        HealthRegeneration.CurrentBattle = model;
+        Vampiric.CurrentBattle = model;
+        Thorns.CurrentBattle = model;
+        Revive.CurrentBattle = model;
+        Invincibility.CurrentBattle = model;
+        ManaShield.CurrentBattle = model;
+        Shield.CurrentBattle = model;
+        CriticalStrike.CurrentBattle = model;
+
+        // 设置Debuff系统的静态引用
+        WeakenAttack.CurrentBattle = model;
+        WeakenDefense.CurrentBattle = model;
+        ManaLeech.CurrentBattle = model;
+        HealingReduction.CurrentBattle = model;
+        Vulnerability.CurrentBattle = model;
+        Poison.CurrentBattle = model;
+        Burn.CurrentBattle = model;
+        Blind.CurrentBattle = model;
+        Silence.CurrentBattle = model;
+        Curse.CurrentBattle = model;
+
+        // 设置ControlDebuff系统的静态引用
+        Frozen.CurrentBattle = model;
+        Sleep.CurrentBattle = model;
+        Confusion.CurrentBattle = model;
+
+        // 设置Special系统的静态引用
+        PrepareEffect.CurrentBattle = model;
 
         // 绑定 UI（如果存在）
         if (battleView != null)
@@ -67,6 +125,32 @@ public class BattleController : MonoBehaviour
     public Spirit Player => player;
     public Enemy Enemy => enemy;
 
+    /// <summary>
+    /// 获取当前Spirit在队列中的索引（从1开始）
+    /// </summary>
+    public int GetCurrentSpiritNumber()
+    {
+        return currentSpiritIndex + 1;
+    }
+
+    /// <summary>
+    /// 获取总Spirit数量
+    /// </summary>
+    public int GetTotalSpiritCount()
+    {
+        return spiritQueue?.Count ?? 0;
+    }
+
+    /// <summary>
+    /// 获取剩余Spirit数量（包括当前的）
+    /// </summary>
+    public int GetRemainingSpiritCount()
+    {
+        if (spiritQueue == null)
+            return 0;
+        return spiritQueue.Count - currentSpiritIndex;
+    }
+
     public void PlayerUseSkill(ISkill skill)
     {
         PlayerUseSkill(skill, -1); // -1 表示不追踪冷却（旧版本兼容）
@@ -82,11 +166,31 @@ public class BattleController : MonoBehaviour
             return;
         }
 
+        // 检查是否被控制（冰冻、睡眠等）
+        if (model != null && model.IsUnitControlled(player))
+        {
+            string controlEffect = model.GetControlEffectName(player);
+            Debug.Log(
+                $"BattleController: {player.DisplayName} 被 {controlEffect} 控制，无法行动！"
+            );
+            return;
+        }
+
         // 检查冷却（如果提供了技能索引）
         if (skillIndex >= 0 && model != null && model.IsSkillOnCooldown(skillIndex))
         {
             Debug.Log(
                 $"BattleController: Skill {skillIndex} is on cooldown for {model.GetSkillCooldown(skillIndex)} more turns"
+            );
+            return;
+        }
+
+        // 检查使用次数限制（如果提供了技能索引）
+        if (skillIndex >= 0 && model != null && model.IsSkillUsageLimitReached(skillIndex, skill))
+        {
+            int maxUses = skill.MaxUsesPerBattle;
+            Debug.Log(
+                $"BattleController: Skill {skillIndex} has reached max uses per battle ({maxUses})"
             );
             return;
         }
@@ -112,11 +216,19 @@ public class BattleController : MonoBehaviour
         skill.Execute(player, enemy);
         Debug.Log($"BattleController: Enemy HP after skill: {enemy.HP}");
 
+        // 记录使用次数（如果提供了技能索引）
+        if (skillIndex >= 0 && model != null)
+        {
+            model.IncrementSkillUsage(skillIndex);
+        }
+
         // 设置冷却（如果提供了技能索引）
         if (skillIndex >= 0 && model != null && skill.CooldownTurns > 0)
         {
             model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
-            Debug.Log($"BattleController: Skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns");
+            Debug.Log(
+                $"BattleController: Skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns"
+            );
         }
 
         // 更新模型中的羁绊/状态并刷新 UI
@@ -151,7 +263,9 @@ public class BattleController : MonoBehaviour
 
         if (skillIndex < 0 || skillIndex >= skills.Count)
         {
-            Debug.LogWarning($"BattleController: Skill index {skillIndex} out of range (0-{skills.Count - 1})");
+            Debug.LogWarning(
+                $"BattleController: Skill index {skillIndex} out of range (0-{skills.Count - 1})"
+            );
             return;
         }
 
@@ -181,6 +295,9 @@ public class BattleController : MonoBehaviour
             return;
 
         Debug.Log("BattleController: EndPlayerTurn called.");
+
+        // 玩家回合结束，处理Buff效果
+        model?.OnTurnEnd();
 
         // 增加回合计数（模型负责）
         model?.IncrementTurn();
@@ -218,9 +335,52 @@ public class BattleController : MonoBehaviour
 
         if (player != null && player.IsDead)
         {
-            State = BattleState.Defeat;
-            return;
+            // 当前Spirit死亡，尝试切换到下一个
+            if (TrySwitchToNextSpirit())
+            {
+                Debug.Log($"BattleController: Current spirit defeated. Switching to next spirit.");
+                // 切换成功，继续战斗
+                if (battleView != null)
+                    battleView.Refresh();
+            }
+            else
+            {
+                // 所有Spirit都死亡，战斗失败
+                State = BattleState.Defeat;
+                Debug.Log("BattleController: All spirits defeated. Battle lost.");
+            }
         }
+    }
+
+    /// <summary>
+    /// 尝试切换到下一个Spirit
+    /// </summary>
+    /// <returns>是否切换成功</returns>
+    private bool TrySwitchToNextSpirit()
+    {
+        // 检查是否还有下一个Spirit
+        if (currentSpiritIndex + 1 >= spiritQueue.Count)
+        {
+            return false; // 没有下一个Spirit了
+        }
+
+        // 切换到下一个Spirit
+        currentSpiritIndex++;
+        var nextSpiritData = spiritQueue[currentSpiritIndex];
+        player = new Spirit(nextSpiritData);
+
+        Debug.Log(
+            $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
+        );
+
+        // 更新BattleModel中的玩家单位
+        model.UpdatePlayer(player);
+
+        // 重置缓存值
+        lastPlayerHP = player?.HP ?? 0;
+        lastPlayerMana = player?.Mana ?? 0;
+
+        return true;
     }
 
     private void Update()
