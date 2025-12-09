@@ -1,0 +1,306 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+public class UI_MainMenuView : MonoBehaviour
+{
+    [Header("主按钮")]
+    [SerializeField] private Button startGameButton;
+    [SerializeField] private Button aboutButton;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button quitButton;
+    
+    [Header("关于面板")]
+    [SerializeField] private GameObject aboutPanel;
+    [SerializeField] private Button aboutCloseButton;
+    [SerializeField] private Text aboutText;
+    
+    [Header("设置面板")]
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private Button settingsCloseButton;
+    [SerializeField] private Slider masterVolumeSlider;
+    [SerializeField] private Slider musicVolumeSlider;
+    [SerializeField] private Slider sfxVolumeSlider;
+    [SerializeField] private Button settingsSaveButton;
+    
+    [Header("场景设置")]
+    [SerializeField] private int gameSceneIndex = 1; // 游戏场景的Build Index
+    
+    [Header("音频管理器引用")]
+    [SerializeField] private AudioManagerService audioManager;
+    
+    // 存储临时的音量设置（用于取消时恢复）
+    private float tempMasterVolume;
+    private float tempMusicVolume;
+    private float tempSfxVolume;
+    
+    private void Awake()
+    {
+        // 确保音频管理器存在
+        if (audioManager == null)
+        {
+            audioManager = FindObjectOfType<AudioManagerService>();
+        }
+        
+        // 初始化面板状态
+        aboutPanel.SetActive(false);
+        settingsPanel.SetActive(false);
+    }
+    
+    private void Start()
+    {
+        // 绑定按钮事件
+        BindButtonEvents();
+        
+        // 初始化UI状态
+        InitializeUI();
+        
+        // 播放主菜单音乐（可选）
+        PlayMenuMusic();
+    }
+    
+    private void BindButtonEvents()
+    {
+        // 主按钮事件
+        startGameButton.onClick.AddListener(OnStartGameClicked);
+        aboutButton.onClick.AddListener(OnAboutClicked);
+        settingsButton.onClick.AddListener(OnSettingsClicked);
+        quitButton.onClick.AddListener(OnQuitClicked);
+        
+        // 关于面板事件
+        aboutCloseButton.onClick.AddListener(() => aboutPanel.SetActive(false));
+        
+        // 设置面板事件
+        settingsCloseButton.onClick.AddListener(() => settingsPanel.SetActive(false));
+        settingsSaveButton.onClick.AddListener(OnSettingsSave);
+        
+        // 音量滑块事件（实时预览）
+        masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+        musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+        sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+    }
+    
+    private void InitializeUI()
+    {
+        // 初始化关于文本（你可以在这里或Inspector中设置文本）
+        if (aboutText != null)
+        {
+            aboutText.text = "关于我们\n\n" +
+                            "游戏名称: [你的游戏名称]\n" +
+                            "版本: 1.0.0\n" +
+                            "开发团队: [你的团队名称]\n" +
+                            "版权所有 © 2023\n\n" +
+                            "感谢您的游玩！";
+        }
+        
+        // 加载并应用保存的音量设置
+        LoadVolumeSettings();
+    }
+    
+    private void PlayMenuMusic()
+    {
+        if (audioManager != null)
+        {
+            // 调用音频管理器播放主菜单音乐
+            // audioManager.PlayMenuMusic();
+        }
+    }
+    
+    #region 主按钮功能
+    
+    private void OnStartGameClicked()
+    {
+        // 播放点击音效
+        PlayButtonClickSound();
+        
+        // 可以添加加载动画或过渡效果
+        
+        // 加载游戏场景
+        SceneManager.LoadScene(gameSceneIndex);
+        
+        // 或者通过GameManagerService控制游戏状态
+        // if (GameManagerService.Instance != null)
+        // {
+        //     GameManagerService.Instance.StartGame();
+        // }
+    }
+    
+    private void OnAboutClicked()
+    {
+        PlayButtonClickSound();
+        aboutPanel.SetActive(true);
+    }
+    
+    private void OnSettingsClicked()
+    {
+        PlayButtonClickSound();
+        
+        // 保存当前音量设置到临时变量（用于取消时恢复）
+        SaveCurrentVolumeToTemp();
+        
+        // 显示设置面板
+        settingsPanel.SetActive(true);
+    }
+    
+    private void OnQuitClicked()
+    {
+        PlayButtonClickSound();
+        
+        // 确认退出对话框（可选）
+        // 这里直接退出，你可以添加确认对话框
+        
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+    
+    #endregion
+    
+    #region 设置面板功能
+    
+    private void SaveCurrentVolumeToTemp()
+    {
+        // 保存当前音量到临时变量
+        if (audioManager != null)
+        {
+            // 尝试调用 getter（如果 AudioManagerService 支持）
+            // 如果不支持，则从 PlayerPrefs 读取或使用滑块当前值
+            tempMasterVolume = PlayerPrefs.GetFloat("MasterVolume", masterVolumeSlider.value);
+            tempMusicVolume = PlayerPrefs.GetFloat("MusicVolume", musicVolumeSlider.value);
+            tempSfxVolume = PlayerPrefs.GetFloat("SFXVolume", sfxVolumeSlider.value);
+        }
+        else
+        {
+            tempMasterVolume = masterVolumeSlider.value;
+            tempMusicVolume = musicVolumeSlider.value;
+            tempSfxVolume = sfxVolumeSlider.value;
+        }
+        
+        // 更新滑块显示
+        masterVolumeSlider.value = tempMasterVolume;
+        musicVolumeSlider.value = tempMusicVolume;
+        sfxVolumeSlider.value = tempSfxVolume;
+    }
+    
+    private void OnSettingsSave()
+    {
+        PlayButtonClickSound();
+        
+        // 保存设置
+        SaveVolumeSettings();
+        
+        // 提示保存成功（可选）
+        Debug.Log("设置已保存");
+    }
+    
+    private void OnMasterVolumeChanged(float value)
+    {
+        // 实时预览（仅更新 UI 或播放预览音效，不调用 setter）
+        // 如果 AudioManagerService 支持 setter，可在此调用
+        // if (audioManager != null)
+        //     audioManager.SetMasterVolume(value);
+        
+        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        PlayerPrefs.SetFloat("MasterVolume", value);
+    }
+    
+    private void OnMusicVolumeChanged(float value)
+    {
+        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        PlayerPrefs.SetFloat("MusicVolume", value);
+    }
+    
+    private void OnSFXVolumeChanged(float value)
+    {
+        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        PlayerPrefs.SetFloat("SFXVolume", value);
+    }
+    
+    #endregion
+    
+    #region 音量设置管理
+    
+    private void LoadVolumeSettings()
+    {
+        // 从PlayerPrefs加载保存的音量设置
+        float masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
+        float musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        float sfxVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        
+        // 不调用 audioManager.SetXxxVolume，仅更新 UI 滑块
+        // 如果需要应用音量到 AudioManagerService，需要等待其实现 setter 方法
+        
+        // 更新UI滑块
+        if (masterVolumeSlider != null) masterVolumeSlider.value = masterVolume;
+        if (musicVolumeSlider != null) musicVolumeSlider.value = musicVolume;
+        if (sfxVolumeSlider != null) sfxVolumeSlider.value = sfxVolume;
+    }
+    
+    private void SaveVolumeSettings()
+    {
+        // 从滑块获取当前值
+        float masterVolume = masterVolumeSlider.value;
+        float musicVolume = musicVolumeSlider.value;
+        float sfxVolume = sfxVolumeSlider.value;
+        
+        // 保存到PlayerPrefs
+        PlayerPrefs.SetFloat("MasterVolume", masterVolume);
+        PlayerPrefs.SetFloat("MusicVolume", musicVolume);
+        PlayerPrefs.SetFloat("SFXVolume", sfxVolume);
+        PlayerPrefs.Save();
+        
+        // 不调用 audioManager.SetXxxVolume，等待其实现对应方法后再集成
+    }
+    
+    #endregion
+    
+    #region 工具方法
+    
+    private void PlayButtonClickSound()
+    {
+        if (audioManager != null)
+        {
+            // audioManager.PlaySFX("ButtonClick");
+        }
+    }
+    
+    #endregion
+    
+    #region 公共方法（供其他脚本调用）
+    
+    public void ShowMainMenu()
+    {
+        // 显示主菜单，隐藏其他面板
+        aboutPanel.SetActive(false);
+        settingsPanel.SetActive(false);
+        
+        // 可以添加动画效果
+    }
+    
+    public void HideMainMenu()
+    {
+        // 隐藏主菜单
+        gameObject.SetActive(false);
+    }
+    
+    #endregion
+    
+    private void OnDestroy()
+    {
+        // 清理事件绑定，防止内存泄漏
+        if (startGameButton != null) startGameButton.onClick.RemoveAllListeners();
+        if (aboutButton != null) aboutButton.onClick.RemoveAllListeners();
+        if (settingsButton != null) settingsButton.onClick.RemoveAllListeners();
+        if (quitButton != null) quitButton.onClick.RemoveAllListeners();
+        
+        if (aboutCloseButton != null) aboutCloseButton.onClick.RemoveAllListeners();
+        if (settingsCloseButton != null) settingsCloseButton.onClick.RemoveAllListeners();
+        if (settingsSaveButton != null) settingsSaveButton.onClick.RemoveAllListeners();
+        
+        if (masterVolumeSlider != null) masterVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (musicVolumeSlider != null) musicVolumeSlider.onValueChanged.RemoveAllListeners();
+        if (sfxVolumeSlider != null) sfxVolumeSlider.onValueChanged.RemoveAllListeners();
+    }
+}
