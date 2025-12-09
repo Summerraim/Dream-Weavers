@@ -20,7 +20,7 @@ public class ItemData : ScriptableObject, IItem
 
     [field: SerializeField]
     public Sprite Icon { get; private set; }
-    [SerializeField]
+    [SerializeField     ]
     private List<Effect> effects = new();
 
     public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;

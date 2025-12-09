@@ -7,8 +7,8 @@ public class Spirit : IBattleUnit
     public SpiritData Data => data;
     public int HP { get; private set; }
     public int Mana { get; private set; }
-    public int Damage { get; private set; }
-    public int Defense { get; private set; }
+    public float Damage { get; private set; }
+    public float Defense { get; private set; }
     private readonly int baseMaxHP;
     private readonly int baseMaxMana;
     private float bonusMaxHpPercent;
@@ -114,10 +114,22 @@ public class Spirit : IBattleUnit
     {
         Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
+    public void ReceiveMana(int amount)
+    {
+        Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
+    }
 
     public void SetMaxHpBonusPercent(float percent)
     {
         bonusMaxHpPercent = Mathf.Max(0f, percent);
         HP = Mathf.Min(HP, MaxHP);
+    }
+    public void EnhanceDamage(int amount)
+    {
+        Damage = baseDamage + Mathf.Max(0, amount)*0.1f;
+    }
+    public void EnhanceDefense(int amount)
+    {
+        Defense = baseDefense + Mathf.Max(0, amount);
     }
 }

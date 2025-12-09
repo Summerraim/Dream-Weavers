@@ -8,8 +8,8 @@ public class Enemy : IBattleUnit
 
     public int HP { get; private set; }
     public int Mana { get; private set; }
-    public int Damage { get; private set; }
-    public int Defense { get; private set; }
+    public float Damage { get; private set; }
+    public float Defense { get; private set; }
 
     public string DisplayName =>
         data != null

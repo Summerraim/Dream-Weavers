@@ -8,8 +8,8 @@ public interface IBattleUnit
     int HP { get; }
     int MaxMana { get; }
     int Mana { get; }
-    int Damage { get; }
-    int Defense { get; }
+    float Damage { get; }
+    float Defense { get; }
     bool IsDead { get; }
     IReadOnlyList<ISkill> GetSkills();
     void ReceiveDamage(int amount);

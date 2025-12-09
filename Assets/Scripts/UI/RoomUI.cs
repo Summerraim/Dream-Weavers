@@ -379,12 +379,27 @@ public class RoomUIActions_cza : MonoBehaviour
     private void HideAllRegisteredPanels()
     {
         var ui = UIManagerService.Instance;
-        var root = ui != null ? ui.panelsRoot : null;
-        if (root == null) return;
-        for (int i = 0; i < root.childCount; i++)
+        if (ui == null) return;
+
+        if (typePanelMap == null || typePanelMap.Count == 0)
+            BuildTypePanelMap();
+
+        var namesToHide = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in typePanelMap)
         {
-            var name = root.GetChild(i).name;
-            ui.HidePanel(name);
+            if (!string.IsNullOrEmpty(kv.Value))
+                namesToHide.Add(kv.Value);
+        }
+        if (!string.IsNullOrEmpty(choosePanelName))
+            namesToHide.Add(choosePanelName);
+
+        foreach (var name in namesToHide)
+        {
+            var go = ui.GetPanel(name);
+            if (go != null)
+            {
+                ui.HidePanel(name);
+            }
         }
     }
 
