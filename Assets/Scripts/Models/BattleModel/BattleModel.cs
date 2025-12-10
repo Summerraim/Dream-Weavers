@@ -22,9 +22,14 @@ public class BattleModel
     public IReadOnlyList<Enemy> EnemyUnits => enemyUnits;
 
     /// <summary>
-    /// 激活的羁绊列表
+    /// 激活的羁绊列表（单个Spirit的羁绊）
     /// </summary>
     public IReadOnlyList<SynergyModel> ActiveSynergies => activeSynergies;
+
+    /// <summary>
+    /// 全队羁绊列表（统计所有出场Spirit的羁绊）
+    /// </summary>
+    public IReadOnlyDictionary<string, SynergyModel> TeamSynergies => teamSynergies;
 
     /// <summary>
     /// 所有活跃的Buff列表
@@ -33,6 +38,7 @@ public class BattleModel
 
     private readonly List<Enemy> enemyUnits;
     private readonly List<SynergyModel> activeSynergies;
+    private readonly Dictionary<string, SynergyModel> teamSynergies; // 全队羁绊：羁绊ID -> SynergyModel
     private readonly Dictionary<int, int> skillCooldowns; // 技能索引 -> 剩余冷却回合数
     private readonly Dictionary<int, int> skillUsageCount; // 技能索引 -> 当前战斗已使用次数
     private readonly List<Buff> activeBuffs; // 所有活跃的Buff
@@ -42,6 +48,7 @@ public class BattleModel
         CurrentTurn = 0;
         enemyUnits = new List<Enemy>();
         activeSynergies = new List<SynergyModel>();
+        teamSynergies = new Dictionary<string, SynergyModel>();
         skillCooldowns = new Dictionary<int, int>();
         skillUsageCount = new Dictionary<int, int>();
         activeBuffs = new List<Buff>();
@@ -269,6 +276,7 @@ public class BattleModel
         PlayerUnit = null;
         enemyUnits.Clear();
         activeSynergies.Clear();
+        teamSynergies.Clear();
         skillCooldowns.Clear();
         skillUsageCount.Clear();
         activeBuffs.Clear();
@@ -449,5 +457,105 @@ public class BattleModel
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 初始化全队羁绊系统（战斗开始时调用）
+    /// 统计所有出场Spirit的Synergy，并应用效果到当前玩家Spirit
+    /// </summary>
+    /// <param name="deployedSpirits">所有出场的Spirit数据列表</param>
+    public void InitializeTeamSynergies(System.Collections.Generic.List<SpiritData> deployedSpirits)
+    {
+        teamSynergies.Clear();
+
+        if (deployedSpirits == null || deployedSpirits.Count == 0 || PlayerUnit == null)
+        {
+            Debug.Log("BattleModel: No deployed spirits or no player unit, skipping team synergy initialization");
+            return;
+        }
+
+        // 统计每个Synergy的数量
+        Dictionary<string, SynergyInfo> synergyCount = new Dictionary<string, SynergyInfo>();
+
+        foreach (var spiritData in deployedSpirits)
+        {
+            if (spiritData == null || spiritData.Synergies == null)
+                continue;
+
+            foreach (var synergy in spiritData.Synergies)
+            {
+                if (synergy == null)
+                    continue;
+
+                string synergyId = synergy.SynergyId;
+                if (!synergyCount.ContainsKey(synergyId))
+                {
+                    synergyCount[synergyId] = new SynergyInfo(synergy, 0);
+                }
+                synergyCount[synergyId].Count++;
+            }
+        }
+
+        // 创建SynergyModel并应用效果
+        foreach (var kvp in synergyCount)
+        {
+            string synergyId = kvp.Key;
+            SynergyInfo info = kvp.Value;
+
+            // 创建SynergyModel，Owner设置为当前玩家Spirit
+            SynergyModel model = new SynergyModel(PlayerUnit, info.Synergy);
+            model.SetActiveCount(info.Count);
+
+            teamSynergies[synergyId] = model;
+
+            Debug.Log(
+                $"BattleModel: Team Synergy [{info.Synergy.DisplayName}] initialized with count {info.Count}, tier {model.GetCurrentTierIndex()}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 更新全队羁绊的应用对象（当Spirit切换时调用）
+    /// 将羁绊效果重新应用到新的Spirit上
+    /// </summary>
+    public void UpdateTeamSynergiesOwner()
+    {
+        if (PlayerUnit == null || teamSynergies.Count == 0)
+            return;
+
+        // 重新创建所有SynergyModel，使用新的Owner
+        var tempSynergies = new Dictionary<string, SynergyModel>(teamSynergies);
+        teamSynergies.Clear();
+
+        foreach (var kvp in tempSynergies)
+        {
+            string synergyId = kvp.Key;
+            SynergyModel oldModel = kvp.Value;
+
+            // 创建新的SynergyModel，Owner为新的Spirit
+            SynergyModel newModel = new SynergyModel(PlayerUnit, oldModel.Synergy);
+            newModel.SetActiveCount(oldModel.ActiveCount);
+
+            teamSynergies[synergyId] = newModel;
+
+            Debug.Log(
+                $"BattleModel: Team Synergy [{oldModel.Synergy.DisplayName}] re-applied to {PlayerUnit.DisplayName}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 辅助类：存储Synergy统计信息
+    /// </summary>
+    private class SynergyInfo
+    {
+        public Synergy Synergy;
+        public int Count;
+
+        public SynergyInfo(Synergy synergy, int count)
+        {
+            Synergy = synergy;
+            Count = count;
+        }
     }
 }

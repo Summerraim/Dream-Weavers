@@ -12,6 +12,7 @@ public class Spirit : IBattleUnit
     private readonly int baseMaxHP;
     private readonly int baseMaxMana;
     private float bonusMaxHpPercent;
+    private float bonusMaxManaPercent;
     private readonly int baseDamage;
     private readonly int baseDefense;
     private readonly List<SynergyModel> synergyModels = new List<SynergyModel>();
@@ -21,8 +22,9 @@ public class Spirit : IBattleUnit
             : string.Empty;
     public Sprite Image => data?.Image;
     public int MaxHP => Mathf.CeilToInt(baseMaxHP * (1f + bonusMaxHpPercent));
-    public int MaxMana => baseMaxMana;
+    public int MaxMana => Mathf.CeilToInt(baseMaxMana * (1f + bonusMaxManaPercent));
     public float MaxHpBonusPercent => bonusMaxHpPercent;
+    public float MaxManaBonusPercent => bonusMaxManaPercent;
     public int BaseMaxHP => baseMaxHP;
     public int BaseMaxMana => baseMaxMana;
     public int BaseDamage => baseDamage;
@@ -129,6 +131,13 @@ public class Spirit : IBattleUnit
         bonusMaxHpPercent = Mathf.Max(0f, percent);
         HP = Mathf.Min(HP, MaxHP);
     }
+
+    public void SetMaxManaBonusPercent(float percent)
+    {
+        bonusMaxManaPercent = Mathf.Max(0f, percent);
+        Mana = Mathf.Min(Mana, MaxMana);
+    }
+
     public void EnhanceDamage(int amount)
     {
         Damage = baseDamage + Mathf.Max(0, amount)*0.1f;

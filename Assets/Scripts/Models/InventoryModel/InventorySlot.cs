@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
+using UnityEngine.UI;
 
 /// <summary>
 /// 背包槽位UI
@@ -139,8 +140,6 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         }
     }
 
-<<<<<<< summer
-=======
     public void OnPointerEnter(PointerEventData eventData)
     {
         // 鼠标进入：通知悬停开始
@@ -153,6 +152,5 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         OnSlotHoverExit?.Invoke(this);
     }
     
->>>>>>> main
     #endregion
 }
