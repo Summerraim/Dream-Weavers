@@ -27,7 +27,7 @@ public class ItemData : ScriptableObject, IItem
     public Sprite Icon { get; private set; }
 
     [SerializeField]
-  
+   
     private List<Effect> effects = new();
 
     public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;
