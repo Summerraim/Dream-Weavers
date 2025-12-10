@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
+using DreamWeavers.Rooms;
 public class RoomUIActions_cza : MonoBehaviour
 {
     [Header("显示")]
@@ -44,7 +44,6 @@ public class RoomUIActions_cza : MonoBehaviour
     [SerializeField]
     private string choosePanelName = "Panel_ChooseNext";
     private Dictionary<RoomType_cza, string> typePanelMap;
-
     // 当前已显示的房间类型面板名，用于在进入选择阶段时立刻隐藏
     private string currentRoomPanelName;
 
@@ -288,6 +287,7 @@ public class RoomUIActions_cza : MonoBehaviour
         else
         {
             ShowPanel(choosePanelName, false);
+            
         }
     }
 
@@ -312,10 +312,21 @@ public class RoomUIActions_cza : MonoBehaviour
         bool selecting = sm != null && sm.IsAwaitingChoice;
         if (btnComplete)
         {
-            // 始终保持 Complete 可点击并暴露在外，由点击行为触发选择面板显隐
-            btnComplete.interactable = true;
+            bool interact = true;
+            // 若当前为战斗房，依据房间清理状态控制 Complete 按钮
+            var current = sm != null ? sm.CurrentRoom : null;
+            if (current != null && current.Type == RoomType_cza.Combat)
+            {
+                var combatCtl = GameObject.FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+                if (combatCtl != null)
+                {
+                    interact = combatCtl.IsCleared();
+                }
+            }
+
+            btnComplete.interactable = interact;
             Debug.Log(
-                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable=true"
+                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={interact}"
             );
         }
         // Next 按钮的交互由 RefreshChoiceUI 设置，这里不重复处理
