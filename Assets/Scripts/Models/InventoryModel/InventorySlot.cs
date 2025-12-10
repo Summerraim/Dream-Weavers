@@ -139,6 +139,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         }
     }
 
+<<<<<<< summer
+=======
     public void OnPointerEnter(PointerEventData eventData)
     {
         // 鼠标进入：通知悬停开始
@@ -151,5 +153,6 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         OnSlotHoverExit?.Invoke(this);
     }
     
+>>>>>>> main
     #endregion
 }

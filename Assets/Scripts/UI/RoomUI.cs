@@ -44,6 +44,7 @@ public class RoomUIActions_cza : MonoBehaviour
     [SerializeField]
     private string choosePanelName = "Panel_ChooseNext";
     private Dictionary<RoomType_cza, string> typePanelMap;
+
     // 当前已显示的房间类型面板名，用于在进入选择阶段时立刻隐藏
     private string currentRoomPanelName;
 
@@ -287,7 +288,6 @@ public class RoomUIActions_cza : MonoBehaviour
         else
         {
             ShowPanel(choosePanelName, false);
-            
         }
     }
 

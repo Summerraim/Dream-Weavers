@@ -45,6 +45,19 @@ public class BattleController : MonoBehaviour
         Debug.Log("BattleController: InitializeBattle called in Start()");
     }
 
+    // 允许外部（如房间控制器）传入玩家/敌人数据并开始战斗
+    public void BeginBattleWith(PlayerData player, EnemyData enemy)
+    {
+        if (player == null || enemy == null)
+        {
+            Debug.LogWarning("BattleController.BeginBattleWith: player or enemy data is null");
+            return;
+        }
+        playerData = player;
+        enemyData = enemy;
+        InitializeBattle();
+    }
+
     public void InitializeBattle()
     {
         // 从PlayerData获取出场的Spirit队列
@@ -65,7 +78,9 @@ public class BattleController : MonoBehaviour
 
         // 创建第一个Spirit
         player = new Spirit(spiritQueue[currentSpiritIndex]);
-        Debug.Log($"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}");
+        Debug.Log(
+            $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
+        );
 
         enemy = new Enemy(enemyData);
         enemyAI = new AIController();
@@ -84,6 +99,8 @@ public class BattleController : MonoBehaviour
         Revive.CurrentBattle = model;
         Invincibility.CurrentBattle = model;
         ManaShield.CurrentBattle = model;
+        Shield.CurrentBattle = model;
+        CriticalStrike.CurrentBattle = model;
 
         // 设置Debuff系统的静态引用
         WeakenAttack.CurrentBattle = model;
@@ -92,7 +109,18 @@ public class BattleController : MonoBehaviour
         HealingReduction.CurrentBattle = model;
         Vulnerability.CurrentBattle = model;
         Poison.CurrentBattle = model;
+        Burn.CurrentBattle = model;
         Blind.CurrentBattle = model;
+        Silence.CurrentBattle = model;
+        Curse.CurrentBattle = model;
+
+        // 设置ControlDebuff系统的静态引用
+        Frozen.CurrentBattle = model;
+        Sleep.CurrentBattle = model;
+        Confusion.CurrentBattle = model;
+
+        // 设置Special系统的静态引用
+        PrepareEffect.CurrentBattle = model;
 
         // 绑定 UI（如果存在）
         if (battleView != null)
@@ -147,6 +175,16 @@ public class BattleController : MonoBehaviour
         {
             Debug.Log(
                 $"BattleController: PlayerUseSkill failed - State check failed or null units"
+            );
+            return;
+        }
+
+        // 检查是否被控制（冰冻、睡眠等）
+        if (model != null && model.IsUnitControlled(player))
+        {
+            string controlEffect = model.GetControlEffectName(player);
+            Debug.Log(
+                $"BattleController: {player.DisplayName} 被 {controlEffect} 控制，无法行动！"
             );
             return;
         }
@@ -344,7 +382,9 @@ public class BattleController : MonoBehaviour
         var nextSpiritData = spiritQueue[currentSpiritIndex];
         player = new Spirit(nextSpiritData);
 
-        Debug.Log($"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}");
+        Debug.Log(
+            $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
+        );
 
         // 更新BattleModel中的玩家单位
         model.UpdatePlayer(player);

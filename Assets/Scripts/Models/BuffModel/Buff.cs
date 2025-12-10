@@ -51,16 +51,12 @@ public abstract class Buff
     /// <summary>
     /// Buff被应用时调用（首次添加时）
     /// </summary>
-    public virtual void OnApplied()
-    {
-    }
+    public virtual void OnApplied() { }
 
     /// <summary>
     /// 每回合开始时调用
     /// </summary>
-    public virtual void OnTurnStart()
-    {
-    }
+    public virtual void OnTurnStart() { }
 
     /// <summary>
     /// 每回合结束时调用，并减少持续时间
@@ -76,9 +72,7 @@ public abstract class Buff
     /// <summary>
     /// Buff被移除时调用
     /// </summary>
-    public virtual void OnRemoved()
-    {
-    }
+    public virtual void OnRemoved() { }
 
     /// <summary>
     /// 修改伤害（在造成伤害时调用）
@@ -101,18 +95,14 @@ public abstract class Buff
     /// </summary>
     /// <param name="actualDamage">实际造成的伤害</param>
     /// <param name="target">受伤目标</param>
-    public virtual void OnDamageDealt(int actualDamage, IBattleUnit target)
-    {
-    }
+    public virtual void OnDamageDealt(int actualDamage, IBattleUnit target) { }
 
     /// <summary>
     /// 受到伤害后触发（用于反伤等效果）
     /// </summary>
     /// <param name="actualDamage">实际受到的伤害</param>
     /// <param name="attacker">攻击者</param>
-    public virtual void OnDamageReceived(int actualDamage, IBattleUnit attacker)
-    {
-    }
+    public virtual void OnDamageReceived(int actualDamage, IBattleUnit attacker) { }
 
     /// <summary>
     /// 单位即将死亡时触发（用于复活等效果）
