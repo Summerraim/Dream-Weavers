@@ -1,6 +1,12 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+<<<<<<< Updated upstream
 using UnityEngine.UI;
+=======
+using TMPro;
+using UnityEngine.UI;
+
+>>>>>>> Stashed changes
 
 /// <summary>
 /// 背包槽位UI
@@ -141,5 +147,19 @@ public class InventorySlot
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        // 鼠标进入：通知悬停开始
+        OnSlotHoverEnter?.Invoke(this);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        // 鼠标离开：通知悬停结束
+        OnSlotHoverExit?.Invoke(this);
+    }
+>>>>>>> Stashed changes
     #endregion
 }

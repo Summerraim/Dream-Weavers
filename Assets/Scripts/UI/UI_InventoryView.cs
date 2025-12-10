@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Reflection;
 
 /// <summary>
 /// 背包UI控制器
@@ -28,10 +29,92 @@ public class InventoryUIController : MonoBehaviour
     private InventorySlot draggedSlot; // 正在拖拽的槽位
     private InventorySlot selectedSlot; // 选中的槽位
 
+    // ========== 反射辅助（兼容不同实现的 UIManagerService） ==========
+    private object uiServiceInstance => UIManagerService.Instance as object;
+
+    private GameObject TryGetServicePanel(string panelName)
+    {
+        var ui = uiServiceInstance;
+        if (ui == null || string.IsNullOrEmpty(panelName)) return null;
+        var t = ui.GetType();
+        var m = t.GetMethod("GetPanel", BindingFlags.Public | BindingFlags.Instance);
+        if (m == null) return null;
+        try { return m.Invoke(ui, new object[] { panelName }) as GameObject; } catch { return null; }
+    }
+
+    private bool TryRegisterServicePanel(string panelName, GameObject panelObj)
+    {
+        var ui = uiServiceInstance;
+        if (ui == null || string.IsNullOrEmpty(panelName) || panelObj == null) return false;
+        var t = ui.GetType();
+        var methods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var m in methods)
+        {
+            if (m.Name != "RegisterPanel") continue;
+            var ps = m.GetParameters();
+            if (ps.Length == 2 &&
+                ps[0].ParameterType == typeof(string) &&
+                typeof(GameObject).IsAssignableFrom(ps[1].ParameterType))
+            {
+                try { m.Invoke(ui, new object[] { panelName, panelObj }); return true; } catch { return false; }
+            }
+        }
+        return false;
+    }
+
+    private bool TryIsPanelActive(string panelName, out bool isActive)
+    {
+        isActive = false;
+        var ui = uiServiceInstance;
+        if (ui == null || string.IsNullOrEmpty(panelName)) return false;
+        var t = ui.GetType();
+        var m = t.GetMethod("IsPanelActive", BindingFlags.Public | BindingFlags.Instance);
+        if (m == null) return false;
+        try
+        {
+            var res = m.Invoke(ui, new object[] { panelName });
+            if (res is bool b) { isActive = b; return true; }
+        }
+        catch { }
+        return false;
+    }
+
+    private void TryShowPanel(string panelName)
+    {
+        var ui = uiServiceInstance;
+        if (ui == null || string.IsNullOrEmpty(panelName)) return;
+        var t = ui.GetType();
+        var m = t.GetMethod("ShowPanel", BindingFlags.Public | BindingFlags.Instance);
+        if (m == null) return;
+        try { m.Invoke(ui, new object[] { panelName }); } catch { }
+    }
+
+    private void TryHidePanel(string panelName)
+    {
+        var ui = uiServiceInstance;
+        if (ui == null || string.IsNullOrEmpty(panelName)) return;
+        var t = ui.GetType();
+        var m = t.GetMethod("HidePanel", BindingFlags.Public | BindingFlags.Instance);
+        if (m == null) return;
+        try { m.Invoke(ui, new object[] { panelName }); } catch { }
+    }
+    // ================================================================
+
     private void Start()
     {
         InitializeUI();
+<<<<<<< Updated upstream
         SubscribeToEvents();
+=======
+        // 订阅移至 OnEnable，避免初始未激活导致的丢失
+
+        // 尝试自动向 UIManagerService 注册面板，避免未找到面板的日志
+        if (inventoryPanel != null && UIManagerService.Instance != null)
+        {
+            // 使用反射安全注册（兼容无该重载的旧版服务）
+            TryRegisterServicePanel("InventoryPanel", inventoryPanel);
+        }
+>>>>>>> Stashed changes
 
         // 初始隐藏拖拽图标
         if (dragItemIcon != null)
@@ -115,7 +198,38 @@ public class InventoryUIController : MonoBehaviour
         bool isActive = UIManagerService.Instance.IsPanelActive("InventoryPanel");
         if (isActive)
         {
+<<<<<<< Updated upstream
             UIManagerService.Instance.HidePanel("InventoryPanel");
+=======
+            try
+            {
+                GameObject svcPanel = TryGetServicePanel("InventoryPanel");
+
+                if (svcPanel == null && inventoryPanel != null)
+                {
+                    TryRegisterServicePanel("InventoryPanel", inventoryPanel);
+                    svcPanel = TryGetServicePanel("InventoryPanel") ?? inventoryPanel;
+                }
+
+                if (svcPanel != null)
+                {
+                    handledByService = true;
+                    bool isActive;
+                    if (TryIsPanelActive("InventoryPanel", out isActive))
+                    {
+                        if (isActive) TryHidePanel("InventoryPanel");
+                        else { TryShowPanel("InventoryPanel"); UpdateInventoryUI(); }
+                    }
+                    else
+                    {
+                        // 回退：直接检查对象的 activeSelf
+                        bool svcActive = svcPanel.activeSelf;
+                        if (svcActive) TryHidePanel("InventoryPanel"); else { TryShowPanel("InventoryPanel"); UpdateInventoryUI(); }
+                    }
+                }
+            }
+            catch { handledByService = false; }
+>>>>>>> Stashed changes
         }
         else
         {
@@ -316,7 +430,38 @@ public class InventoryUIController : MonoBehaviour
             Input.GetKeyDown(KeyCode.R) && UIManagerService.Instance.IsPanelActive("InventoryPanel")
         )
         {
+<<<<<<< Updated upstream
             SortInventory();
+=======
+            Debug.Log("[InventoryUI] 触发 AddRandomItem()");
+            AddRandomItem();
+        }
+
+        // 快捷键：R键整理背包（仅在面板打开时，且避免未注册面板导致的警告）
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            bool panelOpen = false;
+            var ui = UIManagerService.Instance;
+            if (ui != null)
+            {
+                try
+                {
+                    var p = TryGetServicePanel("InventoryPanel");
+                    panelOpen = p != null && (TryIsPanelActive("InventoryPanel", out bool ia) ? ia : p.activeSelf);
+                }
+                catch { /* 忽略服务异常 */ }
+            }
+            // 若服务不可用或未注册，回退到本地判断
+            if (!panelOpen && inventoryPanel != null)
+            {
+                panelOpen = inventoryPanel.activeSelf;
+            }
+
+            if (panelOpen)
+            {
+                SortInventory();
+            }
+>>>>>>> Stashed changes
         }
     }
 
