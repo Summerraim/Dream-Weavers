@@ -9,12 +9,18 @@ public class WeakenBuff : Buff
     public override string Description =>
         $"造成伤害降低{damageReduction * 100}%，护甲降低{defenseReduction * 100}%";
 
-    private float damageReduction;  // 伤害降低百分比（0.2 = 20%）
+    private float damageReduction; // 伤害降低百分比（0.2 = 20%）
     private float defenseReduction; // 护甲降低百分比（0.2 = 20%）
-    private int defenseDebuff;      // 实际降低的护甲值
+    private int defenseDebuff; // 实际降低的护甲值
 
-    public WeakenBuff(IBattleUnit owner, int duration, float damageReduction, float defenseReduction)
-        : base(owner, duration)
+    public WeakenBuff(
+        IBattleUnit owner,
+        int duration,
+        float damageReduction,
+        float defenseReduction,
+        Effect sourceEffect = null
+    )
+        : base(owner, duration, sourceEffect)
     {
         this.damageReduction = Mathf.Clamp01(damageReduction);
         this.defenseReduction = Mathf.Clamp01(defenseReduction);
@@ -31,9 +37,9 @@ public class WeakenBuff : Buff
         defenseDebuff = Mathf.CeilToInt(currentDefense * defenseReduction);
 
         Debug.Log(
-            $"WeakenBuff: Applied to {Owner.DisplayName}, " +
-            $"Damage reduction: {damageReduction * 100}%, " +
-            $"Defense reduction: -{defenseDebuff} ({defenseReduction * 100}%)"
+            $"WeakenBuff: Applied to {Owner.DisplayName}, "
+                + $"Damage reduction: {damageReduction * 100}%, "
+                + $"Defense reduction: -{defenseDebuff} ({defenseReduction * 100}%)"
         );
     }
 

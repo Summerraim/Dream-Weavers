@@ -41,8 +41,8 @@ public class Weaken : Effect
             return;
         }
 
-        // 创建并添加虚弱Debuff
-        var weakenBuff = new WeakenBuff(receiver, duration, damageReduction, defenseReduction);
+        // 创建并添加虚弱Debuff（传递this作为SourceEffect）
+        var weakenBuff = new WeakenBuff(receiver, duration, damageReduction, defenseReduction, this);
         CurrentBattle.AddBuff(weakenBuff);
 
         Debug.Log(

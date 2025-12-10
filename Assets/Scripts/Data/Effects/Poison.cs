@@ -36,11 +36,11 @@ public class Poison : Effect
         Buff debuff;
         if (usePercentDamage)
         {
-            debuff = new PoisonDebuff(receiver, duration, percentDamage);
+            debuff = new PoisonDebuff(receiver, duration, percentDamage, this);
         }
         else
         {
-            debuff = new PoisonDebuff(receiver, duration, initDamage);
+            debuff = new PoisonDebuff(receiver, duration, initDamage, this);
         }
 
         CurrentBattle.AddBuff(debuff);

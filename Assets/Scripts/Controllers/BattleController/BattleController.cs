@@ -27,6 +27,9 @@ public class BattleController : MonoBehaviour
     [SerializeField]
     private UI_SpiritSwitcher spiritSwitcher;
 
+    [SerializeField]
+    private UI_EffectDisplay effectDisplay;
+
     private BattleModel model;
 
     // Spirit队列系统
@@ -155,6 +158,17 @@ public class BattleController : MonoBehaviour
         // 绑定Spirit切换器（如果存在）
         if (spiritSwitcher != null)
             spiritSwitcher.Bind(this);
+
+        // 绑定Effect显示器（如果存在）
+        if (effectDisplay != null)
+        {
+            effectDisplay.Bind(this, model);
+            Debug.Log("BattleController: UI_EffectDisplay已绑定");
+        }
+        else
+        {
+            Debug.LogWarning("BattleController: effectDisplay is null! 请在Inspector中拖入UI_EffectDisplay组件");
+        }
 
         // 初始化缓存值
         lastPlayerHP = player?.HP ?? 0;
@@ -338,6 +352,8 @@ public class BattleController : MonoBehaviour
         UpdateBattleStateAfterAction();
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     /// <summary>
@@ -409,6 +425,8 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     private void EnemyAct()
@@ -425,6 +443,8 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     private void UpdateBattleStateAfterAction()
@@ -452,6 +472,8 @@ public class BattleController : MonoBehaviour
                     battleView.Refresh();
                 if (spiritSwitcher != null)
                     spiritSwitcher.RefreshSlots();
+                if (effectDisplay != null)
+                    effectDisplay.RefreshDisplay();
             }
             else
             {
@@ -597,6 +619,8 @@ public class BattleController : MonoBehaviour
             battleView.Refresh();
         if (spiritSwitcher != null)
             spiritSwitcher.RefreshSlots();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
 
         return true;
     }
