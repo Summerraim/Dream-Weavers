@@ -139,20 +139,5 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         }
     }
 
-<<<<<<< summer
-=======
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        // 鼠标进入：通知悬停开始
-        OnSlotHoverEnter?.Invoke(this);
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        // 鼠标离开：通知悬停结束
-        OnSlotHoverExit?.Invoke(this);
-    }
-    
->>>>>>> main
     #endregion
 }
