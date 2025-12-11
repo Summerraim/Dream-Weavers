@@ -19,7 +19,9 @@ public class HealingReductionDebuff : Buff
     public override void OnApplied()
     {
         base.OnApplied();
-        Debug.Log($"{Owner?.DisplayName} afflicted with Healing Reduction for {RemainingTurns} turns");
+        Debug.Log(
+            $"{Owner?.DisplayName} afflicted with Healing Reduction for {RemainingTurns} turns"
+        );
     }
 
     // 注意：此Debuff需要在治疗逻辑中检查并调用修改

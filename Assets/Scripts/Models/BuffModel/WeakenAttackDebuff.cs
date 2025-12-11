@@ -9,9 +9,10 @@ public class WeakenAttackDebuff : Buff
     private readonly float damageReductionPercent;
 
     public override string DisplayName => "攻击降低";
-    public override string Description => damageReductionPercent > 0
-        ? $"攻击力降低{(damageReductionPercent * 100):F0}%"
-        : $"攻击力降低{damageReduction}点";
+    public override string Description =>
+        damageReductionPercent > 0
+            ? $"攻击力降低{(damageReductionPercent * 100):F0}%"
+            : $"攻击力降低{damageReduction}点";
 
     /// <summary>
     /// 基于百分比的攻击降低

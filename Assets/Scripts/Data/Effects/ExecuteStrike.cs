@@ -14,7 +14,7 @@ public class ExecuteStrike : Effect
     private int initDamage = 60;
 
     [SerializeField, Range(0f, 1f)]
-    private float missingHealthScaling = 0.5f;
+    private float missingHealthScaling = 0.1f;
 
     [SerializeField, Range(0f, 1f)]
     private float executeThreshold = 0.75f;

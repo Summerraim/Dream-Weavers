@@ -9,9 +9,10 @@ public class ManaRegenerationBuff : Buff
     private readonly float percentRegeneration;
 
     public override string DisplayName => "能量充沛";
-    public override string Description => percentRegeneration > 0
-        ? $"每回合恢复{(percentRegeneration * 100):F0}%最大法力值"
-        : $"每回合恢复{flatRegeneration}点法力值";
+    public override string Description =>
+        percentRegeneration > 0
+            ? $"每回合恢复{(percentRegeneration * 100):F0}%最大法力值"
+            : $"每回合恢复{flatRegeneration}点法力值";
 
     public ManaRegenerationBuff(IBattleUnit owner, int duration, float percentRegen)
         : base(owner, duration)
@@ -55,13 +56,17 @@ public class ManaRegenerationBuff : Buff
                 int currentMana = spirit.Mana;
                 int newMana = Mathf.Min(spirit.MaxMana, currentMana + regenAmount);
                 // 这里需要一个方法来设置法力值
-                Debug.Log($"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)");
+                Debug.Log(
+                    $"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)"
+                );
             }
             else if (Owner is Enemy enemy)
             {
                 int currentMana = enemy.Mana;
                 int newMana = Mathf.Min(enemy.MaxMana, currentMana + regenAmount);
-                Debug.Log($"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)");
+                Debug.Log(
+                    $"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)"
+                );
             }
         }
     }
