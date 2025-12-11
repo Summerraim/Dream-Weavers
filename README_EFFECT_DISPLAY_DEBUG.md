@@ -1,6 +1,6 @@
 # Effect显示问题排查指南
 
-## 你现在有完整的调试日志！
+## 你现在有完整的调试日志
 
 我已经为EffectSlot和UI_EffectDisplay添加了详细的调试日志，格式为`[EffectSlot]`和`[UI_EffectDisplay]`。
 
@@ -13,11 +13,13 @@
 ### 第1步：检查UI_EffectDisplay是否绑定
 
 **运行游戏后，在Console中查找：**
+
 ```
 [UI_EffectDisplay] Bind完成: controller=存在, model=存在
 ```
 
 **如果没有这条日志：**
+
 - ❌ BattleController中没有绑定UI_EffectDisplay
 - ✅ **解决方案**：在BattleController中添加：
 
@@ -44,11 +46,13 @@ private void Start()
 ### 第2步：检查是否获取到Buff
 
 **施放中毒技能后，在Console中查找：**
+
 ```
 [UI_EffectDisplay] RefreshUnitEffects: 敌人名称, Buff数量=1
 ```
 
 **如果Buff数量=0：**
+
 - ❌ Buff没有被添加到BattleModel
 - ✅ **检查**：
   1. Poison.cs是否传递了`this`？
@@ -60,13 +64,16 @@ private void Start()
 ### 第3步：检查Buff的Image和SourceEffect
 
 **在Console中查找：**
+
 ```
 [EffectSlot] SetEffect: 中毒, RemainingTurns=3, SourceEffect=Poison, Image=存在
 ```
 
 **如果显示SourceEffect=null：**
+
 - ❌ **Poison.cs没有传递`this`**
 - ✅ **检查Poison.cs第39行和第43行**：
+
 ```csharp
 // 应该是这样（有this参数）：
 debuff = new PoisonDebuff(receiver, duration, percentDamage, this);
@@ -74,6 +81,7 @@ debuff = new PoisonDebuff(receiver, duration, initDamage, this);
 ```
 
 **如果显示Image=null：**
+
 - ❌ **Unity编辑器中没有为Poison设置Image**
 - ✅ **解决方案**：
   1. 在Project面板选择你的Poison.asset
@@ -85,6 +93,7 @@ debuff = new PoisonDebuff(receiver, duration, initDamage, this);
 ### 第4步：检查EffectSlot组件配置
 
 **在Console中查找：**
+
 ```
 [EffectSlot] UpdateDisplay开始: 中毒
 [EffectSlot] effectIcon is null!
@@ -93,6 +102,7 @@ debuff = new PoisonDebuff(receiver, duration, initDamage, this);
 ```
 
 **如果有这些警告：**
+
 - ❌ **EffectSlot预制体配置不正确**
 - ✅ **解决方案**：检查EffectSlot预制体结构
 
@@ -100,7 +110,7 @@ debuff = new PoisonDebuff(receiver, duration, initDamage, this);
 
 ## EffectSlot预制体正确配置
 
-### 必需结构：
+### 必需结构
 
 ```
 EffectSlot (GameObject)
@@ -112,13 +122,13 @@ EffectSlot (GameObject)
     └── TextMeshPro - Text (组件) ← durationText
 ```
 
-### 在Inspector中配置EffectSlot.cs：
+### 在Inspector中配置EffectSlot.cs
 
 1. **Background**: 拖入根GameObject的Image组件
 2. **Effect Icon**: 拖入Icon子对象的Image组件
 3. **Duration Text**: 拖入DurationText子对象的TMP_Text组件
 
-### 快速创建预制体：
+### 快速创建预制体
 
 1. 在Hierarchy中右键 → UI → Panel，命名为"EffectSlot"
 2. 添加EffectSlot.cs脚本
@@ -133,7 +143,7 @@ EffectSlot (GameObject)
 
 ## UI_EffectDisplay场景配置
 
-### 必需的Hierarchy结构：
+### 必需的Hierarchy结构
 
 ```
 BattleCanvas
@@ -145,7 +155,7 @@ BattleCanvas
         └── EnemyEffectsContainer (Horizontal Layout Group)
 ```
 
-### 在Inspector中配置UI_EffectDisplay：
+### 在Inspector中配置UI_EffectDisplay
 
 1. **Effect Slot Prefab**: 拖入你创建的EffectSlot预制体
 2. **Player Effects Container**: 拖入PlayerEffectsContainer
@@ -155,9 +165,10 @@ BattleCanvas
 6. **Hide When Empty**: 勾选（没有Effect时自动隐藏）
 7. **Max Effects Per Unit**: 10（默认值）
 
-### Container配置：
+### Container配置
 
 为PlayerEffectsContainer和EnemyEffectsContainer添加：
+
 - **Horizontal Layout Group** 组件
 - Spacing: 5
 - Child Alignment: Middle Left
@@ -232,16 +243,21 @@ private void RefreshUI()
 ### 问题1：看到中毒效果生效，但UI不显示
 
 **可能原因**：
+
 1. UI_EffectDisplay没有绑定
 2. RefreshDisplay()没有被调用
 3. Container/Panel被隐藏或禁用
 
 **诊断**：
+
 - 在BattleController的Start()中添加：
+
 ```csharp
 Debug.Log($"effectDisplay绑定状态: {(effectDisplay != null ? "存在" : "null")}");
 ```
+
 - 在技能使用后手动调用：
+
 ```csharp
 effectDisplay?.RefreshDisplay();
 ```
@@ -251,11 +267,13 @@ effectDisplay?.RefreshDisplay();
 ### 问题2：显示了背景色，但没有Icon和Duration
 
 **可能原因**：
+
 1. EffectSlot预制体没有Icon和DurationText子对象
 2. EffectSlot.cs的引用没有正确设置
 
 **诊断**：
 查看Console中的警告：
+
 ```
 [EffectSlot] effectIcon is null!
 [EffectSlot] durationText is null!
@@ -269,18 +287,22 @@ effectDisplay?.RefreshDisplay();
 ### 问题3：显示了Duration，但Icon是空白
 
 **可能原因**：
+
 1. Poison.asset中没有设置Image
 2. Poison.cs没有传递`this`
 3. Image的Sprite是null
 
 **诊断**：
 查看Console日志：
+
 ```
 [EffectSlot] buffData.Image is null! SourceEffect=Poison
 ```
+
 如果SourceEffect存在但Image是null，说明Poison.asset中没有设置Image。
 
 **解决方案**：
+
 1. 选中Poison.asset
 2. 在Inspector中为**Image**字段拖入Sprite
 3. 重新进入战斗测试
@@ -290,11 +312,13 @@ effectDisplay?.RefreshDisplay();
 ### 问题4：Icon和Duration都显示了，但看不见
 
 **可能原因**：
+
 1. UI层级问题（被其他UI遮挡）
 2. Canvas Sorting Order太低
 3. Panel被禁用或透明
 
 **解决方案**：
+
 1. 检查Canvas的Sorting Order
 2. 确认Panel和Container都是Active状态
 3. 检查EffectSlot的Scale和Position
