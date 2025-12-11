@@ -23,6 +23,17 @@ public class InventoryManager : MonoBehaviour
     private readonly Dictionary<string, InventoryItem> itemDictionary =
         new Dictionary<string, InventoryItem>();
 
+    // 当前战斗上下文（用于默认使用者=玩家）
+    public BattleModel CurrentBattle { get; private set; }
+
+    /// <summary>
+    /// 由战斗控制器在初始化后调用，绑定战斗上下文
+    /// </summary>
+    public void BindBattle(BattleModel model)
+    {
+        CurrentBattle = model;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -172,6 +183,19 @@ public class InventoryManager : MonoBehaviour
         if (!itemDictionary.TryGetValue(itemId, out var item))
             return;
 
+        // 默认使用者为玩家（场上精灵）
+        if (user == null)
+        {
+            user = CurrentBattle?.PlayerUnit;
+        }
+
+        // 若该道具需要单体目标但未提供，则提示并返回，让UI先进行选取
+        if (item?.data != null && item.data.RequiresTargetSelection && target == null)
+        {
+            Debug.LogWarning($"[Inventory] 道具需要选择目标：{item.data.DisplayName}");
+            return;
+        }
+
         UseItem(item, user, target);
     }
 
@@ -179,6 +203,21 @@ public class InventoryManager : MonoBehaviour
     {
         if (item == null || item.data == null)
             return;
+
+        // 默认使用者为玩家（场上精灵）。目标由调用方决定：
+        // - 单体：UI 传入被点击的场上精灵
+        // - 群体：传 null，由效果内部自行遍历
+        if (user == null)
+        {
+            user = CurrentBattle?.PlayerUnit;
+        }
+
+        // SingleUnit 模式要求必须提供 target
+        if (item.data.RequiresTargetSelection && target == null)
+        {
+            Debug.LogWarning($"[Inventory] 需要先选择一个目标来使用道具：{item.data.DisplayName}");
+            return;
+        }
 
         if (!item.data.CanUse(user, target))
         {
