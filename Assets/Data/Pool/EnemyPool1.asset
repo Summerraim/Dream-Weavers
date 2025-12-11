@@ -20,5 +20,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 71dd53f462ea09847a9a4f62bbe0104b, type: 2}
   - {fileID: 11400000, guid: 71dd53f462ea09847a9a4f62bbe0104b, type: 2}
   - {fileID: 11400000, guid: 71dd53f462ea09847a9a4f62bbe0104b, type: 2}
+  Spirits:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   UseWeights: 1
-  Weights: 01000000010000000100000001000000
+  Weights: 04000000010000000100000001000000
