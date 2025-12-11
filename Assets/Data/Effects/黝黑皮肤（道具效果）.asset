@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfffbc376a47b6b48a74b06c005cc1ff, type: 3}
+  m_Name: "\u9EDD\u9ED1\u76AE\u80A4\uFF08\u9053\u5177\u6548\u679C\uFF09"
+  m_EditorClassIdentifier: 
+  displayName: Defense Up
+  description: add 10% Defense
+  defensePercent: 0.1
+  duration: 3
+  applyToAllUnitsOnField: 1
+  applyToCasterIfNotAll: 1

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 背包UI控制器
 /// </summary>
-public class InventoryUIView : MonoBehaviour
+public class UI_InventoryView : MonoBehaviour
 {
     [Header("UI引用")]
     public GameObject inventoryPanel; // 背包面板
@@ -26,6 +26,7 @@ public class InventoryUIView : MonoBehaviour
     public TextMeshProUGUI itemNameText; // 物品名称
     public TextMeshProUGUI itemDescriptionText; // 物品描述
     public TextMeshProUGUI itemStatsText; // 物品属性
+    public Image itemInfoBg; // 物品信息界面背景图片（若为空则使用纯色背景）
     public Button useButton; // 使用按钮
     public Button dropButton; // 丢弃按钮
     
@@ -38,6 +39,12 @@ public class InventoryUIView : MonoBehaviour
     public bool infoPanelAutoFlipBySide = true;
     [Tooltip("信息面板与槽位侧向间距（像素），用于左/右侧显示时的水平空隙")]
     public float infoPanelSideMargin = 16f;
+    [Tooltip("为信息面板添加背景，避免文字被道具视觉遮挡")]
+    // public bool infoPanelUseBackground = true;
+    // [Tooltip("信息面板背景颜色（若未指定精灵则使用纯色背景）")]
+    // public Color infoPanelBackgroundColor = new Color(0f, 0f, 0f, 0.6f);
+    // [Tooltip("信息面板背景精灵，可选。如果为空则使用纯色背景")] 
+    public Sprite infoPanelBackgroundSprite;
 
     [Header("拖拽相关")]
     public GameObject dragItemIcon; // 拖拽时的图标
@@ -89,6 +96,10 @@ public class InventoryUIView : MonoBehaviour
         // 配置信息面板的 Raycast 拦截，避免悬停时被面板挡住造成闪烁
         if (itemInfoPanel != null)
             ConfigureInfoPanelRaycast(infoPanelBlockRaycasts);
+
+        // 若启用背景，则确保信息面板挂有 Image 并设置背景样式
+        // if (itemInfoPanel != null && infoPanelUseBackground)
+        //     EnsureInfoPanelBackground();
 
         // Start 阶段也尝试关闭（保险）
         if (startClosed && inventoryPanel != null)
@@ -197,10 +208,16 @@ public class InventoryUIView : MonoBehaviour
     /// 更新背包UI
     private void UpdateInventoryUI()
     {
-        Debug.Log($"[InventoryUI] 刷新背包：items={InventoryManager.Instance.items.Count}, slots={slots.Count}");
+        if (InventoryManager.Instance == null)
+        {
+            Debug.LogError("[InventoryUI] 刷新失败：InventoryManager.Instance 为 null");
+            return;
+        }
+        Debug.Log($"[InventoryUI] 刷新背包：items={InventoryManager.Instance.items.Count}, slots(现有)={slots.Count}");
         // 槽位数量按物品数量动态生成/回收
         int count = InventoryManager.Instance.items.Count;
         EnsureSlotCount(count);
+        Debug.Log($"[InventoryUI] EnsureSlotCount 后：slots(当前)={slots.Count}");
 
         // 更新有物品的槽位（支持最新在前）
         for (int i = 0; i < count; i++)
@@ -213,7 +230,16 @@ public class InventoryUIView : MonoBehaviour
                 {
                     Debug.LogWarning($"[InventoryUI] 第{srcIndex}个物品为空或缺少数据");
                 }
+                else
+                {
+                    var hasIcon = item.data.Icon != null;
+                    Debug.Log($"[InventoryUI] 槽位{i} <- 物品[{srcIndex}] '{item.data.DisplayName}', Icon={(hasIcon ? "有" : "无")}, qty={item.quantity}");
+                }
                 slots[i].UpdateSlot(item);
+            }
+            else
+            {
+                Debug.LogWarning($"[InventoryUI] 槽位索引越界：i={i}, slots.Count={slots.Count}");
             }
         }
     }
@@ -282,6 +308,8 @@ public class InventoryUIView : MonoBehaviour
         hoveredSlot = slot;
         var item = slot != null ? slot.GetItem() : null;
         ShowItemInfo(item);
+        // 将信息面板置于同级的最前，确保不被其他 UI 视觉遮挡
+        itemInfoPanel.transform.SetAsLastSibling();
         PositionInfoPanelUnder(slot);
     }
 
@@ -294,6 +322,8 @@ public class InventoryUIView : MonoBehaviour
             hoveredSlot = null;
         if (itemInfoPanel != null)
             itemInfoPanel.SetActive(false);
+        if (itemInfoBg != null)
+            itemInfoBg.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -374,6 +404,20 @@ public class InventoryUIView : MonoBehaviour
             graphics[i].raycastTarget = block;
         }
     }
+
+    /// <summary>
+    /// 确保信息面板具备背景 Image，并应用颜色/精灵设置
+    /// </summary>
+    // private void EnsureInfoPanelBackground()
+    // {
+    //     if (itemInfoPanel == null) return;
+    //     var img = itemInfoPanel.GetComponent<Image>();
+    //     if (img == null) img = itemInfoPanel.AddComponent<Image>();
+    //     img.sprite = infoPanelBackgroundSprite;
+    //     // img.color = infoPanelBackgroundColor;
+    //     // 背景不拦截鼠标，避免悬停闪烁
+    //     img.raycastTarget = infoPanelBlockRaycasts;
+    // }
 
     #region 背包操作
 
@@ -504,11 +548,15 @@ public class InventoryUIView : MonoBehaviour
         {
             if (itemInfoPanel != null)
                 itemInfoPanel.SetActive(false);
+            if (itemInfoBg != null)
+                itemInfoBg.gameObject.SetActive(false);
             return;
         }
 
         if (itemInfoPanel != null)
             itemInfoPanel.SetActive(true);
+        if (itemInfoBg != null)
+            itemInfoBg.gameObject.SetActive(true);
 
         // 更新UI
         itemNameText.text = item.data.DisplayName;
