@@ -146,6 +146,7 @@ public class BattleController : MonoBehaviour
 
         // 设置Sacrifice Synergy的静态引用（用于获取所有出场Spirit）
         SacrificeSynergyBridge.DeployedSpirits = spiritQueue;
+        SacrificeSynergyBridge.IsSpiritAliveAtIndex = IsSpiritAlive;
 
         // 初始化全队羁绊系统（战斗开始时统计所有出场Spirit的Synergy并应用效果）
         model.InitializeTeamSynergies(spiritQueue);

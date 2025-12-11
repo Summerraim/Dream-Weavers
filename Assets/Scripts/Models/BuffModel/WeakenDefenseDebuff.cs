@@ -9,9 +9,10 @@ public class WeakenDefenseDebuff : Buff
     private readonly float defenseReductionPercent;
 
     public override string DisplayName => "防御降低";
-    public override string Description => defenseReductionPercent > 0
-        ? $"防御力降低{(defenseReductionPercent * 100):F0}%"
-        : $"防御力降低{defenseReduction}点";
+    public override string Description =>
+        defenseReductionPercent > 0
+            ? $"防御力降低{(defenseReductionPercent * 100):F0}%"
+            : $"防御力降低{defenseReduction}点";
 
     /// <summary>
     /// 基于百分比的防御降低

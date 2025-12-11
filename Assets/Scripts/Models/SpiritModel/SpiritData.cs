@@ -5,10 +5,10 @@ public class SpiritData : ScriptableObject
 {
     public string DisplayName;
     public Sprite Image;
-    public int MaxHP = 1000;
-    public int MaxMana = 100;
-    public int Damage = 50;
-    public int Defense = 10;
+    public int MaxHP = 200;
+    public int MaxMana = 120;
+    public int Damage = 10;
+    public int Defense = 5;
 
     public ScriptableObject[] Skills;
     public Synergy[] Synergies;

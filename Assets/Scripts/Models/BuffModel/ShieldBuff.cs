@@ -9,11 +9,24 @@ public class ShieldBuff : Buff
     public override string Description => "吸收一定伤害";
 
     private int shieldAmount;
+    private int maxShieldAmount; // 记录初始最大护盾值
 
-    public ShieldBuff(IBattleUnit owner, int duration, int shield) : base(owner, duration)
+    public ShieldBuff(IBattleUnit owner, int duration, int shield)
+        : base(owner, duration)
     {
         shieldAmount = Mathf.Max(0, shield);
+        maxShieldAmount = shieldAmount;
     }
+
+    /// <summary>
+    /// 获取当前护盾值
+    /// </summary>
+    public int GetCurrentShield() => shieldAmount;
+
+    /// <summary>
+    /// 获取最大护盾值
+    /// </summary>
+    public int GetMaxShield() => maxShieldAmount;
 
     public override void OnApplied()
     {
@@ -49,7 +62,9 @@ public class ShieldBuff : Buff
         base.OnTurnEnd();
         if (RemainingTurns > 0)
         {
-            Debug.Log($"{Owner?.DisplayName} 的护盾剩余 {shieldAmount} 点，持续 {RemainingTurns} 回合");
+            Debug.Log(
+                $"{Owner?.DisplayName} 的护盾剩余 {shieldAmount} 点，持续 {RemainingTurns} 回合"
+            );
         }
     }
 }

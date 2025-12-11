@@ -12,7 +12,8 @@ public class CurseDebuff : Buff
     private int originalMaxHP;
     private int reducedAmount;
 
-    public CurseDebuff(IBattleUnit owner, int duration, float reduction) : base(owner, duration)
+    public CurseDebuff(IBattleUnit owner, int duration, float reduction)
+        : base(owner, duration)
     {
         maxHPReduction = Mathf.Clamp01(reduction);
     }
@@ -26,7 +27,9 @@ public class CurseDebuff : Buff
         originalMaxHP = Owner.MaxHP;
         reducedAmount = Mathf.RoundToInt(originalMaxHP * maxHPReduction);
 
-        Debug.Log($"{Owner.DisplayName} 被诅咒了！最大生命值降低 {reducedAmount} 点（{maxHPReduction * 100}%），持续 {RemainingTurns} 回合");
+        Debug.Log(
+            $"{Owner.DisplayName} 被诅咒了！最大生命值降低 {reducedAmount} 点（{maxHPReduction * 100}%），持续 {RemainingTurns} 回合"
+        );
 
         // 如果当前生命值超过新的最大值，调整为新最大值
         if (Owner.HP > originalMaxHP - reducedAmount)

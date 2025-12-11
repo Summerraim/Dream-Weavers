@@ -58,7 +58,9 @@ public class ManaShieldBuff : Buff
             }
 
             int finalDamage = baseDamage - absorbedDamage;
-            Debug.Log($"{Owner.DisplayName}'s Mana Shield absorbed {absorbedDamage} damage (cost {requiredMana} mana)");
+            Debug.Log(
+                $"{Owner.DisplayName}'s Mana Shield absorbed {absorbedDamage} damage (cost {requiredMana} mana)"
+            );
             return Mathf.Max(0, finalDamage);
         }
         else if (availableMana > 0)
@@ -76,7 +78,9 @@ public class ManaShieldBuff : Buff
             }
 
             int finalDamage = baseDamage - partialAbsorb;
-            Debug.Log($"{Owner.DisplayName}'s Mana Shield partially absorbed {partialAbsorb} damage (used all {availableMana} mana)");
+            Debug.Log(
+                $"{Owner.DisplayName}'s Mana Shield partially absorbed {partialAbsorb} damage (used all {availableMana} mana)"
+            );
             return Mathf.Max(0, finalDamage);
         }
 

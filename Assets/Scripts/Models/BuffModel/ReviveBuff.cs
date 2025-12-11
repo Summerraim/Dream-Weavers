@@ -8,7 +8,8 @@ public class ReviveBuff : Buff
     private readonly float reviveHealthPercent;
 
     public override string DisplayName => "复活";
-    public override string Description => $"死亡时复活并恢复{(reviveHealthPercent * 100):F0}%生命值";
+    public override string Description =>
+        $"死亡时复活并恢复{(reviveHealthPercent * 100):F0}%生命值";
 
     public ReviveBuff(IBattleUnit owner, float healthPercent)
         : base(owner, 999) // 持续到触发为止

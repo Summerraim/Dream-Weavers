@@ -56,7 +56,9 @@ public class Dispel : Effect
         }
 
         // 决定移除多少个Buff
-        int buffsToRemove = removeAllBuffs ? positiveBuffs.Count : Mathf.Min(maxBuffsToRemove, positiveBuffs.Count);
+        int buffsToRemove = removeAllBuffs
+            ? positiveBuffs.Count
+            : Mathf.Min(maxBuffsToRemove, positiveBuffs.Count);
 
         // 随机移除Buff
         for (int i = 0; i < buffsToRemove; i++)

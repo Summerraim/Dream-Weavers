@@ -35,6 +35,14 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private Image enemyImage2;
 
+    [Header("Unit Names")]
+    [SerializeField]
+    private TMP_Text spiritNameText;
+
+    [SerializeField]
+    private TMP_Text enemyNameText;
+
+    [Header("Unit Stats")]
     [SerializeField]
     private ImageBar spiritHpBar;
 
@@ -48,6 +56,12 @@ public class UI_BattleView : MonoBehaviour
     private TMP_Text spiritMpText;
 
     [SerializeField]
+    private ImageBar spiritShieldBar;
+
+    [SerializeField]
+    private TMP_Text spiritShieldText;
+
+    [SerializeField]
     private ImageBar enemyHpBar;
 
     [SerializeField]
@@ -58,6 +72,12 @@ public class UI_BattleView : MonoBehaviour
 
     [SerializeField]
     private TMP_Text enemyMpText;
+
+    [SerializeField]
+    private ImageBar enemyShieldBar;
+
+    [SerializeField]
+    private TMP_Text enemyShieldText;
 
     [Header("Debug / Info")]
     [SerializeField]
@@ -190,6 +210,17 @@ public class UI_BattleView : MonoBehaviour
                 enemyImage2.sprite = enemy.Image;
         }
 
+        // 名称显示
+        if (spiritNameText != null && player != null)
+        {
+            spiritNameText.text = player.DisplayName;
+        }
+
+        if (enemyNameText != null && enemy != null)
+        {
+            enemyNameText.text = enemy.DisplayName;
+        }
+
         // 血量/蓝量：使用单位公开的属性，不直接依赖数据对象字段名
         if (spiritHpBar != null && player != null)
             spiritHpBar.Set(player.HP, player.MaxHP);
@@ -203,6 +234,38 @@ public class UI_BattleView : MonoBehaviour
         if (spiritMpText != null && player != null)
             spiritMpText.text = $"{player.Mana}/{player.MaxMana}";
 
+        // Spirit Shield
+        if (player != null)
+        {
+            var shieldInfo = model.GetUnitShieldInfo(player);
+
+            if (spiritShieldBar != null)
+            {
+                if (shieldInfo.max > 0)
+                {
+                    spiritShieldBar.Set(shieldInfo.current, shieldInfo.max);
+                    spiritShieldBar.gameObject.SetActive(true);
+                }
+                else
+                {
+                    spiritShieldBar.gameObject.SetActive(false);
+                }
+            }
+
+            if (spiritShieldText != null)
+            {
+                if (shieldInfo.max > 0)
+                {
+                    spiritShieldText.text = $"{shieldInfo.current}/{shieldInfo.max}";
+                    spiritShieldText.gameObject.SetActive(true);
+                }
+                else
+                {
+                    spiritShieldText.gameObject.SetActive(false);
+                }
+            }
+        }
+
         if (enemyHpBar != null && enemy != null)
             enemyHpBar.Set(enemy.HP, enemy.MaxHP);
 
@@ -214,6 +277,38 @@ public class UI_BattleView : MonoBehaviour
 
         if (enemyMpText != null && enemy != null)
             enemyMpText.text = $"{enemy.Mana}/{enemy.MaxMana}";
+
+        // Enemy Shield
+        if (enemy != null)
+        {
+            var shieldInfo = model.GetUnitShieldInfo(enemy);
+
+            if (enemyShieldBar != null)
+            {
+                if (shieldInfo.max > 0)
+                {
+                    enemyShieldBar.Set(shieldInfo.current, shieldInfo.max);
+                    enemyShieldBar.gameObject.SetActive(true);
+                }
+                else
+                {
+                    enemyShieldBar.gameObject.SetActive(false);
+                }
+            }
+
+            if (enemyShieldText != null)
+            {
+                if (shieldInfo.max > 0)
+                {
+                    enemyShieldText.text = $"{shieldInfo.current}/{shieldInfo.max}";
+                    enemyShieldText.gameObject.SetActive(true);
+                }
+                else
+                {
+                    enemyShieldText.gameObject.SetActive(false);
+                }
+            }
+        }
 
         if (turnText != null && model != null)
         {

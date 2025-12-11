@@ -87,4 +87,24 @@ public class Sacrifice : Synergy
 public static class SacrificeSynergyBridge
 {
     public static List<SpiritData> DeployedSpirits { get; set; }
+
+    /// <summary>
+    /// 委托：检查指定索引的Spirit是否存活
+    /// </summary>
+    public static System.Func<int, bool> IsSpiritAliveAtIndex { get; set; }
+
+    /// <summary>
+    /// 检查指定SpiritData是否存活
+    /// </summary>
+    public static bool IsSpiritAlive(SpiritData spiritData)
+    {
+        if (spiritData == null || DeployedSpirits == null || IsSpiritAliveAtIndex == null)
+            return false;
+
+        int index = DeployedSpirits.IndexOf(spiritData);
+        if (index < 0)
+            return false;
+
+        return IsSpiritAliveAtIndex(index);
+    }
 }
