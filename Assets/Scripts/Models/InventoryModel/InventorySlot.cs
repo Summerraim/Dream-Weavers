@@ -2,6 +2,11 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 using UnityEngine.UI;
+=======
+using TMPro;
+using UnityEngine.UI;
+
+>>>>>>> Stashed changes
 
 /// <summary>
 /// 背包槽位UI
@@ -151,6 +156,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
         // 鼠标离开：通知悬停结束
         OnSlotHoverExit?.Invoke(this);
     }
+
     
+
     #endregion
 }
