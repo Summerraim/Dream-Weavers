@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Data/Effects/Debuff/Blind")]
+[CreateAssetMenu(menuName = "Data/Effects/ControlDebuff/Blind")]
 // 致盲：有概率使技能失效
 public class Blind : Effect
 {

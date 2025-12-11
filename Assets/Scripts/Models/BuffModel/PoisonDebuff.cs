@@ -16,8 +16,8 @@ public class PoisonDebuff : Buff
     /// <summary>
     /// 基于百分比的中毒伤害
     /// </summary>
-    public PoisonDebuff(IBattleUnit owner, int duration, float percent)
-        : base(owner, duration)
+    public PoisonDebuff(IBattleUnit owner, int duration, float percent, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damagePerTurn = 0;
         damagePercent = Mathf.Clamp01(percent);
@@ -26,8 +26,8 @@ public class PoisonDebuff : Buff
     /// <summary>
     /// 基于固定值的中毒伤害
     /// </summary>
-    public PoisonDebuff(IBattleUnit owner, int duration, int damage)
-        : base(owner, duration)
+    public PoisonDebuff(IBattleUnit owner, int duration, int damage, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damagePerTurn = Mathf.Max(0, damage);
         damagePercent = 0f;

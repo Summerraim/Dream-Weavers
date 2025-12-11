@@ -16,7 +16,9 @@ MonoBehaviour:
   <Description>k__BackingField: "\u8611\u83C7\u7684\u653B\u51FB"
   <Mana>k__BackingField: 10
   <CooldownTurns>k__BackingField: 1
+  <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 10913, guid: 0000000000000000f000000000000000,
     type: 0}
   effects:
   - {fileID: 11400000, guid: 9eb64a255f8f1e542997594ae9ed5da7, type: 2}
+  - {fileID: 11400000, guid: 8fa514c45e9f77e448626108dd2903a0, type: 2}

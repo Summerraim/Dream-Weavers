@@ -24,22 +24,40 @@ public class UI_BattleView : MonoBehaviour
 
     [Header("Unit Images")]
     [SerializeField]
-    private Image spiritImage;
+    private Image spiritImage1;
 
     [SerializeField]
-    private Image enemyImage;
+    private Image spiritImage2;
+
+    [SerializeField]
+    private Image enemyImage1;
+
+    [SerializeField]
+    private Image enemyImage2;
 
     [SerializeField]
     private ImageBar spiritHpBar;
 
     [SerializeField]
+    private TMP_Text spiritHpText;
+
+    [SerializeField]
     private ImageBar spiritMpBar;
+
+    [SerializeField]
+    private TMP_Text spiritMpText;
 
     [SerializeField]
     private ImageBar enemyHpBar;
 
     [SerializeField]
+    private TMP_Text enemyHpText;
+
+    [SerializeField]
     private ImageBar enemyMpBar;
+
+    [SerializeField]
+    private TMP_Text enemyMpText;
 
     [Header("Debug / Info")]
     [SerializeField]
@@ -130,7 +148,9 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"UI: Skill {skillIndex} clicked but no BattleController bound or found in scene.");
+        Debug.LogWarning(
+            $"UI: Skill {skillIndex} clicked but no BattleController bound or found in scene."
+        );
     }
 
     /// <summary>
@@ -147,30 +167,53 @@ public class UI_BattleView : MonoBehaviour
                 ? model.EnemyUnits[0]
                 : controller.Enemy;
         // 头像：直接使用 IBattleUnit 的 Image 属性
-        if (spiritImage != null && player != null)
+        if (spiritImage1 != null && player != null)
         {
             if (player.Image != null)
-                spiritImage.sprite = player.Image;
+                spiritImage1.sprite = player.Image;
         }
 
-        if (enemyImage != null && enemy != null)
+        if (enemyImage1 != null && enemy != null)
         {
             if (enemy.Image != null)
-                enemyImage.sprite = enemy.Image;
+                enemyImage1.sprite = enemy.Image;
+        }
+        if (spiritImage2 != null && player != null)
+        {
+            if (player.Image != null)
+                spiritImage2.sprite = player.Image;
+        }
+
+        if (enemyImage2 != null && enemy != null)
+        {
+            if (enemy.Image != null)
+                enemyImage2.sprite = enemy.Image;
         }
 
         // 血量/蓝量：使用单位公开的属性，不直接依赖数据对象字段名
         if (spiritHpBar != null && player != null)
             spiritHpBar.Set(player.HP, player.MaxHP);
 
+        if (spiritHpText != null && player != null)
+            spiritHpText.text = $"{player.HP}/{player.MaxHP}";
+
         if (spiritMpBar != null && player != null)
             spiritMpBar.Set(player.Mana, player.MaxMana);
+
+        if (spiritMpText != null && player != null)
+            spiritMpText.text = $"{player.Mana}/{player.MaxMana}";
 
         if (enemyHpBar != null && enemy != null)
             enemyHpBar.Set(enemy.HP, enemy.MaxHP);
 
+        if (enemyHpText != null && enemy != null)
+            enemyHpText.text = $"{enemy.HP}/{enemy.MaxHP}";
+
         if (enemyMpBar != null && enemy != null)
             enemyMpBar.Set(enemy.Mana, enemy.MaxMana);
+
+        if (enemyMpText != null && enemy != null)
+            enemyMpText.text = $"{enemy.Mana}/{enemy.MaxMana}";
 
         if (turnText != null && model != null)
         {
@@ -229,7 +272,10 @@ public class UI_BattleView : MonoBehaviour
         {
             button.interactable = false;
             int remainingUses = model.GetSkillRemainingUses(skillIndex, skill);
-            UpdateButtonText(button, $"{skillName}\n{description}\n次数:0/{skill.MaxUsesPerBattle}");
+            UpdateButtonText(
+                button,
+                $"{skillName}\n{description}\n次数:0/{skill.MaxUsesPerBattle}"
+            );
             return;
         }
 
@@ -255,7 +301,10 @@ public class UI_BattleView : MonoBehaviour
         if (skill.MaxUsesPerBattle > 0)
         {
             int remainingUses = model.GetSkillRemainingUses(skillIndex, skill);
-            UpdateButtonText(button, $"{skillName}\n{description}\n蓝耗:{manaCost} | 次数:{remainingUses}/{skill.MaxUsesPerBattle}");
+            UpdateButtonText(
+                button,
+                $"{skillName}\n{description}\n蓝耗:{manaCost} | 次数:{remainingUses}/{skill.MaxUsesPerBattle}"
+            );
         }
         else
         {

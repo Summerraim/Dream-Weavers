@@ -34,25 +34,27 @@ public class UIManagerService : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-		// 自动注册 panelsRoot 下的所有子孙物体（递归）
-		if (panelsRoot != null)
-		{
-			int count = 0;
-			void RegisterRecursive(Transform t)
-			{
-				if (t == null) return;
-				var go = t.gameObject;
-				RegisterPanel(go.name, go);
-				count++;
-				for (int i = 0; i < t.childCount; i++)
-				{
-					RegisterRecursive(t.GetChild(i));
-				}
-			}
-			RegisterRecursive(panelsRoot);
-			if (debugMode) Debug.Log($"UIManager: 递归注册 {count} 个面板（含子孙）");
-		}
-	}
+        // 自动注册 panelsRoot 下的所有子孙物体（递归）
+        if (panelsRoot != null)
+        {
+            int count = 0;
+            void RegisterRecursive(Transform t)
+            {
+                if (t == null)
+                    return;
+                var go = t.gameObject;
+                RegisterPanel(go.name, go);
+                count++;
+                for (int i = 0; i < t.childCount; i++)
+                {
+                    RegisterRecursive(t.GetChild(i));
+                }
+            }
+            RegisterRecursive(panelsRoot);
+            if (debugMode)
+                Debug.Log($"UIManager: 递归注册 {count} 个面板（含子孙）");
+        }
+    }
 
     #region 面板管理 API
 

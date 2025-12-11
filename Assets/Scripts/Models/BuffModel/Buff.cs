@@ -16,6 +16,17 @@ public abstract class Buff
     public abstract string Description { get; }
 
     /// <summary>
+    /// 创建此Buff的Effect（可能为null，如Synergy创建的Buff）
+    /// </summary>
+    public Effect SourceEffect { get; private set; }
+
+    /// <summary>
+    /// Buff的图标（优先从SourceEffect获取，否则使用自定义图标）
+    /// </summary>
+    public Sprite Image => SourceEffect?.Image ?? customIcon;
+    private Sprite customIcon;
+
+    /// <summary>
     /// 剩余持续回合数（-1表示永久）
     /// </summary>
     public int RemainingTurns { get; private set; }
@@ -40,12 +51,22 @@ public abstract class Buff
     /// </summary>
     public bool HasTriggered { get; protected set; }
 
-    protected Buff(IBattleUnit owner, int duration)
+    protected Buff(IBattleUnit owner, int duration, Effect sourceEffect = null)
     {
         Owner = owner;
         RemainingTurns = duration;
+        SourceEffect = sourceEffect;
+        customIcon = null;
         IsOneTime = false;
         HasTriggered = false;
+    }
+
+    /// <summary>
+    /// 设置自定义图标（用于没有SourceEffect的Buff，如Synergy）
+    /// </summary>
+    public void SetCustomIcon(Sprite icon)
+    {
+        customIcon = icon;
     }
 
     /// <summary>

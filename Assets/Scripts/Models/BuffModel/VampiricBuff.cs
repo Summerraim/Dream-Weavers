@@ -19,7 +19,9 @@ public class VampiricBuff : Buff
     public override void OnApplied()
     {
         base.OnApplied();
-        Debug.Log($"{Owner?.DisplayName} gained Vampiric: {(lifeStealPercent * 100):F0}% life steal for {RemainingTurns} turns");
+        Debug.Log(
+            $"{Owner?.DisplayName} gained Vampiric: {(lifeStealPercent * 100):F0}% life steal for {RemainingTurns} turns"
+        );
     }
 
     public override void OnDamageDealt(int actualDamage, IBattleUnit target)
@@ -33,7 +35,9 @@ public class VampiricBuff : Buff
         if (healAmount > 0)
         {
             Owner.ReceiveHeal(healAmount);
-            Debug.Log($"{Owner.DisplayName} healed {healAmount} HP from Vampiric (dealt {actualDamage} damage)");
+            Debug.Log(
+                $"{Owner.DisplayName} healed {healAmount} HP from Vampiric (dealt {actualDamage} damage)"
+            );
         }
     }
 }

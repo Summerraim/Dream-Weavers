@@ -11,6 +11,9 @@ public abstract class Effect : ScriptableObject
     [SerializeField, TextArea]
     private string description;
 
+    [SerializeField]
+    private Sprite image;
+
     /// <summary>
     /// Display-friendly name exposed in the inspector and UI.
     /// Falls back to the asset name when no custom label is provided.
@@ -21,6 +24,11 @@ public abstract class Effect : ScriptableObject
     /// Optional descriptive text for UI/tooltip usage.
     /// </summary>
     public string Description => description;
+
+    /// <summary>
+    /// Optional image/icon for UI display.
+    /// </summary>
+    public Sprite Image => image;
 
     /// <summary>
     /// Executes the effect logic against the provided caster/target pair.

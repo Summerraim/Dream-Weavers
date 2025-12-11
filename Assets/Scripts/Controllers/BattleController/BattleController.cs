@@ -24,11 +24,19 @@ public class BattleController : MonoBehaviour
     [SerializeField]
     private UI_BattleView battleView;
 
+    [SerializeField]
+    private UI_SpiritSwitcher spiritSwitcher;
+
+    [SerializeField]
+    private UI_EffectDisplay effectDisplay;
+
     private BattleModel model;
 
     // Spirit队列系统
     private System.Collections.Generic.List<SpiritData> spiritQueue;
     private int currentSpiritIndex = 0;
+    private System.Collections.Generic.Dictionary<int, bool> spiritAliveStatus; // 跟踪每个Spirit的存活状态
+    private System.Collections.Generic.Dictionary<int, SpiritRuntimeData> spiritRuntimeData; // 跟踪每个Spirit的运行时数据（HP/MP）
 
     // 缓存的 HP/Mana 值，用于检测变化
     private int lastPlayerHP;
@@ -76,6 +84,25 @@ public class BattleController : MonoBehaviour
 
         currentSpiritIndex = 0;
 
+        // 初始化Spirit存活状态和运行时数据
+        spiritAliveStatus = new System.Collections.Generic.Dictionary<int, bool>();
+        spiritRuntimeData = new System.Collections.Generic.Dictionary<int, SpiritRuntimeData>();
+
+        for (int i = 0; i < spiritQueue.Count; i++)
+        {
+            spiritAliveStatus[i] = true; // 战斗开始时所有Spirit都是存活的
+
+            // 初始化运行时数据（使用SpiritData的基础值）
+            var data = spiritQueue[i];
+            spiritRuntimeData[i] = new SpiritRuntimeData
+            {
+                CurrentHP = data.MaxHP,
+                MaxHP = data.MaxHP,
+                CurrentMP = data.MaxMana,
+                MaxMP = data.MaxMana,
+            };
+        }
+
         // 创建第一个Spirit
         player = new Spirit(spiritQueue[currentSpiritIndex]);
         Debug.Log(
@@ -105,6 +132,7 @@ public class BattleController : MonoBehaviour
         // 设置Debuff系统的静态引用
         WeakenAttack.CurrentBattle = model;
         WeakenDefense.CurrentBattle = model;
+        Weaken.CurrentBattle = model;
         ManaLeech.CurrentBattle = model;
         HealingReduction.CurrentBattle = model;
         Vulnerability.CurrentBattle = model;
@@ -122,9 +150,38 @@ public class BattleController : MonoBehaviour
         // 设置Special系统的静态引用
         PrepareEffect.CurrentBattle = model;
 
+        // 设置净化/驱散系统的静态引用
+        Cleanse.CurrentBattle = model;
+        Dispel.CurrentBattle = model;
+
+        // 设置Berserker Synergy的静态引用
+        BerserkerSynergyBridge.CurrentBattle = model;
+
+        // 设置Sacrifice Synergy的静态引用（用于获取所有出场Spirit）
+        SacrificeSynergyBridge.DeployedSpirits = spiritQueue;
+
+        // 初始化全队羁绊系统（战斗开始时统计所有出场Spirit的Synergy并应用效果）
+        model.InitializeTeamSynergies(spiritQueue);
+        Debug.Log("BattleController: Team synergies initialized");
+
         // 绑定 UI（如果存在）
         if (battleView != null)
             battleView.Bind(this, model);
+
+        // 绑定Spirit切换器（如果存在）
+        if (spiritSwitcher != null)
+            spiritSwitcher.Bind(this);
+
+        // 绑定Effect显示器（如果存在）
+        if (effectDisplay != null)
+        {
+            effectDisplay.Bind(this, model);
+            Debug.Log("BattleController: UI_EffectDisplay已绑定");
+        }
+        else
+        {
+            Debug.LogWarning("BattleController: effectDisplay is null! 请在Inspector中拖入UI_EffectDisplay组件");
+        }
 
         // 初始化缓存值
         lastPlayerHP = player?.HP ?? 0;
@@ -137,6 +194,59 @@ public class BattleController : MonoBehaviour
 
     public Spirit Player => player;
     public Enemy Enemy => enemy;
+
+    /// <summary>
+    /// 获取部署的Spirit列表
+    /// </summary>
+    public System.Collections.Generic.List<SpiritData> GetDeployedSpirits()
+    {
+        return spiritQueue;
+    }
+
+    /// <summary>
+    /// 获取当前Spirit的索引
+    /// </summary>
+    public int GetCurrentSpiritIndex()
+    {
+        return currentSpiritIndex;
+    }
+
+    /// <summary>
+    /// 检查指定索引的Spirit是否存活
+    /// </summary>
+    public bool IsSpiritAlive(int index)
+    {
+        if (spiritAliveStatus == null || !spiritAliveStatus.ContainsKey(index))
+            return false;
+        return spiritAliveStatus[index];
+    }
+
+    /// <summary>
+    /// 获取指定索引Spirit的运行时数据（HP/MP）
+    /// </summary>
+    public SpiritRuntimeData GetSpiritRuntimeData(int index)
+    {
+        // 如果是当前Spirit，返回实时数据
+        if (index == currentSpiritIndex && player != null)
+        {
+            return new SpiritRuntimeData
+            {
+                CurrentHP = player.HP,
+                MaxHP = player.MaxHP,
+                CurrentMP = player.Mana,
+                MaxMP = player.MaxMana,
+            };
+        }
+
+        // 否则返回缓存的数据
+        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(index))
+        {
+            return spiritRuntimeData[index];
+        }
+
+        // 如果没有数据，返回默认值
+        return new SpiritRuntimeData();
+    }
 
     /// <summary>
     /// 获取当前Spirit在队列中的索引（从1开始）
@@ -229,6 +339,12 @@ public class BattleController : MonoBehaviour
         skill.Execute(player, enemy);
         Debug.Log($"BattleController: Enemy HP after skill: {enemy.HP}");
 
+        // 触发狂战士羁绊的怒意机制（如果存在）
+        TriggerBerserkerRage();
+
+        // 触发疗愈者羁绊效果（如果存在）
+        TriggerHealerSynergy();
+
         // 记录使用次数（如果提供了技能索引）
         if (skillIndex >= 0 && model != null)
         {
@@ -249,6 +365,8 @@ public class BattleController : MonoBehaviour
         UpdateBattleStateAfterAction();
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     /// <summary>
@@ -320,6 +438,8 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     private void EnemyAct()
@@ -336,6 +456,8 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
     }
 
     private void UpdateBattleStateAfterAction()
@@ -348,13 +470,23 @@ public class BattleController : MonoBehaviour
 
         if (player != null && player.IsDead)
         {
-            // 当前Spirit死亡，尝试切换到下一个
-            if (TrySwitchToNextSpirit())
+            // 标记当前Spirit为死亡
+            if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(currentSpiritIndex))
+            {
+                spiritAliveStatus[currentSpiritIndex] = false;
+            }
+
+            // 当前Spirit死亡，尝试切换到下一个存活的Spirit
+            if (TrySwitchToNextAliveSpirit())
             {
                 Debug.Log($"BattleController: Current spirit defeated. Switching to next spirit.");
                 // 切换成功，继续战斗
                 if (battleView != null)
                     battleView.Refresh();
+                if (spiritSwitcher != null)
+                    spiritSwitcher.RefreshSlots();
+                if (effectDisplay != null)
+                    effectDisplay.RefreshDisplay();
             }
             else
             {
@@ -363,6 +495,59 @@ public class BattleController : MonoBehaviour
                 Debug.Log("BattleController: All spirits defeated. Battle lost.");
             }
         }
+    }
+
+    /// <summary>
+    /// 手动切换到指定索引的Spirit
+    /// </summary>
+    /// <param name="spiritIndex">目标Spirit索引（0-based）</param>
+    /// <returns>是否切换成功</returns>
+    public bool SwitchToSpirit(int spiritIndex)
+    {
+        // 验证索引
+        if (spiritIndex < 0 || spiritIndex >= spiritQueue.Count)
+        {
+            Debug.LogWarning($"BattleController: Invalid spirit index {spiritIndex}");
+            return false;
+        }
+
+        // 不能切换到当前Spirit
+        if (spiritIndex == currentSpiritIndex)
+        {
+            Debug.Log($"BattleController: Spirit {spiritIndex} is already active");
+            return false;
+        }
+
+        // 不能切换到死亡的Spirit
+        if (!IsSpiritAlive(spiritIndex))
+        {
+            Debug.LogWarning(
+                $"BattleController: Cannot switch to dead spirit at index {spiritIndex}"
+            );
+            return false;
+        }
+
+        // 执行切换
+        return PerformSpiritSwitch(spiritIndex);
+    }
+
+    /// <summary>
+    /// 尝试切换到下一个存活的Spirit（自动切换）
+    /// </summary>
+    /// <returns>是否切换成功</returns>
+    private bool TrySwitchToNextAliveSpirit()
+    {
+        // 从当前索引的下一个开始查找存活的Spirit
+        for (int i = currentSpiritIndex + 1; i < spiritQueue.Count; i++)
+        {
+            if (IsSpiritAlive(i))
+            {
+                return PerformSpiritSwitch(i);
+            }
+        }
+
+        // 没有找到存活的Spirit
+        return false;
     }
 
     /// <summary>
@@ -378,9 +563,54 @@ public class BattleController : MonoBehaviour
         }
 
         // 切换到下一个Spirit
-        currentSpiritIndex++;
+        return PerformSpiritSwitch(currentSpiritIndex + 1);
+    }
+
+    /// <summary>
+    /// 执行Spirit切换
+    /// </summary>
+    private bool PerformSpiritSwitch(int targetIndex)
+    {
+        if (targetIndex < 0 || targetIndex >= spiritQueue.Count)
+            return false;
+
+        // 保存当前Spirit的运行时数据
+        if (player != null && spiritRuntimeData.ContainsKey(currentSpiritIndex))
+        {
+            spiritRuntimeData[currentSpiritIndex] = new SpiritRuntimeData
+            {
+                CurrentHP = player.HP,
+                MaxHP = player.MaxHP,
+                CurrentMP = player.Mana,
+                MaxMP = player.MaxMana,
+            };
+        }
+
+        // 保存旧的Spirit索引
+        int oldIndex = currentSpiritIndex;
+
+        // 切换索引
+        currentSpiritIndex = targetIndex;
         var nextSpiritData = spiritQueue[currentSpiritIndex];
         player = new Spirit(nextSpiritData);
+
+        // 恢复目标Spirit的运行时数据
+        if (spiritRuntimeData.ContainsKey(targetIndex))
+        {
+            var runtimeData = spiritRuntimeData[targetIndex];
+            // 设置HP和MP为之前保存的值
+            int hpLoss = player.MaxHP - runtimeData.CurrentHP;
+            if (hpLoss > 0)
+            {
+                player.ReceiveDamage(hpLoss);
+            }
+
+            int manaLoss = player.MaxMana - runtimeData.CurrentMP;
+            if (manaLoss > 0)
+            {
+                player.ConsumeMana(manaLoss);
+            }
+        }
 
         Debug.Log(
             $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
@@ -389,9 +619,21 @@ public class BattleController : MonoBehaviour
         // 更新BattleModel中的玩家单位
         model.UpdatePlayer(player);
 
+        // 重新应用全队羁绊到新的Spirit上
+        model.UpdateTeamSynergiesOwner();
+        Debug.Log("BattleController: Team synergies re-applied to new spirit");
+
         // 重置缓存值
         lastPlayerHP = player?.HP ?? 0;
         lastPlayerMana = player?.Mana ?? 0;
+
+        // 刷新UI
+        if (battleView != null)
+            battleView.Refresh();
+        if (spiritSwitcher != null)
+            spiritSwitcher.RefreshSlots();
+        if (effectDisplay != null)
+            effectDisplay.RefreshDisplay();
 
         return true;
     }
@@ -407,6 +649,22 @@ public class BattleController : MonoBehaviour
                 lastPlayerHP = player.HP;
                 lastPlayerMana = player.Mana;
                 changed = true;
+
+                // 更新当前Spirit的运行时数据
+                if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(currentSpiritIndex))
+                {
+                    spiritRuntimeData[currentSpiritIndex] = new SpiritRuntimeData
+                    {
+                        CurrentHP = player.HP,
+                        MaxHP = player.MaxHP,
+                        CurrentMP = player.Mana,
+                        MaxMP = player.MaxMana,
+                    };
+                }
+
+                // 刷新Spirit切换器（显示实时HP/MP）
+                if (spiritSwitcher != null)
+                    spiritSwitcher.RefreshSlots();
             }
         }
 
@@ -422,5 +680,44 @@ public class BattleController : MonoBehaviour
 
         if (changed && battleView != null)
             battleView.Refresh();
+    }
+
+    /// <summary>
+    /// 触发狂战士羁绊的怒意机制
+    /// 在每次释放技能后调用，检查并应用怒意效果
+    /// </summary>
+    private void TriggerBerserkerRage()
+    {
+        if (player == null || enemy == null)
+            return;
+
+        // 检查玩家是否有怒意Buff
+        var rageBuff = Berserker.CurrentRageBuff;
+        if (rageBuff != null && rageBuff.Owner == player)
+        {
+            // 检查并应用怒意效果（积累或消耗）
+            rageBuff.CheckAndApplyRage(enemy);
+        }
+    }
+
+    /// <summary>
+    /// 触发疗愈者羁绊效果（在使用技能后调用）
+    /// </summary>
+    private void TriggerHealerSynergy()
+    {
+        if (player == null || model == null)
+            return;
+
+        // 检查玩家是否有疗愈者Buff
+        var buffs = model.GetBuffsForUnit(player);
+        foreach (var buff in buffs)
+        {
+            if (buff is HealerBuff healerBuff)
+            {
+                // 触发治疗效果
+                healerBuff.TriggerHeal(model);
+                break; // 只触发一次
+            }
+        }
     }
 }
