@@ -17,6 +17,10 @@ public class UI_InventoryView : MonoBehaviour
     [Tooltip("展示顺序：勾选则最新添加的物品显示在前面（索引小）")]
     public bool showNewestFirst = true;
 
+    [Header("显示控制")]
+    [Tooltip("独立切换背包面板，不通过 UIManagerService（避免影响房间UI）")]
+    public bool independentToggle = true;
+
     [Header("槽位布局")]
     [Tooltip("每个槽位之间的空隙（x=水平, y=垂直）")]
     public Vector2 slotSpacing = new Vector2(8f, 8f);
@@ -44,7 +48,7 @@ public class UI_InventoryView : MonoBehaviour
     // [Tooltip("信息面板背景颜色（若未指定精灵则使用纯色背景）")]
     // public Color infoPanelBackgroundColor = new Color(0f, 0f, 0f, 0.6f);
     // [Tooltip("信息面板背景精灵，可选。如果为空则使用纯色背景")] 
-    public Sprite infoPanelBackgroundSprite;
+    // public Sprite infoPanelBackgroundSprite;
 
     [Header("拖拽相关")]
     public GameObject dragItemIcon; // 拖拽时的图标
@@ -63,7 +67,7 @@ public class UI_InventoryView : MonoBehaviour
         // 订阅移至 OnEnable，避免初始未激活导致的丢失
 
         // 尝试自动向 UIManagerService 注册面板，避免未找到面板的日志
-        if (inventoryPanel != null && UIManagerService.Instance != null)
+        if (!independentToggle && inventoryPanel != null && UIManagerService.Instance != null)
         {
             try
             {
@@ -426,7 +430,19 @@ public class UI_InventoryView : MonoBehaviour
     /// </summary>
     public void ToggleInventory()
     {
-        // 优先使用 UIManagerService：仅在服务确实有该面板时才调用；否则尝试注册后再决定
+        // 当启用独立切换时，仅本地显示/隐藏背包面板，避免影响房间UI
+        if (independentToggle)
+        {
+            if (inventoryPanel != null)
+            {
+                bool next = !inventoryPanel.activeSelf;
+                inventoryPanel.SetActive(next);
+                if (next) UpdateInventoryUI();
+            }
+            return;
+        }
+
+        // 使用 UIManagerService 的模式（可能会独占面板显示，谨慎使用）
         bool handledByService = false;
         var ui = UIManagerService.Instance;
         if (ui != null)

@@ -34,6 +34,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private bool subscribed;
     private Coroutine waitCo;
+    private Coroutine enemyWatchCo; // 监听战斗房间敌人状态的协程
+    private bool overrideCompleteByEnemy; // 是否由敌人状态接管 Complete 的交互
+    private bool combatCompleteReady; // 敌人击败后允许完成房间
 
     [Header("面板切换")]
     [Tooltip("房间类型到UI面板名的映射，用于进入房间时切换UI。")]
@@ -227,6 +230,14 @@ public class RoomUIActions_cza : MonoBehaviour
             StopCoroutine(waitCo);
             waitCo = null;
         }
+        // 停止战斗监听
+        if (enemyWatchCo != null)
+        {
+            StopCoroutine(enemyWatchCo);
+            enemyWatchCo = null;
+        }
+        overrideCompleteByEnemy = false;
+        combatCompleteReady = false;
     }
 
     private void RefreshRoomInfo(RoomNode_cza node)
@@ -247,6 +258,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 进入房间时进行UI面板切换
         SwitchToRoomTypePanel(node.Type);
+
+        // 进入房间后尝试监听战斗房间敌人状态
+        RestartWatchEnemyIfCombatRoom();
     }
 
     private string FormatList(System.Collections.Generic.List<int> list)
@@ -284,6 +298,14 @@ public class RoomUIActions_cza : MonoBehaviour
                 ShowPanel(currentRoomPanelName, false);
             }
             ShowPanel(choosePanelName, true);
+            // 进入选择阶段停止战斗监听
+            if (enemyWatchCo != null)
+            {
+                StopCoroutine(enemyWatchCo);
+                enemyWatchCo = null;
+            }
+            overrideCompleteByEnemy = false;
+            combatCompleteReady = false;
         }
         else
         {
@@ -312,10 +334,13 @@ public class RoomUIActions_cza : MonoBehaviour
         bool selecting = sm != null && sm.IsAwaitingChoice;
         if (btnComplete)
         {
-            // 始终保持 Complete 可点击并暴露在外，由点击行为触发选择面板显隐
-            btnComplete.interactable = true;
+            // 若战斗房间监听开启，则由敌人状态决定 Complete 是否可点击
+            if (overrideCompleteByEnemy)
+                btnComplete.interactable = combatCompleteReady;
+            else
+                btnComplete.interactable = true;
             Debug.Log(
-                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable=true"
+                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
             );
         }
         // Next 按钮的交互由 RefreshChoiceUI 设置，这里不重复处理
@@ -350,6 +375,14 @@ public class RoomUIActions_cza : MonoBehaviour
         currentRoomPanelName = null;
         // 同时确保选择面板关闭
         ShowPanel(choosePanelName, false);
+        // 完成后停止战斗监听
+        if (enemyWatchCo != null)
+        {
+            StopCoroutine(enemyWatchCo);
+            enemyWatchCo = null;
+        }
+        overrideCompleteByEnemy = false;
+        combatCompleteReady = false;
     }
 
     private void BuildTypePanelMap()
@@ -425,5 +458,57 @@ public class RoomUIActions_cza : MonoBehaviour
             UIManagerService.Instance.ShowPanel(panelName);
         else
             UIManagerService.Instance.HidePanel(panelName);
+    }
+
+    // 战斗房间监听：若存在 CombatRoom_cza，则监控其敌人模型的 HP/Mana
+    private void RestartWatchEnemyIfCombatRoom()
+    {
+        var room = FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+        if (room == null)
+        {
+            // 无战斗房间，关闭覆盖
+            if (enemyWatchCo != null)
+            {
+                StopCoroutine(enemyWatchCo);
+                enemyWatchCo = null;
+            }
+            overrideCompleteByEnemy = false;
+            combatCompleteReady = false;
+            return;
+        }
+        // 开启由敌人状态接管 Complete 交互
+        overrideCompleteByEnemy = true;
+        combatCompleteReady = false;
+        if (enemyWatchCo != null)
+        {
+            StopCoroutine(enemyWatchCo);
+        }
+        enemyWatchCo = StartCoroutine(WatchEnemyState(room));
+        ApplyInteractableState("RestartWatchEnemyIfCombatRoom");
+    }
+
+    private IEnumerator WatchEnemyState(DreamWeavers.Rooms.CombatRoom_cza room)
+    {
+        // 等待敌人模型就绪
+        while (room != null && room.GetEnemyModel() == null)
+        {
+            yield return null;
+        }
+        var model = room != null ? room.GetEnemyModel() : null;
+        if (model == null)
+        {
+            yield break;
+        }
+        // 轮询检查生命/法力
+        while (room != null && model != null)
+        {
+            if (model.HP <= 0 || model.Mana <= 0)
+            {
+                combatCompleteReady = true;
+                ApplyInteractableState("EnemyDefeated");
+                yield break;
+            }
+            yield return null;
+        }
     }
 }
