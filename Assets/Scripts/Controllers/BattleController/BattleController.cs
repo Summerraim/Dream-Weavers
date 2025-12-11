@@ -179,6 +179,29 @@ public class BattleController : MonoBehaviour
         State = BattleState.PlayerTurn;
     }
 
+    /// <summary>
+    /// Allows external systems (ex: rooms) to begin a battle with runtime data.
+    /// </summary>
+    public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride)
+    {
+        if (playerDataOverride == null)
+        {
+            Debug.LogWarning("BattleController: BeginBattleWith called without PlayerData");
+            return;
+        }
+
+        if (enemyDataOverride == null)
+        {
+            Debug.LogWarning("BattleController: BeginBattleWith called without EnemyData");
+            return;
+        }
+
+        playerData = playerDataOverride;
+        enemyData = enemyDataOverride;
+
+        InitializeBattle();
+    }
+
     public Spirit Player => player;
     public Enemy Enemy => enemy;
 

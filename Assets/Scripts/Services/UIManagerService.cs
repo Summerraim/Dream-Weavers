@@ -60,6 +60,9 @@ public class UIManagerService : MonoBehaviour
     [Header("UI根Canvas")]
     [SerializeField] private Canvas rootCanvas;
     
+    [Header("面板容器")]
+    [SerializeField] private Transform panelsRoot; // 添加缺失的面板容器引用
+    
     [Header("设置")]
     [SerializeField] private bool autoInitialize = true;
     [SerializeField] private bool debugMode = false;
@@ -89,8 +92,6 @@ public class UIManagerService : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-<<<<<<< Updated upstream
-        Instance = this;
         DontDestroyOnLoad(gameObject);
 
         // 自动注册 panelsRoot 下的所有子孙物体（递归）
@@ -115,92 +116,8 @@ public class UIManagerService : MonoBehaviour
         }
     }
 
-    #region 面板管理 API
-
-    // 注册一个面板（覆盖已有同名）
-    public void RegisterPanel(string name, GameObject panel)
-    {
-        if (string.IsNullOrEmpty(name) || panel == null)
-            return;
-        panels[name] = panel;
-    }
-
-    // 注销面板（如果存在）
-    public void UnregisterPanel(string name)
-    {
-        if (string.IsNullOrEmpty(name))
-            return;
-        panels.Remove(name);
-    }
-
-    // 获取面板（可能为 null）
-    public GameObject GetPanel(string name)
-    {
-        if (string.IsNullOrEmpty(name))
-            return null;
-        panels.TryGetValue(name, out var panel);
-        return panel;
-    }
-
-    // 显示面板（默认激活 GameObject）
-    public void ShowPanel(string name)
-    {
-        SetPanelActive(name, true);
-    }
-
-    // 隐藏面板（默认禁用 GameObject）
-    public void HidePanel(string name)
-    {
-        SetPanelActive(name, false);
-    }
-
-    // 切换面板可见性
-    public void TogglePanel(string name)
-    {
-        var panel = GetPanel(name);
-        if (panel == null)
-            return;
-        SetPanelActive(name, !panel.activeSelf);
-    }
-
-    // 显式设置面板激活状态
-    public void SetPanelActive(string name, bool active)
-    {
-        var panel = GetPanel(name);
-        if (panel == null)
-=======
-        
-        // 初始化UI系统
-        if (autoInitialize)
->>>>>>> Stashed changes
-        {
-            Initialize();
-        }
-    }
-    
-    private void Start()
-    {
-        // 订阅游戏状态变化
-        if (GameManagerService.Instance != null)
-        {
-            GameManagerService.Instance.OnGameStateChanged += OnGameStateChanged;
-        }
-    }
-    
-    private void OnDestroy()
-    {
-        // 清理事件订阅
-        if (GameManagerService.Instance != null)
-        {
-            GameManagerService.Instance.OnGameStateChanged -= OnGameStateChanged;
-        }
-        
-        // 清理所有面板
-        ClearAllPanels();
-    }
-    
     #endregion
-    
+
     #region 初始化
     
     /// <summary>
@@ -785,3 +702,4 @@ public class UIManagerService : MonoBehaviour
     
     #endregion
 }
+    
