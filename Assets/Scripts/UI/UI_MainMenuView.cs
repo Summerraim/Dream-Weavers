@@ -116,7 +116,7 @@ public class UI_MainMenuView : MonoBehaviour
         // 可以添加加载动画或过渡效果
         
         // 加载游戏场景
-        SceneManager.LoadScene(gameSceneIndex);
+        SceneManager.LoadScene(1);
         
         // 或者通过GameManagerService控制游戏状态
         // if (GameManagerService.Instance != null)

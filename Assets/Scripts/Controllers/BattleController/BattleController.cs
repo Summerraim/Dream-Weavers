@@ -54,17 +54,17 @@ public class BattleController : MonoBehaviour
     }
 
     // 允许外部（如房间控制器）传入玩家/敌人数据并开始战斗
-    public void BeginBattleWith(PlayerData player, EnemyData enemy)
-    {
-        if (player == null || enemy == null)
-        {
-            Debug.LogWarning("BattleController.BeginBattleWith: player or enemy data is null");
-            return;
-        }
-        playerData = player;
-        enemyData = enemy;
-        InitializeBattle();
-    }
+    // public void BeginBattleWith(PlayerData player, EnemyData enemy)
+    // {
+    //     if (player == null || enemy == null)
+    //     {
+    //         Debug.LogWarning("BattleController.BeginBattleWith: player or enemy data is null");
+    //         return;
+    //     }
+    //     playerData = player;
+    //     enemyData = enemy;
+    //     InitializeBattle();
+    // }
 
     public void InitializeBattle()
     {
@@ -190,6 +190,29 @@ public class BattleController : MonoBehaviour
         lastEnemyMana = enemy?.Mana ?? 0;
 
         State = BattleState.PlayerTurn;
+    }
+
+    /// <summary>
+    /// Allows external systems (ex: rooms) to begin a battle with runtime data.
+    /// </summary>
+    public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride)
+    {
+        if (playerDataOverride == null)
+        {
+            Debug.LogWarning("BattleController: BeginBattleWith called without PlayerData");
+            return;
+        }
+
+        if (enemyDataOverride == null)
+        {
+            Debug.LogWarning("BattleController: BeginBattleWith called without EnemyData");
+            return;
+        }
+
+        playerData = playerDataOverride;
+        enemyData = enemyDataOverride;
+
+        InitializeBattle();
     }
 
     public Spirit Player => player;

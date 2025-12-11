@@ -23,6 +23,10 @@ public class EnemyPool : ScriptableObject
     [Tooltip("对象池中包含的所有敌人数据")]
     public List<EnemyData> Enemies = new List<EnemyData>();
 
+    [Header("精灵数据")]
+    [Tooltip("与每个敌人对应的精灵数据（需与Enemies数量一致）")]
+    public List<SpiritData> Spirits = new List<SpiritData>();
+
     [Header("权重配置（可选）")]
     [Tooltip("是否启用权重系统")]
     public bool UseWeights = false;
@@ -152,6 +156,79 @@ public class EnemyPool : ScriptableObject
     }
 
     /// <summary>
+    /// 按索引获取对应的精灵数据
+    /// </summary>
+    public SpiritData GetSpiritByIndex(int index)
+    {
+        if (Spirits == null || Spirits.Count == 0)
+        {
+            Debug.LogWarning($"EnemyPool [{DisplayName}]: Spirits list is empty!");
+            return null;
+        }
+
+        if (index < 0 || index >= Spirits.Count)
+        {
+            Debug.LogWarning(
+                $"EnemyPool [{DisplayName}]: Spirit index {index} out of range (0-{Spirits.Count - 1})"
+            );
+            return null;
+        }
+
+        return Spirits[index];
+    }
+
+    /// <summary>
+    /// 根据敌人数据获取对应的精灵数据
+    /// </summary>
+    public SpiritData GetSpiritForEnemy(EnemyData enemyData)
+    {
+        if (enemyData == null)
+        {
+            Debug.LogWarning($"EnemyPool [{DisplayName}]: Enemy data is null!");
+            return null;
+        }
+
+        int index = Enemies.IndexOf(enemyData);
+        if (index == -1)
+        {
+            Debug.LogWarning($"EnemyPool [{DisplayName}]: Enemy '{enemyData.DisplayName}' not found in pool!");
+            return null;
+        }
+
+        return GetSpiritByIndex(index);
+    }
+
+    /// <summary>
+    /// 随机获取一对敌人和精灵数据
+    /// </summary>
+    public (EnemyData enemy, SpiritData spirit) GetRandomEnemyWithSpirit()
+    {
+        if (IsEmpty)
+        {
+            Debug.LogWarning($"EnemyPool [{DisplayName}]: Pool is empty!");
+            return (null, null);
+        }
+
+        int randomIndex = Random.Range(0, Enemies.Count);
+        return (Enemies[randomIndex], GetSpiritByIndex(randomIndex));
+    }
+
+    /// <summary>
+    /// 按权重随机获取一对敌人和精灵数据
+    /// </summary>
+    public (EnemyData enemy, SpiritData spirit) GetWeightedRandomEnemyWithSpirit()
+    {
+        var enemy = GetWeightedRandomEnemy();
+        if (enemy == null)
+        {
+            return (null, null);
+        }
+
+        var spirit = GetSpiritForEnemy(enemy);
+        return (enemy, spirit);
+    }
+
+    /// <summary>
     /// 获取多个随机敌人（不重复）
     /// </summary>
     public List<EnemyData> GetRandomEnemies(int count, bool allowDuplicates = false)
@@ -232,12 +309,21 @@ public class EnemyPool : ScriptableObject
             isValid = false;
         }
 
+        // 检查Spirits列表大小
+        if (Spirits != null && Spirits.Count != Enemies.Count)
+        {
+            Debug.LogWarning(
+                $"EnemyPool [{DisplayName}]: Spirits count ({Spirits.Count}) doesn't match Enemies count ({Enemies.Count})!"
+            );
+            isValid = false;
+        }
+
         return isValid;
     }
 
 #if UNITY_EDITOR
     /// <summary>
-    /// 编辑器中自动修复权重列表大小
+    /// 编辑器中自动修复列表大小
     /// </summary>
     private void OnValidate()
     {
@@ -251,6 +337,19 @@ public class EnemyPool : ScriptableObject
             while (Weights.Count > Enemies.Count)
             {
                 Weights.RemoveAt(Weights.Count - 1);
+            }
+        }
+
+        // 自动调整精灵列表大小以匹配敌人列表
+        if (Spirits != null && Enemies != null)
+        {
+            while (Spirits.Count < Enemies.Count)
+            {
+                Spirits.Add(null); // 默认为null，需要手动赋值
+            }
+            while (Spirits.Count > Enemies.Count)
+            {
+                Spirits.RemoveAt(Spirits.Count - 1);
             }
         }
     }

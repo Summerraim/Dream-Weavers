@@ -35,13 +35,36 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     {
         currentItem = item;
 
-        if (item != null && item.data != null && item.quantity > 0)
+        // 诊断：检查必要引用
+        if (iconImage == null)
+        {
+            Debug.LogError($"[InventorySlot] iconImage 未绑定（slotIndex={slotIndex}，GameObject={gameObject.name}）");
+            // 没有图像引用也继续更新数量文本，避免信息缺失
+            quantityText.text = (item != null && item.quantity > 1) ? item.quantity.ToString() : "";
+            return;
+        }
+
+        // 显示条件：只要有有效数据就显示图标，不再依赖数量>0
+        if (item != null && item.data != null)
         {
             // 显示物品
             var sprite = item.data.Icon != null ? item.data.Icon : fallbackIcon;
+            if (item.data.Icon == null)
+            {
+                Debug.LogWarning($"[InventorySlot] 物品 \"{item.data.DisplayName}\" 的 Icon 为空，使用占位图标（slotIndex={slotIndex}）");
+            }
+            if (sprite == null)
+            {
+                Debug.LogWarning($"[InventorySlot] 没有可用图标（Icon 与 fallbackIcon 均为空），将隐藏图像（slotIndex={slotIndex}）");
+            }
+
             iconImage.sprite = sprite;
+            // 只要有图标，强制不透明显示；无图标才透明
             iconImage.color = sprite != null ? Color.white : new Color(0, 0, 0, 0);
-            quantityText.text = item.quantity > 1 ? item.quantity.ToString() : "";
+
+            if (quantityText != null)
+                quantityText.text = item.quantity > 1 ? item.quantity.ToString() : "";
+
             item.slotIndex = slotIndex;
         }
         else
@@ -57,9 +80,15 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public void ClearSlot()
     {
         currentItem = null;
-        iconImage.sprite = null;
-        iconImage.color = new Color(0, 0, 0, 0);
-        quantityText.text = "";
+        if (iconImage != null)
+        {
+            iconImage.sprite = null;
+            iconImage.color = new Color(0, 0, 0, 0);
+        }
+        if (quantityText != null)
+        {
+            quantityText.text = "";
+        }
 
         if (selectedIndicator != null)
             selectedIndicator.SetActive(false);

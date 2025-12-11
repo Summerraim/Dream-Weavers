@@ -19,6 +19,15 @@ public class RoomUISkinController : MonoBehaviour
     [SerializeField]
     private GameObject defaultSkinPrefab;
 
+    [Header("实例化策略")]
+    [Tooltip("若 skinRoot 下已存在与目标 Prefab 同名的子物体，则直接收编为当前皮肤，避免再次实例化。")]
+    [SerializeField]
+    private bool adoptExistingChild = true;
+
+    [Tooltip("应用新皮肤后清理 skinRoot 下除当前皮肤外的其他子物体，避免重复背景残留。")]
+    [SerializeField]
+    private bool clearOthersOnApply = true;
+
     private GameObject currentSkinInstance;
     private int currentAppliedFloor = int.MinValue;
 
@@ -54,8 +63,28 @@ public class RoomUISkinController : MonoBehaviour
         var prefab = ResolvePrefab(floorIndex);
         if (prefab != null)
         {
-            currentSkinInstance = Instantiate(prefab, skinRoot);
-            currentSkinInstance.name = prefab.name;
+            // 可选：收编已存在的同名子物体，避免重复生成
+            if (adoptExistingChild)
+            {
+                var existing = FindChildByName(skinRoot, prefab.name);
+                if (existing != null)
+                {
+                    currentSkinInstance = existing.gameObject;
+                }
+            }
+
+            // 若未找到现有同名子物体，则实例化
+            if (currentSkinInstance == null)
+            {
+                currentSkinInstance = Instantiate(prefab, skinRoot);
+                currentSkinInstance.name = prefab.name;
+            }
+
+            // 可选：清理除当前皮肤外的其他子物体，保证唯一
+            if (clearOthersOnApply)
+            {
+                CleanupOtherChildren(skinRoot, currentSkinInstance.transform);
+            }
         }
         currentAppliedFloor = floorIndex;
     }
@@ -88,5 +117,34 @@ public class RoomUISkinController : MonoBehaviour
 
         // 兜底默认
         return defaultSkinPrefab;
+    }
+
+    private static Transform FindChildByName(Transform root, string childName)
+    {
+        if (root == null || string.IsNullOrEmpty(childName)) return null;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            if (string.Equals(c.name, childName, StringComparison.Ordinal))
+                return c;
+        }
+        return null;
+    }
+
+    private void CleanupOtherChildren(Transform root, Transform keep)
+    {
+        if (root == null) return;
+        var toDestroy = new List<Transform>();
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            if (keep != null && c == keep) continue;
+            toDestroy.Add(c);
+        }
+        for (int i = 0; i < toDestroy.Count; i++)
+        {
+            var go = toDestroy[i].gameObject;
+            if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
+        }
     }
 }
