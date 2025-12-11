@@ -1,0 +1,33 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Data/Effects/ControlDebuff/Blind")]
+// 致盲：有概率使技能失效
+public class Blind : Effect
+{
+    [SerializeField, Range(0f, 1f)]
+    private float missChance = 0.5f;
+
+    [SerializeField, Min(1)]
+    private int duration = 2;
+
+    [SerializeField]
+    private bool applyToTarget = true;
+
+    public static BattleModel CurrentBattle { get; set; }
+
+    public override void Apply(IBattleUnit caster, IBattleUnit target)
+    {
+        IBattleUnit receiver = applyToTarget ? target : caster;
+        if (receiver == null)
+            return;
+
+        if (CurrentBattle == null)
+        {
+            Debug.LogWarning("Blind: No active battle model found");
+            return;
+        }
+
+        var debuff = new BlindDebuff(receiver, duration, missChance);
+        CurrentBattle.AddBuff(debuff);
+    }
+}

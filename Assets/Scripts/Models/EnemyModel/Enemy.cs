@@ -8,14 +8,15 @@ public class Enemy : IBattleUnit
 
     public int HP { get; private set; }
     public int Mana { get; private set; }
-    public int Damage { get; private set; }
-    public int Defense { get; private set; }
+    public float Damage { get; private set; }
+    public float Defense { get; private set; }
 
     public string DisplayName =>
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
             : string.Empty;
 
+    public Sprite Image => data?.Image;
     public int MaxHP => data?.MaxHP ?? 0;
     public int MaxMana => data?.MaxMana ?? 0;
 

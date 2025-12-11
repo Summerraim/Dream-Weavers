@@ -1,10 +1,11 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Data/Effects/Damage")]
+[CreateAssetMenu(menuName = "Data/Effects/Base/Damage")]
+//基础伤害：总伤害 = 固定伤害 + (施法者攻击力 × 伤害倍率)
 public class Damage : Effect
 {
     [SerializeField, Min(0)]
-    private int initDamage = 10;
+    private int initDamage = 0;
 
     [SerializeField]
     private bool scaleWithDamage = true;

@@ -5,6 +5,7 @@ using UnityEngine;
 /// 物品基础数据（ScriptableObject，可在编辑器中创建）
 /// </summary>
 [CreateAssetMenu(fileName = "NewItem", menuName = "Data/ItemData")]
+
 public class ItemData : ScriptableObject, IItem
 {
     [SerializeField]

@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-<<<<<<< Updated upstream
+using TMPro;
 using UnityEngine.UI;
 =======
 using TMPro;
@@ -11,19 +11,14 @@ using UnityEngine.UI;
 /// <summary>
 /// 背包槽位UI
 /// </summary>
-public class InventorySlot
-    : MonoBehaviour,
-        IPointerClickHandler,
-        IBeginDragHandler,
-        IDragHandler,
-        IEndDragHandler,
-        IDropHandler
+public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI引用")]
-    public Image iconImage; // 物品图标
-    public Text quantityText; // 数量文本
+    public Image iconImage;           // 物品图标
+    public TextMeshProUGUI quantityText;         // 数量文本
     public GameObject selectedIndicator; // 选中指示器
-
+    public Sprite fallbackIcon; // 当物品没有图标时的占位图标（可选）
+    
     [Header("槽位设置")]
     public int slotIndex = -1; // 槽位索引
     public bool isEquipmentSlot = false; // 是否是装备槽
@@ -35,7 +30,9 @@ public class InventorySlot
     public System.Action<InventorySlot> OnSlotBeginDrag;
     public System.Action<InventorySlot> OnSlotEndDrag;
     public System.Action<InventorySlot, InventorySlot> OnSlotDrop;
-
+    public System.Action<InventorySlot> OnSlotHoverEnter;
+    public System.Action<InventorySlot> OnSlotHoverExit;
+    
     /// <summary>
     /// 更新槽位显示
     /// </summary>
@@ -46,8 +43,9 @@ public class InventorySlot
         if (item != null && item.data != null && item.quantity > 0)
         {
             // 显示物品
-            iconImage.sprite = item.data.Icon;
-            iconImage.color = item.data.Icon != null ? Color.white : new Color(0, 0, 0, 0);
+            var sprite = item.data.Icon != null ? item.data.Icon : fallbackIcon;
+            iconImage.sprite = sprite;
+            iconImage.color = sprite != null ? Color.white : new Color(0, 0, 0, 0);
             quantityText.text = item.quantity > 1 ? item.quantity.ToString() : "";
             item.slotIndex = slotIndex;
         }
@@ -147,8 +145,6 @@ public class InventorySlot
         }
     }
 
-<<<<<<< Updated upstream
-=======
     public void OnPointerEnter(PointerEventData eventData)
     {
         // 鼠标进入：通知悬停开始
@@ -160,6 +156,8 @@ public class InventorySlot
         // 鼠标离开：通知悬停结束
         OnSlotHoverExit?.Invoke(this);
     }
->>>>>>> Stashed changes
+
+    
+
     #endregion
 }

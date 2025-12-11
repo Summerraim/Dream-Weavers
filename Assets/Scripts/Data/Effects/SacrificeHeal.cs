@@ -1,6 +1,11 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Data/Effects/Sacrifice Heal")]
+[CreateAssetMenu(menuName = "Data/Effects/Base/Sacrifice Heal")]
+/*献祭治疗
+献祭HP = 施法者最大HP × healthSacrificePercent
+实际献祭 = 施法者受伤前HP - 施法者受伤后HP
+治疗量 = 实际献祭 × healMultiplier
+*/
 public class SacrificeHeal : Effect
 {
     [SerializeField, Range(0f, 1f)]

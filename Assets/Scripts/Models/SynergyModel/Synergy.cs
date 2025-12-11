@@ -16,11 +16,15 @@ public abstract class Synergy : ScriptableObject
     private string description;
 
     [SerializeField]
+    private Sprite image;
+
+    [SerializeField]
     private List<int> triggerCounts = new List<int> { 2, 4, 6 };
 
     public string SynergyId => string.IsNullOrWhiteSpace(synergyId) ? name : synergyId;
     public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
     public string Description => description;
+    public Sprite Image => image;
     public IReadOnlyList<int> TriggerCounts => triggerCounts;
 
     /// <summary>

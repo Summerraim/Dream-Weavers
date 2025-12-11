@@ -24,22 +24,40 @@ public class UI_BattleView : MonoBehaviour
 
     [Header("Unit Images")]
     [SerializeField]
-    private Image spiritImage;
+    private Image spiritImage1;
 
     [SerializeField]
-    private Image enemyImage;
+    private Image spiritImage2;
+
+    [SerializeField]
+    private Image enemyImage1;
+
+    [SerializeField]
+    private Image enemyImage2;
 
     [SerializeField]
     private ImageBar spiritHpBar;
 
     [SerializeField]
+    private TMP_Text spiritHpText;
+
+    [SerializeField]
     private ImageBar spiritMpBar;
+
+    [SerializeField]
+    private TMP_Text spiritMpText;
 
     [SerializeField]
     private ImageBar enemyHpBar;
 
     [SerializeField]
+    private TMP_Text enemyHpText;
+
+    [SerializeField]
     private ImageBar enemyMpBar;
+
+    [SerializeField]
+    private TMP_Text enemyMpText;
 
     [Header("Debug / Info")]
     [SerializeField]
@@ -130,7 +148,9 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"UI: Skill {skillIndex} clicked but no BattleController bound or found in scene.");
+        Debug.LogWarning(
+            $"UI: Skill {skillIndex} clicked but no BattleController bound or found in scene."
+        );
     }
 
     /// <summary>
@@ -146,31 +166,54 @@ public class UI_BattleView : MonoBehaviour
             (model.EnemyUnits != null && model.EnemyUnits.Count > 0)
                 ? model.EnemyUnits[0]
                 : controller.Enemy;
-        // 头像：优先从数据对象中查找可能存在的 Sprite 字段（如 Portrait/Icon/Sprite），否则保持在 Inspector 中手动设置的图片
-        if (spiritImage != null && player != null)
+        // 头像：直接使用 IBattleUnit 的 Image 属性
+        if (spiritImage1 != null && player != null)
         {
-            if (TryGetSpriteFromData(player.Data, out var s))
-                spiritImage.sprite = s;
+            if (player.Image != null)
+                spiritImage1.sprite = player.Image;
         }
 
-        if (enemyImage != null && enemy != null)
+        if (enemyImage1 != null && enemy != null)
         {
-            if (TryGetSpriteFromData(enemy.Data, out var s))
-                enemyImage.sprite = s;
+            if (enemy.Image != null)
+                enemyImage1.sprite = enemy.Image;
+        }
+        if (spiritImage2 != null && player != null)
+        {
+            if (player.Image != null)
+                spiritImage2.sprite = player.Image;
+        }
+
+        if (enemyImage2 != null && enemy != null)
+        {
+            if (enemy.Image != null)
+                enemyImage2.sprite = enemy.Image;
         }
 
         // 血量/蓝量：使用单位公开的属性，不直接依赖数据对象字段名
         if (spiritHpBar != null && player != null)
             spiritHpBar.Set(player.HP, player.MaxHP);
 
+        if (spiritHpText != null && player != null)
+            spiritHpText.text = $"{player.HP}/{player.MaxHP}";
+
         if (spiritMpBar != null && player != null)
             spiritMpBar.Set(player.Mana, player.MaxMana);
+
+        if (spiritMpText != null && player != null)
+            spiritMpText.text = $"{player.Mana}/{player.MaxMana}";
 
         if (enemyHpBar != null && enemy != null)
             enemyHpBar.Set(enemy.HP, enemy.MaxHP);
 
+        if (enemyHpText != null && enemy != null)
+            enemyHpText.text = $"{enemy.HP}/{enemy.MaxHP}";
+
         if (enemyMpBar != null && enemy != null)
             enemyMpBar.Set(enemy.Mana, enemy.MaxMana);
+
+        if (enemyMpText != null && enemy != null)
+            enemyMpText.text = $"{enemy.Mana}/{enemy.MaxMana}";
 
         if (turnText != null && model != null)
         {
@@ -219,16 +262,29 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        // 获取技能名称和蓝耗信息
+        // 获取技能名称、描述和蓝耗信息
         string skillName = skill.DisplayName;
+        string description = skill.Description;
         int manaCost = skill.ManaCost;
+
+        // 检查使用次数限制
+        if (model.IsSkillUsageLimitReached(skillIndex, skill))
+        {
+            button.interactable = false;
+            int remainingUses = model.GetSkillRemainingUses(skillIndex, skill);
+            UpdateButtonText(
+                button,
+                $"{skillName}\n{description}\n次数:0/{skill.MaxUsesPerBattle}"
+            );
+            return;
+        }
 
         // 检查冷却
         if (model.IsSkillOnCooldown(skillIndex))
         {
             button.interactable = false;
             var cooldown = model.GetSkillCooldown(skillIndex);
-            UpdateButtonText(button, $"{skillName}\n冷却:{cooldown}");
+            UpdateButtonText(button, $"{skillName}\n{description}\n冷却:{cooldown}");
             return;
         }
 
@@ -236,13 +292,24 @@ public class UI_BattleView : MonoBehaviour
         if (model.PlayerUnit.Mana < manaCost)
         {
             button.interactable = false;
-            UpdateButtonText(button, $"{skillName}\n蓝耗:{manaCost}");
+            UpdateButtonText(button, $"{skillName}\n{description}\n蓝耗:{manaCost}");
             return;
         }
 
-        // 技能可用
+        // 技能可用 - 显示剩余使用次数（如果有限制）
         button.interactable = true;
-        UpdateButtonText(button, $"{skillName}\n蓝耗:{manaCost}");
+        if (skill.MaxUsesPerBattle > 0)
+        {
+            int remainingUses = model.GetSkillRemainingUses(skillIndex, skill);
+            UpdateButtonText(
+                button,
+                $"{skillName}\n{description}\n蓝耗:{manaCost} | 次数:{remainingUses}/{skill.MaxUsesPerBattle}"
+            );
+        }
+        else
+        {
+            UpdateButtonText(button, $"{skillName}\n{description}\n蓝耗:{manaCost}");
+        }
     }
 
     /// <summary>
@@ -266,47 +333,5 @@ public class UI_BattleView : MonoBehaviour
         {
             legacyText.text = text;
         }
-    }
-
-    private bool TryGetSpriteFromData(object dataObj, out Sprite sprite)
-    {
-        sprite = null;
-        if (dataObj == null)
-            return false;
-
-        var t = dataObj.GetType();
-
-        // 尝试字段
-        var fieldNames = new[] { "Portrait", "Icon", "Sprite" };
-        foreach (var name in fieldNames)
-        {
-            var f = t.GetField(name);
-            if (f != null)
-            {
-                var val = f.GetValue(dataObj) as Sprite;
-                if (val != null)
-                {
-                    sprite = val;
-                    return true;
-                }
-            }
-        }
-
-        // 尝试属性
-        foreach (var name in fieldNames)
-        {
-            var p = t.GetProperty(name);
-            if (p != null)
-            {
-                var val = p.GetValue(dataObj, null) as Sprite;
-                if (val != null)
-                {
-                    sprite = val;
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }
