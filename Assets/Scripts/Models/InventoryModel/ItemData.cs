@@ -95,7 +95,7 @@ public class ItemData : ScriptableObject, IItem
         string displayName,
         string description,
         Sprite icon,
-        int maxStack,
+        int maxStack,   
         bool removeOnUse
     )
     {
