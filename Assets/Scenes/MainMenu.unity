@@ -538,6 +538,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   rootCanvas: {fileID: 828891618}
+  panelsRoot: {fileID: 0}
   autoInitialize: 1
   debugMode: 1
 --- !u!223 &828891618 stripped
@@ -691,7 +692,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dd71d7ddd128914bb0e30d2c9c5c87a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debugMode: 0
+  audioMixer: {fileID: 24100000, guid: c1fc41f95eacae84fb481d48181544fd, type: 2}
+  masterVolumeParam: MasterVolume
+  bgmVolumeParam: BGMVolume
+  sfxVolumeParam: SFXVolume
+  uiVolumeParam: UIVolume
+  bgmSource: {fileID: 0}
+  bgmCrossfadeSource: {fileID: 0}
+  crossfadeDuration: 1.5
+  sfxPoolSize: 20
+  sfxPrefab: {fileID: 0}
+  sfxPoolParent: {fileID: 0}
+  uiSfxSource: {fileID: 0}
+  defaultBGM: {fileID: 0}
+  menuBGM: {fileID: 0}
+  gameplayBGM: {fileID: 0}
+  battleBGM: {fileID: 0}
+  buttonClickSFX: {fileID: 0}
+  buttonHoverSFX: {fileID: 0}
+  notificationSFX: {fileID: 0}
+  victorySFX: {fileID: 0}
+  defeatSFX: {fileID: 0}
+  levelUpSFX: {fileID: 0}
+  masterVolume: 1
+  bgmVolume: 1
+  sfxVolume: 1
+  uiVolume: 1
+  isMuted: 0
+  isPaused: 0
+  enableCrossfade: 1
 --- !u!1 &2101550600
 GameObject:
   m_ObjectHideFlags: 0
@@ -773,10 +802,15 @@ PrefabInstance:
       propertyPath: m_Name
       value: MainMenuPanel
       objectReference: {fileID: 0}
-    - target: {fileID: 1463138934650754337, guid: edc4b0e860b849540a96483422d1fa66,
+    - target: {fileID: 673283779531916602, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
-      propertyPath: m_IsActive
-      value: 0
+      propertyPath: m_SizeDelta.x
+      value: 538.7751
+      objectReference: {fileID: 0}
+    - target: {fileID: 673283779531916602, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 441
       objectReference: {fileID: 0}
     - target: {fileID: 2416721774245579685, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
