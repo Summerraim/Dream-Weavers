@@ -27,7 +27,9 @@ public class MaxHealthBuff : Buff
         var spirit = Owner as Spirit;
         if (spirit == null)
         {
-            Debug.LogWarning($"MaxHealthBuff: Owner {Owner.DisplayName} is not a Spirit, cannot apply bonus");
+            Debug.LogWarning(
+                $"MaxHealthBuff: Owner {Owner.DisplayName} is not a Spirit, cannot apply bonus"
+            );
             return;
         }
 

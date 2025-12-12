@@ -55,7 +55,9 @@ public class Cleanse : Effect
         }
 
         // 决定移除多少个Debuff
-        int debuffsToRemove = removeAllDebuffs ? debuffs.Count : Mathf.Min(maxDebuffsToRemove, debuffs.Count);
+        int debuffsToRemove = removeAllDebuffs
+            ? debuffs.Count
+            : Mathf.Min(maxDebuffsToRemove, debuffs.Count);
 
         // 随机移除Debuff
         for (int i = 0; i < debuffsToRemove; i++)

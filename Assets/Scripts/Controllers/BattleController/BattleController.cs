@@ -53,6 +53,19 @@ public class BattleController : MonoBehaviour
         Debug.Log("BattleController: InitializeBattle called in Start()");
     }
 
+    // 允许外部（如房间控制器）传入玩家/敌人数据并开始战斗
+    // public void BeginBattleWith(PlayerData player, EnemyData enemy)
+    // {
+    //     if (player == null || enemy == null)
+    //     {
+    //         Debug.LogWarning("BattleController.BeginBattleWith: player or enemy data is null");
+    //         return;
+    //     }
+    //     playerData = player;
+    //     enemyData = enemy;
+    //     InitializeBattle();
+    // }
+
     public void InitializeBattle()
     {
         // 从PlayerData获取出场的Spirit队列
@@ -146,6 +159,7 @@ public class BattleController : MonoBehaviour
 
         // 设置Sacrifice Synergy的静态引用（用于获取所有出场Spirit）
         SacrificeSynergyBridge.DeployedSpirits = spiritQueue;
+        SacrificeSynergyBridge.IsSpiritAliveAtIndex = IsSpiritAlive;
 
         // 初始化全队羁绊系统（战斗开始时统计所有出场Spirit的Synergy并应用效果）
         model.InitializeTeamSynergies(spiritQueue);

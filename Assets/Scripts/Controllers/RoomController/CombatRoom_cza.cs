@@ -13,10 +13,16 @@ namespace DreamWeavers.Rooms
         [SerializeField] private EnemyData enemyData; // 用于初始化敌人模型（可选）
         [SerializeField] private PlayerData playerData; // 当前玩家数据（用于传递到战斗）
 
+        [Header("对象池与随机配置")]
+        [SerializeField] private EnemyPool enemyPool; // 敌人对象池（含敌人与对应精灵）
+        [SerializeField] private bool useWeightedRandom = false; // 是否使用权重随机
+
         // 运行时状态
         private GameObject enemyInstance;
         private bool spawned = false;
         private Enemy enemyModel; // 敌人模型（非 MonoBehaviour），来自 EnemyModel
+        private SpiritData selectedSpirit; // 与当前敌人对应的精灵数据
+        private EnemyData selectedEnemy; // 当前选中的敌人数据（来自对象池或手动配置）
 
         public override void EnterRoom()
         {
@@ -37,15 +43,42 @@ namespace DreamWeavers.Rooms
                 Debug.LogWarning("[CombatRoom] 未配置敌人预制体");
                 return;
             }
+            // 通过对象池选取敌人与对应精灵（优先对象池）
+            selectedEnemy = null;
+            selectedSpirit = null;
+            if (enemyPool != null && !enemyPool.IsEmpty)
+            {
+                var pair = useWeightedRandom
+                    ? enemyPool.GetWeightedRandomEnemyWithSpirit()
+                    : enemyPool.GetRandomEnemyWithSpirit();
 
+                selectedEnemy = pair.enemy;
+                selectedSpirit = pair.spirit;
+            }
+
+            // 若未从对象池取到，则回退到手动配置的 enemyData
+            if (selectedEnemy == null)
+            {
+                selectedEnemy = enemyData;
+                if (selectedEnemy == null)
+                {
+                    Debug.LogWarning("[CombatRoom] 未能获取到敌人数据（对象池为空或未配置，且未提供手动 EnemyData）");
+                }
+                // 尝试根据敌人从对象池获取对应精灵（如果池存在且包含该敌人）
+                if (enemyPool != null && selectedEnemy != null)
+                {
+                    selectedSpirit = enemyPool.GetSpiritForEnemy(selectedEnemy);
+                }
+            }
+
+            // 实例化敌人
             enemyInstance = Instantiate(enemyPrefab, sp.position, sp.rotation);
             spawned = true;
 
             // 初始化敌人模型数据（用于HP/Mana等判定）
-            // 直接使用房间中配置的 ScriptableObject 敌人数据
-            if (enemyData != null)
+            if (selectedEnemy != null)
             {
-                enemyModel = new Enemy(enemyData);
+                enemyModel = new Enemy(selectedEnemy);
             }
         }
 
@@ -62,12 +95,13 @@ namespace DreamWeavers.Rooms
                 Debug.LogWarning("[CombatRoom] 未配置 PlayerData，无法开始战斗");
                 return;
             }
-            if (enemyData == null)
+            if (selectedEnemy == null)
             {
-                Debug.LogWarning("[CombatRoom] 未配置 EnemyData，无法开始战斗");
+                Debug.LogWarning("[CombatRoom] 未配置或选取 EnemyData，无法开始战斗");
                 return;
             }
-            bc.BeginBattleWith(playerData, enemyData);
+            // 将从对象池选取的敌人数据传递到战斗控制器
+            bc.BeginBattleWith(playerData, selectedEnemy);
         }
 
         public bool IsCleared()
@@ -82,11 +116,50 @@ namespace DreamWeavers.Rooms
 
         // 提供敌人模型访问，便于其他系统修改其 HP/Mana
         public Enemy GetEnemyModel() => enemyModel;
+
+        // 提供当前敌人/精灵数据访问
+        public EnemyData GetSelectedEnemyData() => selectedEnemy;
+        public SpiritData GetSelectedSpiritData() => selectedSpirit;
         public override void ExitRoom()
         {
-            // 离开房间时无需额外处理，可按需扩展
+            // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
+            if (playerData == null)
+            {
+                Debug.LogWarning("[CombatRoom] PlayerData 未配置，无法捕捉精灵");
+                return;
+            }
+
+            // 仅在房间清理完成（敌人被击败或实例销毁）时执行捕捉
+            if (!IsCleared())
+            {
+                Debug.Log("[CombatRoom] 房间未清理完成，不执行捕捉精灵");
+                return;
+            }
+
+            // 确定要添加的SpiritData：优先用生成时绑定的 selectedSpirit
+            SpiritData spiritToAdd = selectedSpirit;
+            if (spiritToAdd == null && enemyPool != null && selectedEnemy != null)
+            {
+                spiritToAdd = enemyPool.GetSpiritForEnemy(selectedEnemy);
+            }
+            if (spiritToAdd == null)
+            {
+                Debug.LogWarning("[CombatRoom] 无法确定要捕捉的SpiritData（可能对象池/映射未配置）");
+                return;
+            }
+
+            // 添加到 PlayerData.OwnedSpirits（数组）——允许重复捕捉
+            var owned = playerData.GetOwnedSpirits();
+            owned.Add(spiritToAdd);
+            playerData.OwnedSpirits = owned.ToArray();
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+            Debug.Log($"[CombatRoom] 捕捉精灵成功: {spiritToAdd.DisplayName} (允许重复)");
         }
     }
 
     
 }
+
+// x

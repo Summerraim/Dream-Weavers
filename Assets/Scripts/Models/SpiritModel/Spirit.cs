@@ -128,7 +128,9 @@ public class Spirit : IBattleUnit
 
     public void SetMaxHpBonusPercent(float percent)
     {
-        bonusMaxHpPercent = Mathf.Max(0f, percent);
+        // 允许正负加成：例如 -0.3 表示降低最大生命值上限30%
+        // 下限限制为 -0.9，避免出现过低或为0的上限导致异常
+        bonusMaxHpPercent = Mathf.Clamp(percent, -0.9f, 5f);
         HP = Mathf.Min(HP, MaxHP);
     }
 

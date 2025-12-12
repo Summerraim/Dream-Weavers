@@ -6,7 +6,8 @@ using UnityEngine;
 public class ExecutionerBuff : Buff
 {
     public override string DisplayName => "处决者";
-    public override string Description => $"敌方生命值低于{executeThreshold * 100}%时造成额外攻击力伤害";
+    public override string Description =>
+        $"敌方生命值低于{executeThreshold * 100}%时造成额外攻击力伤害";
 
     private float executeThreshold; // 触发阈值（0.1 = 10%, 0.2 = 20%）
     private BattleModel battleModel;
@@ -45,7 +46,9 @@ public class ExecutionerBuff : Buff
 
     public override void OnApplied()
     {
-        Debug.Log($"ExecutionerBuff: Applied to {Owner?.DisplayName}, threshold={executeThreshold * 100}%");
+        Debug.Log(
+            $"ExecutionerBuff: Applied to {Owner?.DisplayName}, threshold={executeThreshold * 100}%"
+        );
     }
 
     public override void OnRemoved()

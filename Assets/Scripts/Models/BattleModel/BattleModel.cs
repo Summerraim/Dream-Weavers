@@ -558,4 +558,25 @@ public class BattleModel
             Count = count;
         }
     }
+
+    /// <summary>
+    /// 获取单位的护盾信息
+    /// </summary>
+    public (int current, int max) GetUnitShieldInfo(IBattleUnit unit)
+    {
+        if (unit == null)
+            return (0, 0);
+
+        // 查找该单位的ShieldBuff
+        foreach (var buff in GetBuffsForUnit(unit))
+        {
+            if (buff is ShieldBuff shieldBuff)
+            {
+                return (shieldBuff.GetCurrentShield(), shieldBuff.GetMaxShield());
+            }
+        }
+
+        // 没有护盾
+        return (0, 0);
+    }
 }

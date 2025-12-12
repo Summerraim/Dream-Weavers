@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: "\u9EDD\u9ED1\u7684\u76AE\u80A4"
   m_EditorClassIdentifier: 
   itemId: 
-  displayNameOverride: dark skin
-  <Description>k__BackingField: add 10% defense
+  displayNameOverride: "\u9EDD\u9ED1\u7684\u76AE\u80A4"
+  <Description>k__BackingField: "\u589E\u52A010%\u9632\u5FA1\u529B"
   <MaxStack>k__BackingField: 1
   <RemoveOnUse>k__BackingField: 1
-  <Icon>k__BackingField: {fileID: 21300000, guid: c9876341d71ccf4429fd80ad03a2bfdf,
+  <Icon>k__BackingField: {fileID: 21300000, guid: 8c5fce92446168d46bcf757b1e2c209b,
     type: 3}
   effects:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 5432dfec83387cb489c7ce5c56f6a6c3, type: 2}
+  targetingMode: 1

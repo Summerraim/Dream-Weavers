@@ -22,7 +22,9 @@ public class SacrificeBuff : Buff
 
     public override bool OnDeath()
     {
-        Debug.Log($"SacrificeBuff: {Owner?.DisplayName} is sacrificed, granting buffs to teammates");
+        Debug.Log(
+            $"SacrificeBuff: {Owner?.DisplayName} is sacrificed, granting buffs to teammates"
+        );
 
         if (battleModel == null || allSpirits == null)
             return false;
@@ -41,7 +43,10 @@ public class SacrificeBuff : Buff
 
             // 需要找到对应的IBattleUnit实例
             // 这里假设PlayerUnit就是Spirit类型
-            if (battleModel.PlayerUnit != null && battleModel.PlayerUnit.DisplayName == spiritData.DisplayName)
+            if (
+                battleModel.PlayerUnit != null
+                && battleModel.PlayerUnit.DisplayName == spiritData.DisplayName
+            )
             {
                 validTeammates.Add(battleModel.PlayerUnit);
             }
