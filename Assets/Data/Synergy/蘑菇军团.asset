@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: "\u8611\u83C7\u519B\u56E2"
   m_EditorClassIdentifier: 
   synergyId: "\u8611\u83C7\u519B\u56E2"
-  displayName: 
+  displayName: "\u8611\u83C7\u519B\u56E2"
   description: "\u8611\u83C7\u519B\u56E2\u96C6\u4F53\u51FA\u51FB\uFF01"
-  image: {fileID: 0}
-  triggerCounts: 020000000400000006000000
+  image: {fileID: -649091687, guid: 63a7c4e96cbbe1d43b859c16ab55024a, type: 3}
+  triggerCounts: 03000000
   bonusPerUnit: 0.05

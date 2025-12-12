@@ -8,6 +8,10 @@ using UnityEngine.UI;
 /// </summary>
 public class UI_BattleView : MonoBehaviour
 {
+    [Header("Background")]
+    [SerializeField]
+    private Image backgroundImage;
+
     [Header("References")]
     [SerializeField]
     private Button endTurnButton;
@@ -83,8 +87,64 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private TMP_Text turnText;
 
+    [Header("Synergy Display")]
+    [SerializeField]
+    private GameObject synergySlotPrefab;
+
+    [SerializeField]
+    private Transform spiritSynergiesContainer;
+
+    [SerializeField]
+    private int maxSynergiesDisplay = 6; // 最多显示的羁绊数量
+
+    [Header("Spirit Switcher")]
+    [SerializeField]
+    private GameObject spiritSlotPrefab;
+
+    [SerializeField]
+    private Transform spiritSlotsContainer;
+
+    [SerializeField]
+    private Button spiritSwitcherToggleButton;
+
+    [SerializeField]
+    private GameObject spiritSwitcherPanel;
+
+    [Header("Effect Display")]
+    [SerializeField]
+    private GameObject effectSlotPrefab;
+
+    [SerializeField]
+    private Transform playerEffectsContainer;
+
+    [SerializeField]
+    private GameObject playerEffectsPanel;
+
+    [SerializeField]
+    private Transform enemyEffectsContainer;
+
+    [SerializeField]
+    private GameObject enemyEffectsPanel;
+
+    [SerializeField]
+    private bool hideEmptyEffectPanels = true;
+
+    [SerializeField]
+    private int maxEffectsPerUnit = 10; // 每个单位最多显示的Effect数量
+
+    [Header("Enemy Death Panel")]
+    [SerializeField]
+    private GameObject enemyDeathPanel;
+
+    [SerializeField]
+    private Transform enemyDeathSlotContainer;
+
     private BattleController controller;
     private BattleModel model;
+    private List<SynergySlot> spiritSynergySlots = new List<SynergySlot>();
+    private SpiritSlot[] spiritSlots;
+    private List<EffectSlot> playerEffectSlots = new List<EffectSlot>();
+    private List<EffectSlot> enemyEffectSlots = new List<EffectSlot>();
 
     public void Bind(BattleController ctrl, BattleModel m)
     {
@@ -105,6 +165,23 @@ public class UI_BattleView : MonoBehaviour
         if (skillButton3 != null)
             skillButton3.onClick.AddListener(() => OnSkillClicked(2));
 
+        // 初始化Spirit切换器
+        if (spiritSwitcherToggleButton != null)
+            spiritSwitcherToggleButton.onClick.AddListener(ToggleSpiritSwitcherPanel);
+
+        // 初始化敌人死亡面板（默认隐藏）
+        if (enemyDeathPanel != null)
+            enemyDeathPanel.SetActive(false);
+
+        // 初始化羁绊槽位
+        InitializeSynergySlots();
+
+        // 初始化Spirit槽位
+        InitializeSpiritSlots();
+
+        // 初始化Effect槽位
+        InitializeEffectSlots();
+
         Refresh();
     }
 
@@ -121,6 +198,15 @@ public class UI_BattleView : MonoBehaviour
 
         if (skillButton3 != null)
             skillButton3.onClick.RemoveAllListeners();
+
+        if (spiritSwitcherToggleButton != null)
+            spiritSwitcherToggleButton.onClick.RemoveListener(ToggleSpiritSwitcherPanel);
+
+        // 清空羁绊槽位
+        ClearSynergySlots();
+
+        // 清空Effect槽位
+        ClearAllEffectSlots();
 
         controller = null;
         model = null;
@@ -207,7 +293,10 @@ public class UI_BattleView : MonoBehaviour
         if (enemyImage2 != null && enemy != null)
         {
             if (enemy.Image != null)
+            {
                 enemyImage2.sprite = enemy.Image;
+                AdjustEnemyImageSize(enemyImage2, enemy.DisplayName);
+            }
         }
 
         // 名称显示
@@ -317,6 +406,15 @@ public class UI_BattleView : MonoBehaviour
 
         // 更新技能按钮状态
         UpdateSkillButtons();
+
+        // 更新羁绊显示
+        UpdateSynergyDisplay();
+
+        // 更新Spirit槽位显示
+        RefreshSpiritSlots();
+
+        // 更新Effect显示
+        RefreshEffectDisplay();
     }
 
     /// <summary>
@@ -428,5 +526,679 @@ public class UI_BattleView : MonoBehaviour
         {
             legacyText.text = text;
         }
+    }
+
+    /// <summary>
+    /// 初始化羁绊槽位对象池
+    /// </summary>
+    private void InitializeSynergySlots()
+    {
+        Debug.Log("[UI_BattleView] InitializeSynergySlots开始");
+
+        // 清空旧槽位
+        ClearSynergySlots();
+
+        if (spiritSynergiesContainer == null)
+        {
+            Debug.LogWarning(
+                "[UI_BattleView] spiritSynergiesContainer为null，无法初始化羁绊槽位"
+            );
+            return;
+        }
+
+        // 预创建槽位对象
+        for (int i = 0; i < maxSynergiesDisplay; i++)
+        {
+            GameObject slotObj;
+
+            if (synergySlotPrefab != null)
+            {
+                slotObj = Instantiate(synergySlotPrefab, spiritSynergiesContainer);
+            }
+            else
+            {
+                // 如果没有预制体，创建默认槽位
+                slotObj = CreateDefaultSynergySlot();
+                slotObj.transform.SetParent(spiritSynergiesContainer, false);
+            }
+
+            var slot = slotObj.GetComponent<SynergySlot>();
+            if (slot == null)
+            {
+                slot = slotObj.AddComponent<SynergySlot>();
+            }
+
+            slot.Clear(); // 初始时隐藏
+            spiritSynergySlots.Add(slot);
+        }
+
+        Debug.Log($"[UI_BattleView] InitializeSynergySlots完成，创建{spiritSynergySlots.Count}个槽位");
+    }
+
+    /// <summary>
+    /// 创建默认羁绊槽位（如果没有提供预制体）
+    /// </summary>
+    private GameObject CreateDefaultSynergySlot()
+    {
+        GameObject slotObj = new GameObject("SynergySlot");
+
+        // 添加Image组件作为背景
+        var image = slotObj.AddComponent<Image>();
+        image.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+
+        // 设置RectTransform
+        var rectTransform = slotObj.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(80, 80);
+
+        return slotObj;
+    }
+
+    /// <summary>
+    /// 清空羁绊槽位
+    /// </summary>
+    private void ClearSynergySlots()
+    {
+        foreach (var slot in spiritSynergySlots)
+        {
+            if (slot != null)
+            {
+                slot.Clear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 更新羁绊显示
+    /// </summary>
+    private void UpdateSynergyDisplay()
+    {
+        if (model == null || model.PlayerUnit == null)
+        {
+            ClearSynergySlots();
+            return;
+        }
+
+        // 获取PlayerUnit作为Spirit
+        var player = model.PlayerUnit;
+        if (player is Spirit spirit)
+        {
+            var synergies = spirit.Synergies;
+            Debug.Log(
+                $"[UI_BattleView] UpdateSynergyDisplay: {spirit.DisplayName}, 羁绊数量={synergies?.Count ?? 0}"
+            );
+
+            // 更新槽位显示
+            int synergyIndex = 0;
+            if (synergies != null)
+            {
+                for (
+                    int i = 0;
+                    i < synergies.Count && synergyIndex < spiritSynergySlots.Count;
+                    i++
+                )
+                {
+                    var synergy = synergies[i];
+                    if (synergy != null && synergy.Synergy != null)
+                    {
+                        Debug.Log(
+                            $"[UI_BattleView] 设置羁绊槽位{synergyIndex}: {synergy.Synergy.DisplayName}"
+                        );
+                        spiritSynergySlots[synergyIndex].SetSynergy(synergy);
+                        synergyIndex++;
+                    }
+                }
+            }
+
+            Debug.Log($"[UI_BattleView] 总共设置了{synergyIndex}个羁绊槽位");
+
+            // 清空未使用的槽位
+            for (int i = synergyIndex; i < spiritSynergySlots.Count; i++)
+            {
+                spiritSynergySlots[i].Clear();
+            }
+        }
+        else
+        {
+            Debug.Log(
+                $"[UI_BattleView] PlayerUnit不是Spirit类型，无法显示羁绊: {player?.GetType().Name}"
+            );
+            ClearSynergySlots();
+        }
+    }
+
+    // ========== Spirit Switcher功能 ==========
+
+    /// <summary>
+    /// 初始化Spirit槽位
+    /// </summary>
+    private void InitializeSpiritSlots()
+    {
+        if (controller == null || spiritSlotsContainer == null)
+        {
+            Debug.LogWarning("[UI_BattleView] 无法初始化Spirit槽位");
+            return;
+        }
+
+        // 初始化时隐藏面板
+        if (spiritSwitcherPanel != null)
+            spiritSwitcherPanel.SetActive(false);
+
+        // 清除现有槽位
+        foreach (Transform child in spiritSlotsContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // 创建6个槽位
+        spiritSlots = new SpiritSlot[6];
+        var deployedSpirits = controller.GetDeployedSpirits();
+
+        for (int i = 0; i < 6; i++)
+        {
+            GameObject slotObj;
+
+            // 如果有预制体，使用预制体；否则创建简单的按钮
+            if (spiritSlotPrefab != null)
+            {
+                slotObj = Instantiate(spiritSlotPrefab, spiritSlotsContainer);
+            }
+            else
+            {
+                slotObj = CreateDefaultSpiritSlot();
+                slotObj.transform.SetParent(spiritSlotsContainer, false);
+            }
+
+            slotObj.SetActive(true);
+
+            var slot = slotObj.GetComponent<SpiritSlot>();
+            if (slot == null)
+                slot = slotObj.AddComponent<SpiritSlot>();
+
+            slot.enabled = true;
+
+            // 设置槽位数据
+            if (i < deployedSpirits.Count && deployedSpirits[i] != null)
+            {
+                slot.Initialize(i, deployedSpirits[i], OnSpiritSlotClicked);
+            }
+            else
+            {
+                slot.Initialize(i, null, OnSpiritSlotClicked);
+            }
+
+            spiritSlots[i] = slot;
+        }
+
+        RefreshSpiritSlots();
+    }
+
+    /// <summary>
+    /// 创建默认Spirit槽位（如果没有提供预制体）
+    /// </summary>
+    private GameObject CreateDefaultSpiritSlot()
+    {
+        GameObject slotObj = new GameObject("SpiritSlot");
+
+        var image = slotObj.AddComponent<Image>();
+        image.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+        slotObj.AddComponent<Button>();
+
+        var rectTransform = slotObj.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(100, 100);
+
+        return slotObj;
+    }
+
+    /// <summary>
+    /// 刷新所有Spirit槽位的状态
+    /// </summary>
+    public void RefreshSpiritSlots()
+    {
+        if (spiritSlots == null || controller == null)
+            return;
+
+        int currentIndex = controller.GetCurrentSpiritIndex();
+
+        for (int i = 0; i < spiritSlots.Length; i++)
+        {
+            if (spiritSlots[i] != null)
+            {
+                spiritSlots[i].SetSelected(i == currentIndex);
+
+                bool isAlive = controller.IsSpiritAlive(i);
+                var runtimeData = controller.GetSpiritRuntimeData(i);
+
+                spiritSlots[i]
+                    .UpdateStatus(
+                        runtimeData.CurrentHP,
+                        runtimeData.MaxHP,
+                        runtimeData.CurrentMP,
+                        runtimeData.MaxMP,
+                        isAlive
+                    );
+            }
+        }
+    }
+
+    /// <summary>
+    /// Spirit槽位点击回调
+    /// </summary>
+    private void OnSpiritSlotClicked(int slotIndex)
+    {
+        if (controller == null)
+            return;
+
+        Debug.Log($"UI_BattleView: Spirit Slot {slotIndex} clicked");
+
+        bool success = controller.SwitchToSpirit(slotIndex);
+
+        if (success)
+        {
+            RefreshSpiritSlots();
+            Debug.Log($"UI_BattleView: Successfully switched to Spirit {slotIndex}");
+
+            HideSpiritSwitcherPanel();
+            controller.EndPlayerTurn();
+        }
+        else
+        {
+            Debug.LogWarning($"UI_BattleView: Failed to switch to Spirit {slotIndex}");
+        }
+    }
+
+    /// <summary>
+    /// 切换Spirit切换器面板显示/隐藏
+    /// </summary>
+    public void ToggleSpiritSwitcherPanel()
+    {
+        if (spiritSwitcherPanel != null)
+        {
+            bool isActive = !spiritSwitcherPanel.activeSelf;
+            spiritSwitcherPanel.SetActive(isActive);
+
+            if (isActive)
+            {
+                RefreshSpiritSlots();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 显示Spirit切换器面板
+    /// </summary>
+    public void ShowSpiritSwitcherPanel()
+    {
+        if (spiritSwitcherPanel != null)
+        {
+            spiritSwitcherPanel.SetActive(true);
+            RefreshSpiritSlots();
+        }
+    }
+
+    /// <summary>
+    /// 隐藏Spirit切换器面板
+    /// </summary>
+    public void HideSpiritSwitcherPanel()
+    {
+        if (spiritSwitcherPanel != null)
+        {
+            spiritSwitcherPanel.SetActive(false);
+        }
+    }
+
+    // ========== Effect Display功能 ==========
+
+    /// <summary>
+    /// 初始化Effect槽位对象池
+    /// </summary>
+    private void InitializeEffectSlots()
+    {
+        Debug.Log("[UI_BattleView] InitializeEffectSlots开始");
+
+        // 初始化面板状态
+        if (playerEffectsPanel != null && hideEmptyEffectPanels)
+            playerEffectsPanel.SetActive(false);
+
+        if (enemyEffectsPanel != null && hideEmptyEffectPanels)
+            enemyEffectsPanel.SetActive(false);
+
+        // 预创建槽位对象
+        CreateEffectSlotPool(playerEffectsContainer, playerEffectSlots, "Player");
+        CreateEffectSlotPool(enemyEffectsContainer, enemyEffectSlots, "Enemy");
+
+        Debug.Log(
+            $"[UI_BattleView] InitializeEffectSlots完成: 玩家槽位数={playerEffectSlots.Count}, 敌人槽位数={enemyEffectSlots.Count}"
+        );
+    }
+
+    /// <summary>
+    /// 创建Effect槽位池
+    /// </summary>
+    private void CreateEffectSlotPool(
+        Transform container,
+        List<EffectSlot> slotList,
+        string poolName
+    )
+    {
+        Debug.Log($"[UI_BattleView] CreateEffectSlotPool开始: {poolName}");
+
+        if (container == null)
+        {
+            Debug.LogWarning($"[UI_BattleView] {poolName} effects container为null");
+            return;
+        }
+
+        for (int i = 0; i < maxEffectsPerUnit; i++)
+        {
+            GameObject slotObj;
+
+            if (effectSlotPrefab != null)
+            {
+                slotObj = Instantiate(effectSlotPrefab, container);
+            }
+            else
+            {
+                slotObj = CreateDefaultEffectSlot();
+                slotObj.transform.SetParent(container, false);
+            }
+
+            var slot = slotObj.GetComponent<EffectSlot>();
+            if (slot == null)
+            {
+                slot = slotObj.AddComponent<EffectSlot>();
+            }
+
+            slot.Clear();
+            slotList.Add(slot);
+        }
+
+        Debug.Log($"[UI_BattleView] CreateEffectSlotPool完成: {poolName}, 成功创建{slotList.Count}个槽位");
+    }
+
+    /// <summary>
+    /// 创建默认Effect槽位（如果没有提供预制体）
+    /// </summary>
+    private GameObject CreateDefaultEffectSlot()
+    {
+        GameObject slotObj = new GameObject("EffectSlot");
+
+        var image = slotObj.AddComponent<Image>();
+        image.color = new Color(0.3f, 0.3f, 0.3f, 0.8f);
+
+        var rectTransform = slotObj.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(80, 80);
+
+        return slotObj;
+    }
+
+    /// <summary>
+    /// 刷新所有Effect显示
+    /// </summary>
+    public void RefreshEffectDisplay()
+    {
+        if (model == null)
+        {
+            Debug.LogWarning("[UI_BattleView] RefreshEffectDisplay: model is null!");
+            return;
+        }
+
+        Debug.Log("[UI_BattleView] RefreshEffectDisplay开始");
+
+        // 刷新玩家Effect
+        if (model.PlayerUnit != null)
+        {
+            Debug.Log($"[UI_BattleView] 刷新玩家Effect: {model.PlayerUnit.DisplayName}");
+            RefreshUnitEffects(model.PlayerUnit, playerEffectSlots, playerEffectsPanel);
+        }
+        else
+        {
+            ClearEffectSlots(playerEffectSlots, playerEffectsPanel);
+        }
+
+        // 刷新敌人Effect
+        if (model.EnemyUnits != null && model.EnemyUnits.Count > 0)
+        {
+            var enemy = model.EnemyUnits[0];
+            Debug.Log($"[UI_BattleView] 刷新敌人Effect: {enemy.DisplayName}");
+            RefreshUnitEffects(enemy, enemyEffectSlots, enemyEffectsPanel);
+        }
+        else if (controller != null && controller.Enemy != null)
+        {
+            Debug.Log(
+                $"[UI_BattleView] 刷新敌人Effect (from controller): {controller.Enemy.DisplayName}"
+            );
+            RefreshUnitEffects(controller.Enemy, enemyEffectSlots, enemyEffectsPanel);
+        }
+        else
+        {
+            ClearEffectSlots(enemyEffectSlots, enemyEffectsPanel);
+        }
+
+        Debug.Log("[UI_BattleView] RefreshEffectDisplay完成");
+    }
+
+    /// <summary>
+    /// 刷新单个单位的Effect显示
+    /// </summary>
+    private void RefreshUnitEffects(
+        IBattleUnit unit,
+        List<EffectSlot> slotList,
+        GameObject panel
+    )
+    {
+        if (unit == null || model == null)
+        {
+            ClearEffectSlots(slotList, panel);
+            return;
+        }
+
+        var buffs = model.GetBuffsForUnit(unit);
+
+        Debug.Log(
+            $"[UI_BattleView] RefreshUnitEffects: {unit.DisplayName}, Buff数量={(buffs != null ? buffs.Count : 0)}"
+        );
+
+        // 如果没有Effect且设置了隐藏空面板
+        if ((buffs == null || buffs.Count == 0) && hideEmptyEffectPanels)
+        {
+            Debug.Log($"[UI_BattleView] 没有Buff，隐藏面板");
+            ClearEffectSlots(slotList, panel);
+            if (panel != null)
+                panel.SetActive(false);
+            return;
+        }
+
+        // 显示面板
+        if (panel != null)
+        {
+            panel.SetActive(true);
+            Debug.Log($"[UI_BattleView] 显示面板: {panel.name}");
+        }
+
+        // 更新槽位显示
+        int effectIndex = 0;
+        if (buffs != null)
+        {
+            for (int i = 0; i < buffs.Count && effectIndex < slotList.Count; i++)
+            {
+                var buff = buffs[i];
+                if (buff != null && !buff.IsExpired)
+                {
+                    Debug.Log($"[UI_BattleView] 设置Effect槽位{effectIndex}: {buff.DisplayName}");
+                    slotList[effectIndex].SetEffect(buff);
+                    effectIndex++;
+                }
+            }
+        }
+
+        Debug.Log($"[UI_BattleView] 总共设置了{effectIndex}个Effect槽位");
+
+        // 清空未使用的槽位
+        for (int i = effectIndex; i < slotList.Count; i++)
+        {
+            slotList[i].Clear();
+        }
+    }
+
+    /// <summary>
+    /// 清空指定Effect槽位列表
+    /// </summary>
+    private void ClearEffectSlots(List<EffectSlot> slotList, GameObject panel)
+    {
+        if (slotList != null)
+        {
+            foreach (var slot in slotList)
+            {
+                if (slot != null)
+                    slot.Clear();
+            }
+        }
+
+        if (panel != null && hideEmptyEffectPanels)
+        {
+            panel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 清空所有Effect槽位
+    /// </summary>
+    private void ClearAllEffectSlots()
+    {
+        ClearEffectSlots(playerEffectSlots, playerEffectsPanel);
+        ClearEffectSlots(enemyEffectSlots, enemyEffectsPanel);
+    }
+
+    /// <summary>
+    /// 手动触发Effect刷新（供外部调用）
+    /// </summary>
+    public void UpdateEffects()
+    {
+        RefreshEffectDisplay();
+    }
+
+    /// <summary>
+    /// 显示玩家Effect面板
+    /// </summary>
+    public void ShowPlayerEffects()
+    {
+        if (playerEffectsPanel != null)
+            playerEffectsPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// 隐藏玩家Effect面板
+    /// </summary>
+    public void HidePlayerEffects()
+    {
+        if (playerEffectsPanel != null)
+            playerEffectsPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// 显示敌人Effect面板
+    /// </summary>
+    public void ShowEnemyEffects()
+    {
+        if (enemyEffectsPanel != null)
+            enemyEffectsPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// 隐藏敌人Effect面板
+    /// </summary>
+    public void HideEnemyEffects()
+    {
+        if (enemyEffectsPanel != null)
+            enemyEffectsPanel.SetActive(false);
+    }
+
+    /// <summary>
+    /// 获取玩家当前Effect数量
+    /// </summary>
+    public int GetPlayerEffectCount()
+    {
+        if (model == null || model.PlayerUnit == null)
+            return 0;
+
+        var buffs = model.GetBuffsForUnit(model.PlayerUnit);
+        return buffs != null ? buffs.Count : 0;
+    }
+
+    /// <summary>
+    /// 获取敌人当前Effect数量
+    /// </summary>
+    public int GetEnemyEffectCount()
+    {
+        if (model == null)
+            return 0;
+
+        IBattleUnit enemy = null;
+        if (model.EnemyUnits != null && model.EnemyUnits.Count > 0)
+        {
+            enemy = model.EnemyUnits[0];
+        }
+        else if (controller != null)
+        {
+            enemy = controller.Enemy;
+        }
+
+        if (enemy == null)
+            return 0;
+
+        var buffs = model.GetBuffsForUnit(enemy);
+        return buffs != null ? buffs.Count : 0;
+    }
+
+    // ========== Enemy Death Panel功能 ==========
+
+    /// <summary>
+    /// 显示敌人死亡面板
+    /// </summary>
+    public void ShowEnemyDeathPanel()
+    {
+        if (enemyDeathPanel != null)
+        {
+            enemyDeathPanel.SetActive(true);
+            Debug.Log("[UI_BattleView] 显示敌人死亡面板");
+        }
+    }
+
+    /// <summary>
+    /// 隐藏敌人死亡面板
+    /// </summary>
+    public void HideEnemyDeathPanel()
+    {
+        if (enemyDeathPanel != null)
+        {
+            enemyDeathPanel.SetActive(false);
+            Debug.Log("[UI_BattleView] 隐藏敌人死亡面板");
+        }
+    }
+
+    /// <summary>
+    /// 调整敌人图片大小（特殊处理）
+    /// </summary>
+    private void AdjustEnemyImageSize(Image enemyImage, string displayName)
+    {
+        if (enemyImage == null)
+            return;
+
+        var rectTransform = enemyImage.GetComponent<RectTransform>();
+        if (rectTransform == null)
+            return;
+
+        // 特殊处理：阿斯蒙蒂斯的图片大小设置为150x150
+        if (displayName == "阿斯蒙蒂斯")
+        {
+            rectTransform.sizeDelta = new Vector2(150, 150);
+            Debug.Log($"[UI_BattleView] 调整阿斯蒙蒂斯图片大小为150x150");
+        }
+        // 可以在这里添加其他特殊敌人的尺寸处理
+        // else if (displayName == "其他Boss名称")
+        // {
+        //     rectTransform.sizeDelta = new Vector2(width, height);
+        // }
     }
 }

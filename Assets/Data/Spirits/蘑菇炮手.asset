@@ -23,4 +23,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 83f797868f7120a478172343951cfd76, type: 2}
   - {fileID: 11400000, guid: 8f067736e5eef6b4580cac3eeb27a47d, type: 2}
   Synergies:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: eb2413aa73498fa4da8f5b241bd0e739, type: 2}
