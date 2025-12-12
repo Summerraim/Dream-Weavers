@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa3b71dd3b3df3940a38467f3bea4251, type: 3}
+  m_Name: "\u4E0D\u673D\u9020\u7269"
+  m_EditorClassIdentifier: 
+  synergyId: "\u4E0D\u673D\u9020\u7269"
+  displayName: "\u4E0D\u673D\u9020\u7269"
+  description: 
+  image: {fileID: -326783460, guid: 4e963957c4ffe3648a1e6cd077ec2b83, type: 3}
+  triggerCounts: 01000000

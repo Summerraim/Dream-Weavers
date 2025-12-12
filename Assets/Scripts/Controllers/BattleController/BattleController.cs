@@ -24,12 +24,6 @@ public class BattleController : MonoBehaviour
     [SerializeField]
     private UI_BattleView battleView;
 
-    [SerializeField]
-    private UI_SpiritSwitcher spiritSwitcher;
-
-    [SerializeField]
-    private UI_EffectDisplay effectDisplay;
-
     private BattleModel model;
 
     // Spirit队列系统
@@ -168,21 +162,6 @@ public class BattleController : MonoBehaviour
         // 绑定 UI（如果存在）
         if (battleView != null)
             battleView.Bind(this, model);
-
-        // 绑定Spirit切换器（如果存在）
-        if (spiritSwitcher != null)
-            spiritSwitcher.Bind(this);
-
-        // 绑定Effect显示器（如果存在）
-        if (effectDisplay != null)
-        {
-            effectDisplay.Bind(this, model);
-            Debug.Log("BattleController: UI_EffectDisplay已绑定");
-        }
-        else
-        {
-            Debug.LogWarning("BattleController: effectDisplay is null! 请在Inspector中拖入UI_EffectDisplay组件");
-        }
 
         // 初始化缓存值
         lastPlayerHP = player?.HP ?? 0;
@@ -389,8 +368,6 @@ public class BattleController : MonoBehaviour
         UpdateBattleStateAfterAction();
         if (battleView != null)
             battleView.Refresh();
-        if (effectDisplay != null)
-            effectDisplay.RefreshDisplay();
     }
 
     /// <summary>
@@ -462,8 +439,6 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
-        if (effectDisplay != null)
-            effectDisplay.RefreshDisplay();
     }
 
     private void EnemyAct()
@@ -480,8 +455,6 @@ public class BattleController : MonoBehaviour
 
         if (battleView != null)
             battleView.Refresh();
-        if (effectDisplay != null)
-            effectDisplay.RefreshDisplay();
     }
 
     private void UpdateBattleStateAfterAction()
@@ -489,6 +462,13 @@ public class BattleController : MonoBehaviour
         if (enemy != null && enemy.IsDead)
         {
             State = BattleState.Victory;
+            Debug.Log("BattleController: Enemy defeated. Victory!");
+
+            // 显示敌人死亡后的面板
+            if (battleView != null)
+            {
+                battleView.ShowEnemyDeathPanel();
+            }
             return;
         }
 
@@ -500,17 +480,29 @@ public class BattleController : MonoBehaviour
                 spiritAliveStatus[currentSpiritIndex] = false;
             }
 
-            // 当前Spirit死亡，尝试切换到下一个存活的Spirit
-            if (TrySwitchToNextAliveSpirit())
+            // 检查是否还有存活的Spirit
+            bool hasAliveSpirit = false;
+            if (spiritAliveStatus != null)
             {
-                Debug.Log($"BattleController: Current spirit defeated. Switching to next spirit.");
-                // 切换成功，继续战斗
+                foreach (var status in spiritAliveStatus.Values)
+                {
+                    if (status)
+                    {
+                        hasAliveSpirit = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasAliveSpirit)
+            {
+                // 还有存活的Spirit，打开Spirit切换面板让玩家手动选择
+                Debug.Log($"BattleController: Current spirit defeated. Opening spirit switcher panel.");
                 if (battleView != null)
+                {
+                    battleView.ShowSpiritSwitcherPanel();
                     battleView.Refresh();
-                if (spiritSwitcher != null)
-                    spiritSwitcher.RefreshSlots();
-                if (effectDisplay != null)
-                    effectDisplay.RefreshDisplay();
+                }
             }
             else
             {
@@ -654,10 +646,6 @@ public class BattleController : MonoBehaviour
         // 刷新UI
         if (battleView != null)
             battleView.Refresh();
-        if (spiritSwitcher != null)
-            spiritSwitcher.RefreshSlots();
-        if (effectDisplay != null)
-            effectDisplay.RefreshDisplay();
 
         return true;
     }
@@ -685,10 +673,6 @@ public class BattleController : MonoBehaviour
                         MaxMP = player.MaxMana,
                     };
                 }
-
-                // 刷新Spirit切换器（显示实时HP/MP）
-                if (spiritSwitcher != null)
-                    spiritSwitcher.RefreshSlots();
             }
         }
 
