@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  manaIncrease: 0.5
+  manaIncrease: 0.3
   duration: 2
   applyToTarget: 1

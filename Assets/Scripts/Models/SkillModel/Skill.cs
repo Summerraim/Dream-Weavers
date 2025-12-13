@@ -17,6 +17,7 @@ public class Skill : ISkill
     public int ManaCost => Mana;
     public int CooldownTurns => data?.CooldownTurns ?? 0;
     public int MaxUsesPerBattle => data?.MaxUsesPerBattle ?? 0;
+    public AnimationClip SkillAnimation => data?.SkillAnimation;
 
     private readonly SkillData data;
 

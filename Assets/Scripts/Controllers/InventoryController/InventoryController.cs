@@ -176,12 +176,58 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 使用物品
+    /// 使用物品（通过ItemData查找）
+    /// </summary>
+    public void UseItem(ItemData itemData, IBattleUnit user = null, IBattleUnit target = null)
+    {
+        if (itemData == null)
+        {
+            Debug.LogError($"[Inventory] UseItem called with null ItemData");
+            return;
+        }
+
+        Debug.Log($"[Inventory] UseItem called with ItemData: {itemData.DisplayName}");
+
+        // 从items列表中查找匹配的InventoryItem
+        InventoryItem foundItem = null;
+        foreach (var item in items)
+        {
+            if (item != null && item.data != null && item.data == itemData)
+            {
+                foundItem = item;
+                break;
+            }
+        }
+
+        if (foundItem == null)
+        {
+            Debug.LogError($"[Inventory] Item not found in inventory: {itemData.DisplayName}");
+            Debug.Log($"[Inventory] Available items: {string.Join(", ", items.ConvertAll(i => i?.data?.DisplayName ?? "null"))}");
+            return;
+        }
+
+        Debug.Log($"[Inventory] Found item in inventory: {foundItem.DisplayName}, quantity={foundItem.quantity}");
+
+        // 调用InventoryItem版本
+        UseItem(foundItem, user, target);
+    }
+
+    /// <summary>
+    /// 使用物品（通过ItemId查找）
     /// </summary>
     public void UseItem(string itemId, IBattleUnit user = null, IBattleUnit target = null)
     {
+        Debug.Log($"[Inventory] UseItem called with itemId='{itemId}', user={user?.DisplayName}, target={target?.DisplayName}");
+        Debug.Log($"[Inventory] itemDictionary contains {itemDictionary.Count} items");
+
         if (!itemDictionary.TryGetValue(itemId, out var item))
+        {
+            Debug.LogError($"[Inventory] Item not found in dictionary! itemId='{itemId}'");
+            Debug.Log($"[Inventory] Available items in dictionary: {string.Join(", ", itemDictionary.Keys)}");
             return;
+        }
+
+        Debug.Log($"[Inventory] Found item in dictionary: {item.data?.DisplayName}");
 
         // 默认使用者为玩家（场上精灵）
         if (user == null)
@@ -196,13 +242,21 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[Inventory] Calling UseItem(InventoryItem)");
         UseItem(item, user, target);
     }
 
     public void UseItem(InventoryItem item, IBattleUnit user = null, IBattleUnit target = null)
     {
+        Debug.Log($"[Inventory] UseItem(InventoryItem) called: item={item?.DisplayName}, user={user?.DisplayName}, target={target?.DisplayName}");
+
         if (item == null || item.data == null)
+        {
+            Debug.LogError($"[Inventory] Item or item.data is null!");
             return;
+        }
+
+        Debug.Log($"[Inventory] Item data: {item.data.DisplayName}");
 
         // 默认使用者为玩家（场上精灵）。目标由调用方决定：
         // - 单体：UI 传入被点击的场上精灵
@@ -225,7 +279,10 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
+        Debug.Log($"[Inventory] Calling item.Use()");
         item.Use(user, target);
+
+        Debug.Log($"[Inventory] item.Use() completed, item quantity now: {item.quantity}");
 
         // 使用后更新数量
         if (item.quantity <= 0)

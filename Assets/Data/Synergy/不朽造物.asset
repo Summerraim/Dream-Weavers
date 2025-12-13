@@ -16,4 +16,4 @@ MonoBehaviour:
   displayName: "\u4E0D\u673D\u9020\u7269"
   description: 
   image: {fileID: -326783460, guid: 4e963957c4ffe3648a1e6cd077ec2b83, type: 3}
-  triggerCounts: 01000000
+  triggerCounts: 010000000200000003000000

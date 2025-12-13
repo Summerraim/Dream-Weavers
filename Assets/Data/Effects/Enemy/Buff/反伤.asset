@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 
   image: {fileID: 0}
   usePercentDamage: 1
-  reflectPercent: 0.2
-  flatDamage: 5
+  reflectPercent: 0.1
+  flatDamage: 10
   duration: 3
   applyToCaster: 1

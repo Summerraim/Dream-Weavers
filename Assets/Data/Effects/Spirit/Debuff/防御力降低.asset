@@ -17,6 +17,6 @@ MonoBehaviour:
   image: {fileID: 0}
   usePercentReduction: 1
   reductionPercent: 0.3
-  initReduction: 20
+  initReduction: 10
   duration: 3
   applyToTarget: 1
