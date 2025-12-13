@@ -9,6 +9,15 @@ public enum BattleState
     Defeat,
 }
 
+/// <summary>
+/// 战斗输入状态（用于道具使用流程）
+/// </summary>
+public enum BattleInputState
+{
+    Normal,              // 正常状态（可以使用技能、结束回合）
+    WaitingForItemTarget // 等待选择道具目标
+}
+
 public class BattleController : MonoBehaviour
 {
     [SerializeField]
@@ -23,6 +32,16 @@ public class BattleController : MonoBehaviour
 
     [SerializeField]
     private UI_BattleView battleView;
+
+    [Header("UI技能动画")]
+    [SerializeField]
+    private Animator playerSkillAnimator; // 玩家技能动画播放器
+
+    [SerializeField]
+    private Animator enemySkillAnimator; // 敌人技能动画播放器
+
+    [SerializeField]
+    private DreamWeavers.Rooms.CombatRoom_cza combatRoom; // 战斗房间引用（用于捕捉精灵）
 
     private BattleModel model;
 
@@ -40,8 +59,18 @@ public class BattleController : MonoBehaviour
 
     public BattleState State { get; private set; } = BattleState.None;
 
+    // 道具使用状态机
+    private BattleInputState inputState = BattleInputState.Normal;
+    private ItemData pendingItem; // 待使用的道具
+
     private void Start()
     {
+        // 禁用技能动画的Root Motion（防止动画影响物体位置）
+        if (playerSkillAnimator != null)
+            playerSkillAnimator.applyRootMotion = false;
+        if (enemySkillAnimator != null)
+            enemySkillAnimator.applyRootMotion = false;
+
         // 场景加载时自动初始化战斗
         InitializeBattle();
         Debug.Log("BattleController: InitializeBattle called in Start()");
@@ -79,29 +108,77 @@ public class BattleController : MonoBehaviour
         currentSpiritIndex = 0;
 
         // 初始化Spirit存活状态和运行时数据
-        spiritAliveStatus = new System.Collections.Generic.Dictionary<int, bool>();
-        spiritRuntimeData = new System.Collections.Generic.Dictionary<int, SpiritRuntimeData>();
+        // 如果是首次初始化，创建新字典；否则保留现有数据
+        if (spiritAliveStatus == null)
+        {
+            spiritAliveStatus = new System.Collections.Generic.Dictionary<int, bool>();
+        }
+
+        if (spiritRuntimeData == null)
+        {
+            spiritRuntimeData = new System.Collections.Generic.Dictionary<int, SpiritRuntimeData>();
+        }
 
         for (int i = 0; i < spiritQueue.Count; i++)
         {
-            spiritAliveStatus[i] = true; // 战斗开始时所有Spirit都是存活的
-
-            // 初始化运行时数据（使用SpiritData的基础值）
-            var data = spiritQueue[i];
-            spiritRuntimeData[i] = new SpiritRuntimeData
+            // 恢复存活状态（如果之前死亡，保持死亡；否则存活）
+            if (!spiritAliveStatus.ContainsKey(i))
             {
-                CurrentHP = data.MaxHP,
-                MaxHP = data.MaxHP,
-                CurrentMP = data.MaxMana,
-                MaxMP = data.MaxMana,
-            };
+                spiritAliveStatus[i] = true;
+            }
+
+            // 初始化运行时数据（仅在首次初始化时设置为满血满蓝）
+            if (!spiritRuntimeData.ContainsKey(i))
+            {
+                var data = spiritQueue[i];
+                spiritRuntimeData[i] = new SpiritRuntimeData
+                {
+                    CurrentHP = data.MaxHP,
+                    MaxHP = data.MaxHP,
+                    CurrentMP = data.MaxMana,
+                    MaxMP = data.MaxMana,
+                };
+                Debug.Log(
+                    $"BattleController: Spirit {i} ({data.DisplayName}) initialized with full HP/MP"
+                );
+            }
+            else
+            {
+                Debug.Log(
+                    $"BattleController: Spirit {i} retaining previous HP/MP: {spiritRuntimeData[i].CurrentHP}/{spiritRuntimeData[i].MaxHP} HP, {spiritRuntimeData[i].CurrentMP}/{spiritRuntimeData[i].MaxMP} MP"
+                );
+            }
         }
 
         // 创建第一个Spirit
         player = new Spirit(spiritQueue[currentSpiritIndex]);
-        Debug.Log(
-            $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
-        );
+
+        // 恢复第一个Spirit的运行时数据（HP/MP）
+        if (spiritRuntimeData.ContainsKey(currentSpiritIndex))
+        {
+            var runtimeData = spiritRuntimeData[currentSpiritIndex];
+            int hpLoss = player.MaxHP - runtimeData.CurrentHP;
+            if (hpLoss > 0)
+            {
+                player.ReceiveDamage(hpLoss);
+            }
+
+            int manaLoss = player.MaxMana - runtimeData.CurrentMP;
+            if (manaLoss > 0)
+            {
+                player.ConsumeMana(manaLoss);
+            }
+
+            Debug.Log(
+                $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName} (HP: {player.HP}/{player.MaxHP}, MP: {player.Mana}/{player.MaxMana})"
+            );
+        }
+        else
+        {
+            Debug.Log(
+                $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName}"
+            );
+        }
 
         enemy = new Enemy(enemyData);
         enemyAI = new AIController();
@@ -159,6 +236,13 @@ public class BattleController : MonoBehaviour
         model.InitializeTeamSynergies(spiritQueue);
         Debug.Log("BattleController: Team synergies initialized");
 
+        // 绑定InventoryManager到战斗上下文
+        if (InventoryManager.Instance != null)
+        {
+            InventoryManager.Instance.BindBattle(model);
+            Debug.Log("BattleController: InventoryManager bound to battle");
+        }
+
         // 绑定 UI（如果存在）
         if (battleView != null)
             battleView.Bind(this, model);
@@ -193,6 +277,40 @@ public class BattleController : MonoBehaviour
         enemyData = enemyDataOverride;
 
         InitializeBattle();
+    }
+
+    /// <summary>
+    /// 重置所有Spirit的HP/MP为满值（用于游戏开始或重生）
+    /// </summary>
+    public void ResetAllSpiritsToFull()
+    {
+        if (spiritQueue == null || spiritRuntimeData == null)
+        {
+            Debug.LogWarning(
+                "BattleController: Cannot reset spirits - no spirit queue or runtime data"
+            );
+            return;
+        }
+
+        for (int i = 0; i < spiritQueue.Count; i++)
+        {
+            var data = spiritQueue[i];
+            spiritRuntimeData[i] = new SpiritRuntimeData
+            {
+                CurrentHP = data.MaxHP,
+                MaxHP = data.MaxHP,
+                CurrentMP = data.MaxMana,
+                MaxMP = data.MaxMana,
+            };
+
+            // 如果是死亡的Spirit，恢复为存活
+            if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(i))
+            {
+                spiritAliveStatus[i] = true;
+            }
+        }
+
+        Debug.Log("BattleController: All spirits reset to full HP/MP");
     }
 
     public Spirit Player => player;
@@ -329,38 +447,143 @@ public class BattleController : MonoBehaviour
             return;
         }
 
+        // 启动协程执行技能（包含动画）
+        StartCoroutine(ExecuteSkillWithAnimation(skill, skillIndex, player, enemy, true));
+    }
+
+    /// <summary>
+    /// 执行技能并播放动画（协程）
+    /// </summary>
+    private System.Collections.IEnumerator ExecuteSkillWithAnimation(
+        ISkill skill,
+        int skillIndex,
+        IBattleUnit caster,
+        IBattleUnit target,
+        bool isPlayerSkill
+    )
+    {
         Debug.Log(
-            $"BattleController: PlayerUseSkill called. Skill={skill.DisplayName}, ManaCost={skill.ManaCost}"
+            $"BattleController: {caster.DisplayName} using skill: {skill.DisplayName}, ManaCost={skill.ManaCost}"
         );
 
         // 扣除蓝量
-        player.ConsumeMana(skill.ManaCost);
-        Debug.Log($"BattleController: Mana consumed. Remaining: {player.Mana}");
+        if (caster is Spirit spirit)
+        {
+            spirit.ConsumeMana(skill.ManaCost);
+            Debug.Log($"BattleController: Mana consumed. Remaining: {spirit.Mana}");
+        }
+        else if (caster is Enemy enemyUnit)
+        {
+            enemyUnit.ConsumeMana(skill.ManaCost);
+        }
 
-        // 执行技能
-        Debug.Log($"BattleController: Executing skill on enemy...");
-        skill.Execute(player, enemy);
-        Debug.Log($"BattleController: Enemy HP after skill: {enemy.HP}");
+        // 如果有动画，播放动画并等待
+        if (skill.SkillAnimation != null)
+        {
+            Debug.Log($"BattleController: Playing animation for {skill.DisplayName}");
 
-        // 触发狂战士羁绊的怒意机制（如果存在）
-        TriggerBerserkerRage();
+            // 确定使用哪个Animator
+            Animator targetAnimator = (caster == player) ? playerSkillAnimator : enemySkillAnimator;
 
-        // 触发疗愈者羁绊效果（如果存在）
-        TriggerHealerSynergy();
+            if (targetAnimator != null)
+            {
+                // 激活动画GameObject
+                targetAnimator.gameObject.SetActive(true);
 
-        // 记录使用次数（如果提供了技能索引）
+                // 使用AnimatorOverrideController在运行时替换动画
+                AnimatorOverrideController overrideController;
+
+                if (targetAnimator.runtimeAnimatorController is AnimatorOverrideController existing)
+                {
+                    // 如果已经有OverrideController，复用它
+                    overrideController = existing;
+                }
+                else
+                {
+                    // 创建新的OverrideController
+                    if (targetAnimator.runtimeAnimatorController == null)
+                    {
+                        Debug.LogError($"BattleController: {(caster == player ? "Player" : "Enemy")} Skill Animator has no AnimatorController! Please create a basic AnimatorController with a 'Skill' state and assign it.");
+                        targetAnimator.gameObject.SetActive(false);
+                        yield return new WaitForSeconds(skill.SkillAnimation.length);
+                        yield break;
+                    }
+
+                    overrideController = new AnimatorOverrideController(targetAnimator.runtimeAnimatorController);
+                    targetAnimator.runtimeAnimatorController = overrideController;
+                }
+
+                // 替换所有动画为当前技能的动画
+                var overrides = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>>();
+                overrideController.GetOverrides(overrides);
+
+                for (int i = 0; i < overrides.Count; i++)
+                {
+                    overrides[i] = new System.Collections.Generic.KeyValuePair<AnimationClip, AnimationClip>(
+                        overrides[i].Key,
+                        skill.SkillAnimation
+                    );
+                }
+
+                overrideController.ApplyOverrides(overrides);
+
+                // 播放动画（假设状态名为 "Skill"）
+                targetAnimator.Play("Skill", 0, 0f);
+
+                Debug.Log(
+                    $"BattleController: Playing animation '{skill.SkillAnimation.name}' on {(caster == player ? "Player" : "Enemy")} animator, duration: {skill.SkillAnimation.length}s"
+                );
+
+                // 等待动画播放完成
+                yield return new WaitForSeconds(skill.SkillAnimation.length);
+
+                Debug.Log($"BattleController: Animation finished");
+
+                // 禁用动画GameObject
+                targetAnimator.gameObject.SetActive(false);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"BattleController: Skill animator not set! Please assign '{(caster == player ? "Player" : "Enemy")} Skill Animator' in Inspector."
+                );
+                // 即使没有animator，也等待动画时长（保持节奏）
+                yield return new WaitForSeconds(skill.SkillAnimation.length);
+            }
+        }
+
+        // 执行技能效果
+        Debug.Log($"BattleController: Executing skill effects...");
+        skill.Execute(caster, target);
+        Debug.Log($"BattleController: Target HP after skill: {target.HP}");
+
+        // 刷新UI显示血条变化
+        if (battleView != null)
+            battleView.Refresh();
+
+        // 记录技能使用次数和冷却（玩家和敌人都需要）
         if (skillIndex >= 0 && model != null)
         {
             model.IncrementSkillUsage(skillIndex);
+
+            // 设置冷却
+            if (skill.CooldownTurns > 0)
+            {
+                model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
+                Debug.Log(
+                    $"BattleController: {(isPlayerSkill ? "Player" : "Enemy")} skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns"
+                );
+            }
         }
 
-        // 设置冷却（如果提供了技能索引）
-        if (skillIndex >= 0 && model != null && skill.CooldownTurns > 0)
+        // 仅玩家技能触发这些羁绊效果
+        if (isPlayerSkill)
         {
-            model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
-            Debug.Log(
-                $"BattleController: Skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns"
-            );
+            // 触发狂战士羁绊的怒意机制（如果存在）
+            TriggerBerserkerRage();
+
+            // 触发疗愈者羁绊效果（如果存在）
+            TriggerHealerSynergy();
         }
 
         // 更新模型中的羁绊/状态并刷新 UI
@@ -435,21 +658,39 @@ public class BattleController : MonoBehaviour
         model?.IncrementTurn();
 
         State = BattleState.EnemyTurn;
-        EnemyAct();
+        StartCoroutine(EnemyActCoroutine());
 
         if (battleView != null)
             battleView.Refresh();
     }
 
-    private void EnemyAct()
+    private System.Collections.IEnumerator EnemyActCoroutine()
     {
         if (enemyAI == null || enemy == null || player == null)
-            return;
+        {
+            State = BattleState.PlayerTurn;
+            yield break;
+        }
 
-        enemyAI.TakeTurn(enemy, player);
-        model?.UpdateActiveSynergies();
-        UpdateBattleStateAfterAction();
+        // AI决定使用的技能（传入BattleModel以检查冷却和使用次数）
+        int skillIndex;
+        var skill = enemyAI.DecideSkill(enemy, player, model, out skillIndex);
+        if (skill == null)
+        {
+            Debug.Log("AIController: Enemy has no available skills");
+            State = BattleState.PlayerTurn;
+            yield break;
+        }
 
+        // 使用偏移后的索引来存储敌人技能的冷却和使用次数
+        int enemySkillIndex = AIController.GetEnemySkillIndex(skillIndex);
+
+        // 使用协程执行技能（包含动画）
+        yield return StartCoroutine(
+            ExecuteSkillWithAnimation(skill, enemySkillIndex, enemy, player, false)
+        );
+
+        // 敌人回合结束
         if (State == BattleState.EnemyTurn)
             State = BattleState.PlayerTurn;
 
@@ -459,6 +700,52 @@ public class BattleController : MonoBehaviour
 
     private void UpdateBattleStateAfterAction()
     {
+        // 检查狩猎大师羁绊的诱捕条件（在敌人完全死亡前）
+        if (player != null && enemy != null && !enemy.IsDead && model != null && combatRoom != null)
+        {
+            // 检查玩家是否有诱捕Buff
+            var buffs = model.GetBuffsForUnit(player);
+            foreach (var buff in buffs)
+            {
+                if (buff is HunterMasterBuff hunterBuff)
+                {
+                    // 检查是否满足诱捕条件
+                    if (hunterBuff.CanCaptureEnemy(enemy))
+                    {
+                        State = BattleState.Victory;
+                        Debug.Log(
+                            "BattleController: HunterMaster trap activated! Enemy can be captured early."
+                        );
+
+                        // 显示敌人死亡后的面板
+                        if (battleView != null)
+                        {
+                            battleView.ShowEnemyDeathPanel();
+                        }
+
+                        // 立即尝试捕捉精灵（提前捕捉）
+                        var (success, capturedSpirit) = combatRoom.AttemptCapture(
+                            earlyCapture: true
+                        );
+                        if (battleView != null)
+                        {
+                            if (success && capturedSpirit != null)
+                            {
+                                battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
+                            }
+                            else
+                            {
+                                battleView.ShowCaptureFailed();
+                            }
+                        }
+
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+
         if (enemy != null && enemy.IsDead)
         {
             State = BattleState.Victory;
@@ -469,6 +756,30 @@ public class BattleController : MonoBehaviour
             {
                 battleView.ShowEnemyDeathPanel();
             }
+
+            // 立即尝试捕捉精灵
+            if (combatRoom != null)
+            {
+                var (success, capturedSpirit) = combatRoom.AttemptCapture();
+                if (battleView != null)
+                {
+                    if (success && capturedSpirit != null)
+                    {
+                        battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
+                    }
+                    else
+                    {
+                        battleView.ShowCaptureFailed();
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "BattleController: combatRoom reference is null, cannot attempt capture"
+                );
+            }
+
             return;
         }
 
@@ -497,7 +808,9 @@ public class BattleController : MonoBehaviour
             if (hasAliveSpirit)
             {
                 // 还有存活的Spirit，打开Spirit切换面板让玩家手动选择
-                Debug.Log($"BattleController: Current spirit defeated. Opening spirit switcher panel.");
+                Debug.Log(
+                    $"BattleController: Current spirit defeated. Opening spirit switcher panel."
+                );
                 if (battleView != null)
                 {
                     battleView.ShowSpiritSwitcherPanel();
@@ -728,4 +1041,262 @@ public class BattleController : MonoBehaviour
             }
         }
     }
+
+    #region 道具使用系统
+
+    /// <summary>
+    /// 由UI_InventoryView调用：玩家请求使用道具
+    /// </summary>
+    public void OnItemUseRequested(ItemData item)
+    {
+        if (item == null)
+        {
+            Debug.LogWarning("BattleController: OnItemUseRequested called with null item");
+            return;
+        }
+
+        if (State != BattleState.PlayerTurn)
+        {
+            Debug.LogWarning("BattleController: Cannot use item, not player turn");
+            return;
+        }
+
+        if (inputState != BattleInputState.Normal)
+        {
+            Debug.LogWarning("BattleController: Already waiting for item target selection");
+            return;
+        }
+
+        Debug.Log($"BattleController: Item use requested: {item.DisplayName}, TargetMode={item.TargetMode}");
+
+        // 根据TargetingMode决定流程
+        switch (item.TargetMode)
+        {
+            case TargetingMode.Self:
+                // 直接对自己使用
+                UseItemOnTarget(item, player);
+                break;
+
+            case TargetingMode.SingleUnit:
+                // 进入目标选择状态
+                inputState = BattleInputState.WaitingForItemTarget;
+                pendingItem = item;
+
+                // 激活Spirit切换器，提示玩家选择目标
+                if (battleView != null)
+                {
+                    battleView.ShowSpiritSwitcherForItemTarget();
+                    Debug.Log("BattleController: Waiting for player to select a Spirit as target");
+                }
+                else
+                {
+                    Debug.LogError("BattleController: UI_BattleView not assigned! Please assign it in Inspector.");
+                    // 回退状态
+                    inputState = BattleInputState.Normal;
+                    pendingItem = null;
+                }
+                break;
+
+            case TargetingMode.AllAllies:
+            case TargetingMode.AllEnemies:
+            case TargetingMode.AllUnits:
+                // 群体效果，target传null，由Effect内部处理
+                UseItemOnTarget(item, null);
+                break;
+
+            default:
+                Debug.LogWarning($"BattleController: Unhandled TargetingMode: {item.TargetMode}");
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 由UI_BattleView调用：玩家选择了一个Spirit作为道具目标
+    /// </summary>
+    public void OnSpiritSelectedAsItemTarget(int spiritIndex)
+    {
+        if (inputState != BattleInputState.WaitingForItemTarget)
+        {
+            Debug.LogWarning("BattleController: OnSpiritSelectedAsItemTarget called but not waiting for target");
+            return;
+        }
+
+        if (pendingItem == null)
+        {
+            Debug.LogError("BattleController: pendingItem is null");
+            inputState = BattleInputState.Normal;
+            return;
+        }
+
+        // 获取选中的Spirit作为目标
+        IBattleUnit target = GetSpiritAsTarget(spiritIndex);
+
+        if (target == null)
+        {
+            Debug.LogWarning($"BattleController: Invalid target Spirit at index {spiritIndex}");
+            // 不重置状态，让玩家重新选择
+            return;
+        }
+
+        Debug.Log($"BattleController: Spirit {spiritIndex} selected as item target: {target.DisplayName}");
+
+        // 使用道具
+        UseItemOnTarget(pendingItem, target, spiritIndex);
+
+        // 重置状态
+        inputState = BattleInputState.Normal;
+        pendingItem = null;
+
+        // 关闭Spirit切换器
+        if (battleView != null)
+        {
+            battleView.HideSpiritSwitcherPanel();
+        }
+    }
+
+    /// <summary>
+    /// 取消道具目标选择
+    /// </summary>
+    public void CancelItemTargetSelection()
+    {
+        if (inputState == BattleInputState.WaitingForItemTarget)
+        {
+            inputState = BattleInputState.Normal;
+            pendingItem = null;
+
+            Debug.Log("BattleController: Item target selection cancelled");
+
+            // 关闭Spirit切换器
+            if (battleView != null)
+            {
+                battleView.HideSpiritSwitcherPanel();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取当前输入状态（用于UI判断）
+    /// </summary>
+    public BattleInputState GetInputState()
+    {
+        return inputState;
+    }
+
+    /// <summary>
+    /// 实际执行道具使用
+    /// </summary>
+    private void UseItemOnTarget(ItemData item, IBattleUnit target, int targetSpiritIndex = -1)
+    {
+        if (item == null)
+            return;
+
+        // 使用者默认为当前玩家Spirit
+        IBattleUnit user = player;
+
+        // 检查是否可以使用
+        if (!item.CanUse(user, target))
+        {
+            Debug.LogWarning($"BattleController: Cannot use item {item.DisplayName}");
+            return;
+        }
+
+        Debug.Log($"BattleController: Using item {item.DisplayName} on {(target != null ? target.DisplayName : "null (群体)")}");
+        Debug.Log($"BattleController: Target HP before use: {(target != null ? target.HP + "/" + target.MaxHP : "N/A")}");
+
+        // 通过InventoryManager使用道具（直接传递ItemData）
+        if (InventoryManager.Instance != null)
+        {
+            Debug.Log($"BattleController: Calling InventoryManager.UseItem with ItemData={item.DisplayName}");
+            InventoryManager.Instance.UseItem(item, user, target);
+        }
+        else
+        {
+            // 如果没有InventoryManager，直接调用道具的Use方法
+            Debug.Log($"BattleController: InventoryManager not found, calling item.Use directly");
+            item.Use(user, target);
+        }
+
+        Debug.Log($"BattleController: Target HP after use: {(target != null ? target.HP + "/" + target.MaxHP : "N/A")}");
+
+        // 如果目标是非当前Spirit，保存使用后的数据
+        if (targetSpiritIndex >= 0 && targetSpiritIndex != currentSpiritIndex && target is Spirit targetSpirit)
+        {
+            Debug.Log($"BattleController: Saving runtime data for Spirit {targetSpiritIndex}");
+            SaveSpiritRuntimeDataAfterItem(targetSpiritIndex, targetSpirit);
+        }
+        else if (targetSpiritIndex >= 0)
+        {
+            Debug.Log($"BattleController: Not saving (index={targetSpiritIndex}, current={currentSpiritIndex}, target is Spirit: {target is Spirit})");
+        }
+
+        // 刷新UI
+        if (battleView != null)
+            battleView.Refresh();
+
+        Debug.Log($"BattleController: Item {item.DisplayName} used successfully");
+    }
+
+    /// <summary>
+    /// 根据索引获取Spirit作为目标（支持选择非当前上场的Spirit）
+    /// </summary>
+    private IBattleUnit GetSpiritAsTarget(int spiritIndex)
+    {
+        // 如果是当前Spirit，直接返回
+        if (spiritIndex == currentSpiritIndex && player != null)
+        {
+            return player;
+        }
+
+        // 否则，创建临时Spirit实例作为目标
+        if (spiritIndex >= 0 && spiritIndex < spiritQueue.Count)
+        {
+            var spiritData = spiritQueue[spiritIndex];
+            var tempSpirit = new Spirit(spiritData);
+
+            // 恢复该Spirit的运行时数据（HP/MP）
+            if (spiritRuntimeData.ContainsKey(spiritIndex))
+            {
+                var runtimeData = spiritRuntimeData[spiritIndex];
+                int hpLoss = tempSpirit.MaxHP - runtimeData.CurrentHP;
+                if (hpLoss > 0)
+                {
+                    tempSpirit.ReceiveDamage(hpLoss);
+                }
+
+                int manaLoss = tempSpirit.MaxMana - runtimeData.CurrentMP;
+                if (manaLoss > 0)
+                {
+                    tempSpirit.ConsumeMana(manaLoss);
+                }
+            }
+
+            Debug.Log($"BattleController: Created temp Spirit for index {spiritIndex}: HP={tempSpirit.HP}/{tempSpirit.MaxHP}, MP={tempSpirit.Mana}/{tempSpirit.MaxMana}");
+
+            // 注意：不在这里保存，而是在道具使用后保存
+            return tempSpirit;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 使用道具后，保存Spirit的运行时数据
+    /// </summary>
+    private void SaveSpiritRuntimeDataAfterItem(int spiritIndex, Spirit spirit)
+    {
+        if (spirit == null || spiritRuntimeData == null)
+            return;
+
+        spiritRuntimeData[spiritIndex] = new SpiritRuntimeData
+        {
+            CurrentHP = spirit.HP,
+            MaxHP = spirit.MaxHP,
+            CurrentMP = spirit.Mana,
+            MaxMP = spirit.MaxMana,
+        };
+
+        Debug.Log($"BattleController: Saved Spirit {spiritIndex} runtime data after item use: HP={spirit.HP}/{spirit.MaxHP}, MP={spirit.Mana}/{spirit.MaxMana}");
+    }
+
+    #endregion
 }

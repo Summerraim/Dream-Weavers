@@ -72,7 +72,7 @@ public class Enemy : IBattleUnit
             return;
 
         float reduction = 1f;
-        float denominator = Defense + 10f;
+        float denominator = Defense + 20f;
         if (denominator > 0f)
         {
             reduction = Mathf.Clamp01(1f - (Defense / denominator));

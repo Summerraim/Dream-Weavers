@@ -474,6 +474,14 @@ public class BattleModel
             return;
         }
 
+        // 获取当前Spirit
+        var currentSpirit = PlayerUnit as Spirit;
+        if (currentSpirit == null || currentSpirit.Data == null)
+        {
+            Debug.LogWarning("BattleModel: PlayerUnit is not a Spirit or has no data");
+            return;
+        }
+
         // 统计每个Synergy的数量
         Dictionary<string, SynergyInfo> synergyCount = new Dictionary<string, SynergyInfo>();
 
@@ -496,11 +504,20 @@ public class BattleModel
             }
         }
 
-        // 创建SynergyModel并应用效果
+        // 创建SynergyModel并应用效果（只应用当前Spirit拥有的羁绊）
         foreach (var kvp in synergyCount)
         {
             string synergyId = kvp.Key;
             SynergyInfo info = kvp.Value;
+
+            // 检查当前Spirit是否拥有这个羁绊
+            if (!SpiritHasSynergy(currentSpirit, synergyId))
+            {
+                Debug.Log(
+                    $"BattleModel: Team Synergy [{info.Synergy.DisplayName}] (count={info.Count}) NOT applied to {PlayerUnit.DisplayName} (Spirit doesn't have this synergy)"
+                );
+                continue; // 跳过不属于该Spirit的羁绊
+            }
 
             // 创建SynergyModel，Owner设置为当前玩家Spirit
             SynergyModel model = new SynergyModel(PlayerUnit, info.Synergy);
@@ -517,11 +534,20 @@ public class BattleModel
     /// <summary>
     /// 更新全队羁绊的应用对象（当Spirit切换时调用）
     /// 将羁绊效果重新应用到新的Spirit上
+    /// 注意：只应用新Spirit拥有的羁绊
     /// </summary>
     public void UpdateTeamSynergiesOwner()
     {
         if (PlayerUnit == null || teamSynergies.Count == 0)
             return;
+
+        // 获取当前Spirit的数据
+        var spirit = PlayerUnit as Spirit;
+        if (spirit == null || spirit.Data == null)
+        {
+            Debug.LogWarning("BattleModel: Cannot update team synergies - PlayerUnit is not a Spirit or has no data");
+            return;
+        }
 
         // 重新创建所有SynergyModel，使用新的Owner
         var tempSynergies = new Dictionary<string, SynergyModel>(teamSynergies);
@@ -531,6 +557,15 @@ public class BattleModel
         {
             string synergyId = kvp.Key;
             SynergyModel oldModel = kvp.Value;
+
+            // 检查新Spirit是否拥有这个羁绊
+            if (!SpiritHasSynergy(spirit, synergyId))
+            {
+                Debug.Log(
+                    $"BattleModel: Team Synergy [{oldModel.Synergy.DisplayName}] NOT applied to {PlayerUnit.DisplayName} (Spirit doesn't have this synergy)"
+                );
+                continue; // 跳过不属于该Spirit的羁绊
+            }
 
             // 创建新的SynergyModel，Owner为新的Spirit
             SynergyModel newModel = new SynergyModel(PlayerUnit, oldModel.Synergy);
@@ -542,6 +577,23 @@ public class BattleModel
                 $"BattleModel: Team Synergy [{oldModel.Synergy.DisplayName}] re-applied to {PlayerUnit.DisplayName}"
             );
         }
+    }
+
+    /// <summary>
+    /// 检查Spirit是否拥有指定的羁绊
+    /// </summary>
+    private bool SpiritHasSynergy(Spirit spirit, string synergyId)
+    {
+        if (spirit == null || spirit.Data == null || spirit.Data.Synergies == null)
+            return false;
+
+        foreach (var synergy in spirit.Data.Synergies)
+        {
+            if (synergy != null && synergy.SynergyId == synergyId)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

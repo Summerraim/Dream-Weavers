@@ -16,5 +16,5 @@ MonoBehaviour:
   description: 
   image: {fileID: 0}
   minDuration: 1
-  maxDuration: 3
+  maxDuration: 2
   applyToTarget: 1

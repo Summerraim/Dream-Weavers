@@ -103,9 +103,9 @@ TextureImporter:
         x: 236
         y: 534
         width: 1564
-        height: 1278
+        height: 1197
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

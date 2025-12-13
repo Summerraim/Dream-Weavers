@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6639ffc5c90d0544bac8f10a0a79ae91, type: 3}
+  m_Name: "\u5C0F\u86D9"
+  m_EditorClassIdentifier: 
+  DisplayName: "\u5C0F\u86D9"
+  Image: {fileID: -754139544, guid: d7b74c3d94eccae43ba4e1cb51768fe5, type: 3}
+  MaxHP: 300
+  MaxMana: 300
+  Damage: 25
+  Defense: 10
+  Skills:
+  - {fileID: 11400000, guid: bda70bb7d9fe18a40b358af9731bb02f, type: 2}
+  - {fileID: 11400000, guid: e08c771da2949c0478e5b3121ad4bf8d, type: 2}
+  - {fileID: 11400000, guid: d13f957193ef4ce468970259c1cdbbbc, type: 2}

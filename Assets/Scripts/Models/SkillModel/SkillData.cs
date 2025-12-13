@@ -22,6 +22,9 @@ public class SkillData : ScriptableObject, ISkill
     [field: SerializeField]
     public Sprite Image { get; private set; }
 
+    [field: SerializeField]
+    public AnimationClip SkillAnimation { get; private set; }
+
     [SerializeField]
     private List<Effect> effects = new();
 
