@@ -122,8 +122,8 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "啊啊啊这是什么东西，难道是恐龙吗？",
+                speakerName = "男主",
+                dialogueText = "这是什么地方？我怎么会出现在这里？我刚刚不是在家里打我的宝可梦吗？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -133,8 +133,8 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "敌人已经出现在你面前，小心应对！",
+                speakerName = "男主",
+                dialogueText = "等等，前面这是什么动静？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -161,8 +161,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "你发现了一个安全的休息场所。",
+                speakerName = "心兽",
+                dialogueText = "你好啊，欢迎来到心兽世界，你是我们的领导者，只有你能拯救我们的伙伴们。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -172,8 +172,41 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "在这里你可以恢复体力和精神，为接下来的冒险做好准备。",
+                speakerName = "玩家",
+                dialogueText = "这是什么地方，为什么刚刚的心兽和你们有些不一样？",
+                portraitPosition = UI_DialogView.PortraitPosition.Left,
+                displayTime = 0f,
+                isImportant = false,
+                waitForInput = true,
+                triggerEvent = "",
+                choices = null
+            },
+            new DialogueEntry
+            {
+                speakerName = "心兽",
+                dialogueText = "唉，我们的世界遭到了入侵，我们心兽原本代表了爱与和平，但现在却有不属于我们的邪恶力量在侵蚀我们的伙伴",
+                portraitPosition = UI_DialogView.PortraitPosition.Left,
+                displayTime = 0f,
+                isImportant = false,
+                waitForInput = true,
+                triggerEvent = "",
+                choices = null
+            },
+            new DialogueEntry
+            {
+                speakerName = "心兽",
+                dialogueText = "请带领我们战斗并拯救我们的伙伴吧！",
+                portraitPosition = UI_DialogView.PortraitPosition.Left,
+                displayTime = 0f,
+                isImportant = false,
+                waitForInput = true,
+                triggerEvent = "",
+                choices = null
+            },
+            new DialogueEntry
+            {
+                speakerName = "心兽",
+                dialogueText = "这是休息的地方，在这里你可以恢复体力和精神，为接下来的冒险做好准备。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -200,8 +233,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "你发现了一个道具房间！",
+                speakerName = "玩家",
+                dialogueText = "这是什么呀？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -211,8 +244,8 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "这里可能有对你有用的物品，仔细搜索一下吧。",
+                speakerName = "心兽",
+                dialogueText = "哇！这些东西与我们体内的力量有所共鸣，他们可以激发我的潜能！",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -239,8 +272,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "你进入了一个神秘的事件房间。",
+                speakerName = "玩家",
+                dialogueText = "这是什么地方？是我们第一次来吧？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -250,8 +283,8 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "这里可能会发生意想不到的事情，保持警惕！",
+                speakerName = "心兽",
+                dialogueText = "没错，这个地方很神秘，可能会发生一些意想不到的事情。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -278,8 +311,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "警告！你进入了Boss房间！",
+                speakerName = "心兽",
+                dialogueText = "哇，这就是我们的污染源了，他们是最纯粹的邪恶精神力量，比一般的心兽强大许多，要小心应对呀！",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = true,
@@ -289,8 +322,8 @@ public class DialogueDataManager : MonoBehaviour
             },
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "强大的敌人正在等待着你，这将是一场艰苦的战斗！",
+                speakerName = "玩家",
+                dialogueText = "一起加油！",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = true,
@@ -339,8 +372,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "欢迎来到第1层！这是你的冒险开始的地方。",
+                speakerName = "玩家",
+                dialogueText = "这是什么地方？看起来像是一个森林，但是有些安静的太可怕了，往前走走看看吧",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -351,7 +384,7 @@ public class DialogueDataManager : MonoBehaviour
             new DialogueEntry
             {
                 speakerName = "系统",
-                dialogueText = "小心探索每个房间，收集资源，为接下来的挑战做好准备。",
+                dialogueText = "你来到了森林，这里有很多奇怪的生物，它们会引起你的注意。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -378,8 +411,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "恭喜你成功通过第1层！现在你来到了第2层。",
+                speakerName = "玩家",
+                dialogueText = "唔~，好冷好冷，这是什么地方，怎么会如此寒冷？这里会遇到什么样的心兽呢？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -390,7 +423,7 @@ public class DialogueDataManager : MonoBehaviour
             new DialogueEntry
             {
                 speakerName = "系统",
-                dialogueText = "这一层的敌人会更加危险，但奖励也会更加丰厚。",
+                dialogueText = "你来到了森林的另一边，也是寒武纪的开端，这里有很多奇怪的生物，它们会引起你的注意。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -417,8 +450,8 @@ public class DialogueDataManager : MonoBehaviour
         {
             new DialogueEntry
             {
-                speakerName = "系统",
-                dialogueText = "你已经到达第3层！这里的挑战将更加严峻。",
+                speakerName = "玩家",
+                dialogueText = "终于离开寒武纪了，前面那是什么，好像是一座古堡，但是为什么这么诡异呢？",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -429,7 +462,7 @@ public class DialogueDataManager : MonoBehaviour
             new DialogueEntry
             {
                 speakerName = "系统",
-                dialogueText = "Boss房间就在前方，确保你已经做好了充分的准备。",
+                dialogueText = "冥王神话中哈迪斯创造了失乐园，而在此处，不知何人创造的失乐城堡",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = false,
@@ -457,7 +490,7 @@ public class DialogueDataManager : MonoBehaviour
             new DialogueEntry
             {
                 speakerName = "系统",
-                dialogueText = "最终层！第4层！这是你冒险的终点。",
+                dialogueText = "好险！总算是从古堡中出来了。",
                 portraitPosition = UI_DialogView.PortraitPosition.Left,
                 displayTime = 0f,
                 isImportant = true,
