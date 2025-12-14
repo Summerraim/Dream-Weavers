@@ -70,6 +70,14 @@ public class AudioManagerService : MonoBehaviour
     [SerializeField] private AudioClip menuBGM;
     [SerializeField] private AudioClip gameplayBGM;
     [SerializeField] private AudioClip battleBGM;
+    [SerializeField] private AudioClip level1BGM;
+    [SerializeField] private AudioClip level2BGM;
+    [SerializeField] private AudioClip level3BGM;
+    [SerializeField] private AudioClip level4BGM;
+    
+    [Header("场景音乐配置")]
+    [Tooltip("是否启用场景自动音乐切换")]
+    [SerializeField] private bool enableSceneMusicAutoSwitch = true;
     
     [Header("常用音效")]
     [SerializeField] private AudioClip buttonClickSFX;
@@ -735,20 +743,158 @@ public class AudioManagerService : MonoBehaviour
     private void OnSceneLoaded(SceneType sceneType)
     {
         // 根据场景类型播放不同的背景音乐
+        AudioClip targetBGM = GetBGMForScene(sceneType);
+        
+        if (targetBGM != null)
+        {
+            PlayBGM(targetBGM);
+            Debug.Log($"场景 '{sceneType}' 的背景音乐已播放: {targetBGM.name}");
+        }
+        else
+        {
+            // 如果没有找到对应场景的音乐，使用默认音乐
+            if (defaultBGM != null)
+            {
+                PlayBGM(defaultBGM);
+                Debug.LogWarning($"场景 '{sceneType}' 的专用音乐未设置，使用默认音乐: {defaultBGM.name}");
+            }
+            else
+            {
+                Debug.LogError($"场景 '{sceneType}' 的音乐未设置，且默认音乐也未设置");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 根据场景类型获取对应的背景音乐
+    /// </summary>
+    private AudioClip GetBGMForScene(SceneType sceneType)
+    {
         switch (sceneType)
         {
             case SceneType.MainMenu:
-                if (menuBGM != null) PlayBGM(menuBGM);
+                return menuBGM;
+                
+            case SceneType.Gameplay:
+                return gameplayBGM;
+                
+            case SceneType.Battle:
+                return battleBGM;
+                
+            case SceneType.Level1:
+                return level1BGM;
+                
+            case SceneType.Level2:
+                return level2BGM;
+                
+            case SceneType.Level3:
+                return level3BGM;
+                
+            case SceneType.Level4:
+                return level4BGM;
+                
+            default:
+                Debug.LogWarning($"未知的场景类型: {sceneType}");
+                return defaultBGM;
+        }
+    }
+    
+    #endregion
+    
+    #region 场景音乐控制（公共方法）
+    
+    /// <summary>
+    /// 设置特定场景的背景音乐
+    /// </summary>
+    public void SetSceneBGM(SceneType sceneType, AudioClip bgmClip)
+    {
+        switch (sceneType)
+        {
+            case SceneType.MainMenu:
+                menuBGM = bgmClip;
                 break;
                 
             case SceneType.Gameplay:
-                if (gameplayBGM != null) PlayBGM(gameplayBGM);
+                gameplayBGM = bgmClip;
                 break;
                 
             case SceneType.Battle:
-                if (battleBGM != null) PlayBGM(battleBGM);
+                battleBGM = bgmClip;
                 break;
+                
+            case SceneType.Level1:
+                level1BGM = bgmClip;
+                break;
+                
+            case SceneType.Level2:
+                level2BGM = bgmClip;
+                break;
+                
+            case SceneType.Level3:
+                level3BGM = bgmClip;
+                break;
+                
+            case SceneType.Level4:
+                level4BGM = bgmClip;
+                break;
+                
+            default:
+                Debug.LogWarning($"无法设置未知场景类型的音乐: {sceneType}");
+                return;
         }
+        
+        Debug.Log($"场景 '{sceneType}' 的背景音乐已设置为: {bgmClip?.name ?? "null"}");
+    }
+    
+    /// <summary>
+    /// 为当前场景播放指定的背景音乐
+    /// </summary>
+    public void PlayBGMForCurrentScene()
+    {
+        if (GameManagerService.Instance != null)
+        {
+            SceneType currentScene = GameManagerService.Instance.CurrentSceneType;
+            PlayBGMForScene(currentScene);
+        }
+        else
+        {
+            Debug.LogWarning("GameManagerService 未找到，无法获取当前场景类型");
+        }
+    }
+    
+    /// <summary>
+    /// 为指定场景播放背景音乐
+    /// </summary>
+    public void PlayBGMForScene(SceneType sceneType)
+    {
+        AudioClip targetBGM = GetBGMForScene(sceneType);
+        
+        if (targetBGM != null)
+        {
+            PlayBGM(targetBGM);
+            Debug.Log($"手动触发场景 '{sceneType}' 的背景音乐: {targetBGM.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"场景 '{sceneType}' 的背景音乐未设置");
+        }
+    }
+    
+    /// <summary>
+    /// 启用或禁用场景自动音乐切换
+    /// </summary>
+    public void SetSceneMusicAutoSwitch(bool enabled)
+    {
+        enableSceneMusicAutoSwitch = enabled;
+        Debug.Log($"场景自动音乐切换已{(enabled ? "启用" : "禁用")}");
+    }
+    
+    /// <summary>
+    /// 检查场景自动音乐切换是否启用
+    /// </summary>
+    public bool IsSceneMusicAutoSwitchEnabled()
+    {
+        return enableSceneMusicAutoSwitch;
     }
     
     #endregion
