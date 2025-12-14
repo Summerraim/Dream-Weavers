@@ -7,42 +7,39 @@ namespace DreamWeavers.Rooms
     // 继承 RoomBase_cza，以保持与现有房间系统一致
     public class CombatRoom_cza : RoomBase_cza
     {
-        [Header("生成相关")]
-        [SerializeField] private Transform spawnPoint; // 固定出生点
-        [SerializeField] private GameObject enemyPrefab; // 敌人预制体（单个）
-        [SerializeField] private EnemyData enemyData; // 用于初始化敌人模型（可选）
+        [Header("敌人选择")]
+        [SerializeField] private EnemyData enemyData; // 备用：当对象池不可用时使用
         [SerializeField] private PlayerData playerData; // 当前玩家数据（用于传递到战斗）
 
         [Header("对象池与随机配置")]
         [SerializeField] private EnemyPool enemyPool; // 敌人对象池（含敌人与对应精灵）
         [SerializeField] private bool useWeightedRandom = false; // 是否使用权重随机
 
+        [Header("掉落设置")]
+        [SerializeField] private ItemPool itemPool; // 击败敌人后从此池随机掉落一个道具（可选）
+        [SerializeField] private Transform spawnPoint; // 掉落展示的生成位置（仅用于道具展示）
+        [Min(1)] [SerializeField] private int dropQuantity = 1; // 掉落数量
+        [SerializeField] private GameObject pickupPrefab; // 掉落展示用预制体（可选）
+
         // 运行时状态
-        private GameObject enemyInstance;
         private bool spawned = false;
         private Enemy enemyModel; // 敌人模型（非 MonoBehaviour），来自 EnemyModel
         private SpiritData selectedSpirit; // 与当前敌人对应的精灵数据
         private EnemyData selectedEnemy; // 当前选中的敌人数据（来自对象池或手动配置）
+        private bool itemDropped; // 是否已触发掉落，避免重复
 
         public override void EnterRoom()
         {
-            // 进入房间即生成一个敌人（仅一次）
-            TrySpawnEnemy();
+            // 进入房间时从对象池选择一个敌人（仅一次）
+            TrySelectEnemy();
 
             // 将玩家与敌人数据传递给战斗控制器并初始化战斗
             TryStartBattle();
         }
 
-        private void TrySpawnEnemy()
+        private void TrySelectEnemy()
         {
             if (spawned) return;
-
-            var sp = spawnPoint != null ? spawnPoint : transform; // 未配置则用房间中心
-            if (enemyPrefab == null)
-            {
-                Debug.LogWarning("[CombatRoom] 未配置敌人预制体");
-                return;
-            }
             // 通过对象池选取敌人与对应精灵（优先对象池）
             selectedEnemy = null;
             selectedSpirit = null;
@@ -70,9 +67,6 @@ namespace DreamWeavers.Rooms
                     selectedSpirit = enemyPool.GetSpiritForEnemy(selectedEnemy);
                 }
             }
-
-            // 实例化敌人
-            enemyInstance = Instantiate(enemyPrefab, sp.position, sp.rotation);
             spawned = true;
 
             // 初始化敌人模型数据（用于HP/Mana等判定）
@@ -108,9 +102,16 @@ namespace DreamWeavers.Rooms
         {
             // 房间清理判定：如果已生成且该敌人实例被销毁（死亡），则视为清理完成
             if (!spawned) return false;
-            if (enemyInstance == null) return true;
             if (enemyModel != null)
-                return enemyModel.HP <= 0 || enemyModel.Mana <= 0;
+            {
+                bool defeated = enemyModel.HP <= 0 || enemyModel.Mana <= 0;
+                if (defeated && !itemDropped)
+                {
+                    TryDropRandomItem();
+                    itemDropped = true;
+                }
+                return defeated;
+            }
             return false;
         }
 
@@ -204,6 +205,67 @@ namespace DreamWeavers.Rooms
             UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
             Debug.Log($"[CombatRoom] 捕捉精灵成功: {spiritToAdd.DisplayName} (允许重复)");
+        }
+
+        // 击败敌人时从对象池随机掉落一个道具，并写入背包与玩家数据
+        private void TryDropRandomItem()
+        {
+            if (itemPool == null || itemPool.IsEmpty)
+            {
+                Debug.LogWarning("[CombatRoom] itemPool 未配置或为空，无法掉落道具");
+                return;
+            }
+
+            var item = useWeightedRandom ? itemPool.GetWeightedRandomItem() : itemPool.GetRandomItem();
+            if (item == null)
+            {
+                Debug.LogWarning("[CombatRoom] 未能从对象池抽到掉落道具");
+                return;
+            }
+
+            // 1) 运行时背包：更新 UI
+            var inv = InventoryManager.Instance;
+            if (inv != null)
+            {
+                bool ok = inv.AddItem(item, Mathf.Max(1, dropQuantity));
+                if (!ok)
+                {
+                    Debug.LogWarning("[CombatRoom] 掉落添加到背包失败，可能背包已满或参数非法");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，背包未更新");
+            }
+
+            // 2) 玩家数据：写入 InitialItems 以持久化当前拥有
+            if (playerData != null)
+            {
+                var list = playerData.GetInitialItems();
+                list.Add(new ItemStackConfig { Item = item, Count = Mathf.Max(1, dropQuantity) });
+                playerData.InitialItems = list.ToArray();
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+                Debug.Log($"[CombatRoom] 掉落道具：{item.DisplayName} x{dropQuantity} 已写入玩家数据与背包");
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落未写入玩家数据资产");
+            }
+
+            // 3) 可选：在房间中生成一个展示预制体
+            if (pickupPrefab != null)
+            {
+                var sp = spawnPoint != null ? spawnPoint : transform;
+                var pickup = Instantiate(pickupPrefab, sp.position, sp.rotation);
+                var display = pickup.GetComponent<ItemDisplay>();
+                if (display != null)
+                {
+                    display.item = item;
+                    display.Refresh();
+                }
+            }
         }
     }
 

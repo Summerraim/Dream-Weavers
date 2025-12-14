@@ -259,6 +259,9 @@ public class RoomUIActions_cza : MonoBehaviour
         // 进入房间时进行UI面板切换
         SwitchToRoomTypePanel(node.Type);
 
+        // 根据房间类型更新 Complete 按钮文案：战斗房间显示“捕捉”，其他显示“离开房间”
+        UpdateCompleteButtonLabel(node.Type);
+
         // 进入房间后尝试监听战斗房间敌人状态
         RestartWatchEnemyIfCombatRoom();
     }
@@ -336,9 +339,17 @@ public class RoomUIActions_cza : MonoBehaviour
         {
             // 若战斗房间监听开启，则由敌人状态决定 Complete 是否可点击
             if (overrideCompleteByEnemy)
+            {
+                // 战斗房间：只有敌人被击败时才显示并可点击
+                btnComplete.gameObject.SetActive(combatCompleteReady);
                 btnComplete.interactable = combatCompleteReady;
+            }
             else
+            {
+                // 非战斗房间：始终可见且可点击
+                btnComplete.gameObject.SetActive(true);
                 btnComplete.interactable = true;
+            }
             Debug.Log(
                 $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
             );
@@ -458,6 +469,18 @@ public class RoomUIActions_cza : MonoBehaviour
             UIManagerService.Instance.ShowPanel(panelName);
         else
             UIManagerService.Instance.HidePanel(panelName);
+    }
+
+    // 根据当前房间类型更新 Complete 按钮的显示文本
+    private void UpdateCompleteButtonLabel(RoomType_cza type)
+    {
+        if (btnComplete == null) return;
+        var label = btnComplete.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (label == null) return;
+        // CombatRoom 显示“捕捉”，其他房间显示“离开房间”
+        // 注意：根据项目枚举值命名，若战斗房间类型不同，请调整判断
+        bool isCombat = type.ToString().IndexOf("Combat", StringComparison.OrdinalIgnoreCase) >= 0;
+        label.text = isCombat ? "捕捉" : "离开房间";
     }
 
     // 战斗房间监听：若存在 CombatRoom_cza，则监控其敌人模型的 HP/Mana

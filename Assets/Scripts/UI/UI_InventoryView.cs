@@ -12,6 +12,8 @@ public class UI_InventoryView : MonoBehaviour
     public GameObject inventoryPanel; // 背包面板
     public Transform slotsContainer; // 槽位容器
     public GameObject slotPrefab; // 槽位预制体
+    [Tooltip("背包面板的浅色背景 Image（仅引用，不做样式配置）")]
+    public Image inventoryBackground;
     [Tooltip("运行时是否默认关闭背包面板（按 I 打开）")]
     public bool startClosed = true;
     [Tooltip("展示顺序：勾选则最新添加的物品显示在前面（索引小）")]
@@ -108,6 +110,13 @@ public class UI_InventoryView : MonoBehaviour
         // Start 阶段也尝试关闭（保险）
         if (startClosed && inventoryPanel != null)
             inventoryPanel.SetActive(false);
+
+        // 初始隐藏背包背景，避免挡住其他 UI
+        if (inventoryBackground != null)
+        {
+            inventoryBackground.raycastTarget = false; // 不拦截鼠标
+            inventoryBackground.gameObject.SetActive(false);
+        }
     }
 
     private void OnEnable()
@@ -437,6 +446,8 @@ public class UI_InventoryView : MonoBehaviour
             {
                 bool next = !inventoryPanel.activeSelf;
                 inventoryPanel.SetActive(next);
+                if (inventoryBackground != null)
+                    inventoryBackground.gameObject.SetActive(next);
                 if (next) UpdateInventoryUI();
             }
             return;
@@ -464,10 +475,14 @@ public class UI_InventoryView : MonoBehaviour
                     if (isActive)
                     {
                         ui.HidePanel("InventoryPanel");
+                        if (inventoryBackground != null)
+                            inventoryBackground.gameObject.SetActive(false);
                     }
                     else
                     {
                         ui.ShowPanel("InventoryPanel");
+                        if (inventoryBackground != null)
+                            inventoryBackground.gameObject.SetActive(true);
                         UpdateInventoryUI();
                     }
                 }
@@ -480,6 +495,8 @@ public class UI_InventoryView : MonoBehaviour
         {
             bool next = !inventoryPanel.activeSelf;
             inventoryPanel.SetActive(next);
+            if (inventoryBackground != null)
+                inventoryBackground.gameObject.SetActive(next);
             if (next) UpdateInventoryUI();
         }
     }
@@ -750,4 +767,6 @@ public class UI_InventoryView : MonoBehaviour
             InventoryManager.Instance.OnInventoryChanged -= UpdateInventoryUI;
         }
     }
+
+    // 背景仅做显示/隐藏控制，样式与颜色由美术在 Inspector 配置
 }
