@@ -38,6 +38,11 @@ public class RoomUIActions_cza : MonoBehaviour
     private bool overrideCompleteByEnemy; // 是否由敌人状态接管 Complete 的交互
     private bool combatCompleteReady; // 敌人击败后允许完成房间
 
+    [Header("调试开关")]
+    [Tooltip("测试模式：强制 Complete 按钮始终可见且可点击，忽略战斗房间的敌人状态")] 
+    [SerializeField]
+    private bool forceCompleteAlwaysActive = true;
+
     [Header("面板切换")]
     [Tooltip("房间类型到UI面板名的映射，用于进入房间时切换UI。")]
     [SerializeField]
@@ -50,6 +55,28 @@ public class RoomUIActions_cza : MonoBehaviour
 
     // 当前已显示的房间类型面板名，用于在进入选择阶段时立刻隐藏
     private string currentRoomPanelName;
+
+    [Header("路线选择Prefab（按楼层）")]
+    [Tooltip("用于显示分支选择的Prefab容器（实例化到该节点下）。为空则使用本对象")] 
+    [SerializeField]
+    private Transform chooseRoot;
+
+    [Tooltip("仅在选择阶段使用Prefab，不显示默认选择面板（choosePanelName）")]
+    [SerializeField]
+    private bool usePrefabOnlyForChoices = true;
+
+    [Serializable]
+    public struct FloorChoosePrefabEntry
+    {
+        public int floorIndex;
+        public GameObject prefab;
+    }
+
+    [Tooltip("不同楼层使用不同的路线选择Prefab；未匹配则不显示Prefab（仅使用面板逻辑）")]
+    [SerializeField]
+    private List<FloorChoosePrefabEntry> floorChoosePrefabs = new List<FloorChoosePrefabEntry>();
+
+    private GameObject currentChooseInstance;
 
     [Serializable]
     public struct TypePanelMapping
@@ -145,6 +172,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 构建类型映射字典
         BuildTypePanelMap();
+
+        if (chooseRoot == null)
+            chooseRoot = transform;
     }
 
     private void OnEnable()
@@ -223,6 +253,7 @@ public class RoomUIActions_cza : MonoBehaviour
             RoomStateMachine_cza.Instance.OnBranchChoicesUpdated -= RefreshChoiceUI;
             RoomStateMachine_cza.Instance.OnReady -= OnStateReady;
             RoomStateMachine_cza.Instance.OnRoomCompleted -= OnRoomCompletedHideCurrent;
+            RoomStateMachine_cza.Instance.OnFloorInitialized -= OnFloorInitializedHidePanels;
             subscribed = false;
         }
         if (waitCo != null)
@@ -300,7 +331,14 @@ public class RoomUIActions_cza : MonoBehaviour
             {
                 ShowPanel(currentRoomPanelName, false);
             }
-            ShowPanel(choosePanelName, true);
+            if (!usePrefabOnlyForChoices)
+                ShowPanel(choosePanelName, true);
+            // 显示按楼层路选择Prefab
+            ShowChoosePrefab(true);
+            // 同步调用房间类型面板上的皮肤控制器，显示当前楼层的路线选择 UI（场景内已存在的 uiRoot）
+            var sm = RoomStateMachine_cza.Instance;
+            int floor = (sm != null && sm.CurrentMap != null) ? sm.CurrentMap.FloorIndex : 0;
+            TryApplyChooseUIOnSkinController(floor, true);
             // 进入选择阶段停止战斗监听
             if (enemyWatchCo != null)
             {
@@ -312,7 +350,13 @@ public class RoomUIActions_cza : MonoBehaviour
         }
         else
         {
-            ShowPanel(choosePanelName, false);
+            if (!usePrefabOnlyForChoices)
+                ShowPanel(choosePanelName, false);
+            ShowChoosePrefab(false);
+            // 退出选择阶段隐藏所有路线选择 UI
+            var sm = RoomStateMachine_cza.Instance;
+            int floor = (sm != null && sm.CurrentMap != null) ? sm.CurrentMap.FloorIndex : 0;
+            TryApplyChooseUIOnSkinController(floor, false);
         }
     }
 
@@ -337,22 +381,32 @@ public class RoomUIActions_cza : MonoBehaviour
         bool selecting = sm != null && sm.IsAwaitingChoice;
         if (btnComplete)
         {
-            // 若战斗房间监听开启，则由敌人状态决定 Complete 是否可点击
-            if (overrideCompleteByEnemy)
+            // 测试模式：强制保持激活
+            if (forceCompleteAlwaysActive)
             {
-                // 战斗房间：只有敌人被击败时才显示并可点击
-                btnComplete.gameObject.SetActive(combatCompleteReady);
-                btnComplete.interactable = combatCompleteReady;
+                btnComplete.gameObject.SetActive(true);
+                btnComplete.interactable = true;
+                Debug.Log($"[RoomUI] ApplyInteractableState[{reason}]: testing forced active -> Complete.interactable=true");
             }
             else
             {
-                // 非战斗房间：始终可见且可点击
-                btnComplete.gameObject.SetActive(true);
-                btnComplete.interactable = true;
+                // 若战斗房间监听开启，则由敌人状态决定 Complete 是否可点击
+                if (overrideCompleteByEnemy)
+                {
+                    // 战斗房间：只有敌人被击败时才显示并可点击
+                    btnComplete.gameObject.SetActive(combatCompleteReady);
+                    btnComplete.interactable = combatCompleteReady;
+                }
+                else
+                {
+                    // 非战斗房间：始终可见且可点击
+                    btnComplete.gameObject.SetActive(true);
+                    btnComplete.interactable = true;
+                }
+                Debug.Log(
+                    $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
+                );
             }
-            Debug.Log(
-                $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
-            );
         }
         // Next 按钮的交互由 RefreshChoiceUI 设置，这里不重复处理
     }
@@ -372,6 +426,7 @@ public class RoomUIActions_cza : MonoBehaviour
         RoomStateMachine_cza.Instance.OnBranchChoicesUpdated += RefreshChoiceUI;
         RoomStateMachine_cza.Instance.OnReady += OnStateReady;
         RoomStateMachine_cza.Instance.OnRoomCompleted += OnRoomCompletedHideCurrent;
+        RoomStateMachine_cza.Instance.OnFloorInitialized += OnFloorInitializedHidePanels;
         subscribed = true;
         RefreshChoiceUI(RoomStateMachine_cza.Instance.GetCurrentBranchChoices());
         if (RoomStateMachine_cza.Instance.IsReady)
@@ -385,8 +440,28 @@ public class RoomUIActions_cza : MonoBehaviour
         HideAllRegisteredPanels();
         currentRoomPanelName = null;
         // 同时确保选择面板关闭
-        ShowPanel(choosePanelName, false);
+        if (!usePrefabOnlyForChoices)
+            ShowPanel(choosePanelName, false);
+        ShowChoosePrefab(false);
         // 完成后停止战斗监听
+        if (enemyWatchCo != null)
+        {
+            StopCoroutine(enemyWatchCo);
+            enemyWatchCo = null;
+        }
+        overrideCompleteByEnemy = false;
+        combatCompleteReady = false;
+    }
+
+    // 新增：楼层初始化完成时，统一隐藏上一层的类型面板以避免皮肤残留
+    private void OnFloorInitializedHidePanels(int floorIndex)
+    {
+        HideAllRegisteredPanels();
+        currentRoomPanelName = null;
+        // 楼层变化时选择面板也关闭，等待进入新房间后再由刷新逻辑打开
+        if (!usePrefabOnlyForChoices)
+            ShowPanel(choosePanelName, false);
+        // 同时停止战斗监听，重置交互覆盖状态
         if (enemyWatchCo != null)
         {
             StopCoroutine(enemyWatchCo);
@@ -421,6 +496,7 @@ public class RoomUIActions_cza : MonoBehaviour
 
             // 进入房间后按楼层应用美术皮肤（复用交互UI，仅替换背景/装饰）
             var panelGO = UIManagerService.Instance.GetPanel(panelName);
+            Debug.Log($"[RoomUI] SwitchToRoomTypePanel: panelName={panelName} panelGO={(panelGO!=null ? panelGO.name : "null")} type={type}");
             if (panelGO != null)
             {
                 var skinCtl = panelGO.GetComponentInChildren<RoomUISkinController>(true);
@@ -428,9 +504,28 @@ public class RoomUIActions_cza : MonoBehaviour
                 var sm = RoomStateMachine_cza.Instance;
                 if (sm != null && sm.CurrentMap != null)
                     floor = sm.CurrentMap.FloorIndex;
+                Debug.Log($"[RoomUI] SkinCtl found={(skinCtl!=null)} floor={floor}");
                 if (skinCtl != null)
                     skinCtl.ApplySkin(floor);
             }
+        }
+    }
+
+    // 尝试在房间类型面板的皮肤控制器上应用选择 UI 显隐
+    private void TryApplyChooseUIOnSkinController(int floor, bool active)
+    {
+        if (string.IsNullOrEmpty(currentRoomPanelName) || UIManagerService.Instance == null)
+            return;
+        var panelGO = UIManagerService.Instance.GetPanel(currentRoomPanelName);
+        var skinCtl = panelGO != null ? panelGO.GetComponentInChildren<RoomUISkinController>(true) : null;
+        if (skinCtl != null)
+        {
+            skinCtl.ApplyChooseUI(floor, active);
+            Debug.Log($"[RoomUI] ApplyChooseUI via SkinCtl: floor={floor} active={active} panel={currentRoomPanelName}");
+        }
+        else
+        {
+            Debug.Log($"[RoomUI] SkinCtl not found under panel {currentRoomPanelName}, skip ApplyChooseUI");
         }
     }
 
@@ -469,6 +564,54 @@ public class RoomUIActions_cza : MonoBehaviour
             UIManagerService.Instance.ShowPanel(panelName);
         else
             UIManagerService.Instance.HidePanel(panelName);
+    }
+
+    private GameObject ResolveChoosePrefabForCurrentFloor()
+    {
+        if (floorChoosePrefabs == null || floorChoosePrefabs.Count == 0)
+            return null;
+        int floor = 0;
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentMap != null)
+            floor = sm.CurrentMap.FloorIndex;
+        for (int i = 0; i < floorChoosePrefabs.Count; i++)
+        {
+            var e = floorChoosePrefabs[i];
+            if (e.floorIndex == floor && e.prefab != null)
+                return e.prefab;
+        }
+        return null;
+    }
+
+    private void ShowChoosePrefab(bool active)
+    {
+        var targetPrefab = ResolveChoosePrefabForCurrentFloor();
+        if (!active)
+        {
+            if (currentChooseInstance != null)
+            {
+                currentChooseInstance.SetActive(false);
+            }
+            return;
+        }
+        if (targetPrefab == null)
+        {
+            // 未配置对应楼层的Prefab，保持现有面板逻辑
+            if (currentChooseInstance != null)
+                currentChooseInstance.SetActive(false);
+            return;
+        }
+        // 若当前实例与目标Prefab不同或不存在，则实例化
+        if (currentChooseInstance == null || currentChooseInstance.name != targetPrefab.name)
+        {
+            // 隐藏旧实例
+            if (currentChooseInstance != null)
+                currentChooseInstance.SetActive(false);
+            var parent = chooseRoot != null ? chooseRoot : transform;
+            currentChooseInstance = Instantiate(targetPrefab, parent);
+            currentChooseInstance.name = targetPrefab.name;
+        }
+        currentChooseInstance.SetActive(true);
     }
 
     // 根据当前房间类型更新 Complete 按钮的显示文本
