@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DisplayName: "\u8611\u83C7\u76FE\u5175"
   Image: {fileID: -2125488427, guid: 993f0105de409494db512764bf8eb3a3, type: 3}
-  MaxHP: 200
+  MaxHP: 220
   MaxMana: 50
   Damage: 5
-  Defense: 5
+  Defense: 10
   Skills:
   - {fileID: 11400000, guid: 83f797868f7120a478172343951cfd76, type: 2}
-  - {fileID: 11400000, guid: 8f067736e5eef6b4580cac3eeb27a47d, type: 2}
+  - {fileID: 11400000, guid: 9a809293f2e6e0f4199ffbf5432a9ea2, type: 2}
   Synergies:
   - {fileID: 11400000, guid: eb2413aa73498fa4da8f5b241bd0e739, type: 2}
   - {fileID: 11400000, guid: b4a9678a9d0221a498286800405365e7, type: 2}

@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: "\u9AD8\u7EA7\u653B\u51FB"
   description: "\u57FA\u7840\u653B\u51FB"
   image: {fileID: 0}
-  initDamage: 15
+  initDamage: 0
   scaleWithDamage: 1
-  DamageMultiplier: 1
+  DamageMultiplier: 1.5
