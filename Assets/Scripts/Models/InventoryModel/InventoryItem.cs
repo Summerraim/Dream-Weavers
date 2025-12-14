@@ -83,20 +83,34 @@ public class InventoryItem
     // 使用物品（适配 IItem）
     public void Use(IBattleUnit user = null, IBattleUnit target = null)
     {
+        Debug.Log($"[InventoryItem] Use called: item={DisplayName}, user={user?.DisplayName}, target={target?.DisplayName}");
+
         if (data == null)
+        {
+            Debug.LogError($"[InventoryItem] data is null!");
             return;
+        }
+
+        Debug.Log($"[InventoryItem] data.DisplayName={data.DisplayName}");
 
         // 前置校验（与 UI 保持一致）
         if (!data.CanUse(user, target))
+        {
+            Debug.LogWarning($"[InventoryItem] CanUse returned false");
             return;
+        }
 
+        Debug.Log($"[InventoryItem] Calling data.Use()");
         data.Use(user, target);
+
+        Debug.Log($"[InventoryItem] data.Use() completed, RemoveOnUse={data.RemoveOnUse}");
 
         if (data.RemoveOnUse)
         {
             quantity--;
             if (quantity < 0)
                 quantity = 0;
+            Debug.Log($"[InventoryItem] Quantity decreased to {quantity}");
         }
     }
 }

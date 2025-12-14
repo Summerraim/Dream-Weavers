@@ -68,10 +68,13 @@ public class ItemData : ScriptableObject, IItem
 
     protected virtual void OnUse(IBattleUnit user, IBattleUnit target)
     {
+        Debug.Log($"[ItemData] OnUse called: {DisplayName}, user={user?.DisplayName}, target={target?.DisplayName}");
+        Debug.Log($"[ItemData] Effects count: {(effects != null ? effects.Count : 0)}");
+
         // 执行挂载到道具上的效果列表（与 SkillData.Execute 逻辑一致）
         if (effects == null || effects.Count == 0)
         {
-            Debug.Log($"[ItemData] Use called but no effects: {DisplayName}");
+            Debug.LogWarning($"[ItemData] Use called but no effects: {DisplayName}");
             return;
         }
 
@@ -82,9 +85,15 @@ public class ItemData : ScriptableObject, IItem
         {
             var effect = effects[i];
             if (effect == null)
+            {
+                Debug.LogWarning($"[ItemData] Effect {i} is null");
                 continue;
+            }
+            Debug.Log($"[ItemData] Applying effect {i}: {effect.GetType().Name}");
             effect.Apply(user, target);
         }
+
+        Debug.Log($"[ItemData] OnUse finished for {DisplayName}");
     }
 
     /// <summary>
@@ -95,7 +104,7 @@ public class ItemData : ScriptableObject, IItem
         string displayName,
         string description,
         Sprite icon,
-        int maxStack,
+        int maxStack,   
         bool removeOnUse
     )
     {

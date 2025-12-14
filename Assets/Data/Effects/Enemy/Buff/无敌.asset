@@ -15,5 +15,5 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  duration: 2
+  duration: 1
   applyToCaster: 1

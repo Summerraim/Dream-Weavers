@@ -5,9 +5,9 @@ public class EnemyData : ScriptableObject
 {
     public string DisplayName;
     public Sprite Image;
-    public int MaxHP = 1000;
-    public int MaxMana = 100;
-    public int Damage = 50;
+    public int MaxHP = 500;
+    public int MaxMana = 200;
+    public int Damage = 30;
     public int Defense = 10;
 
     public ScriptableObject[] Skills;

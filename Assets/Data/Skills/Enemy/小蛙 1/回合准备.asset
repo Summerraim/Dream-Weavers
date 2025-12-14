@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50c27e14cd5bc7c41b6c85ebbd0def7e, type: 3}
+  m_Name: "\u56DE\u5408\u51C6\u5907"
+  m_EditorClassIdentifier: 
+  displayName: 
+  description: 
+  image: {fileID: 0}
+  prepareTime: 2
+  applyToCaster: 1
+  triggeredEffects:
+  - {fileID: 11400000, guid: 5389af4172635e045a08b38c25784ae1, type: 2}
+  targetEnemy: 1
+  preparingEffects:
+  - {fileID: 11400000, guid: 0c42110e4811c1648993a2e4b26d6d27, type: 2}
+  - {fileID: 11400000, guid: c29c8c02d7b684149a20d5dfe23c8c83, type: 2}

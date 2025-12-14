@@ -117,15 +117,12 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
-            // 左键点击：使用物品
-            if (currentItem != null)
-            {
-                InventoryManager.Instance.UseItem(currentItem);
-            }
+            // 左键点击：选中槽位（显示信息面板）
+            OnSlotClicked?.Invoke(this);
         }
         else if (eventData.button == PointerEventData.InputButton.Right)
         {
-            // 右键点击：显示详细信息
+            // 右键点击：同样选中槽位
             OnSlotClicked?.Invoke(this);
         }
     }

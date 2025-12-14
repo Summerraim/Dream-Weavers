@@ -16,6 +16,7 @@ public class Spirit : IBattleUnit
     private readonly int baseDamage;
     private readonly int baseDefense;
     private readonly List<SynergyModel> synergyModels = new List<SynergyModel>();
+    private readonly List<ISkill> battleSkills = new List<ISkill>(); // 缓存随机选择的战斗技能
     public string DisplayName =>
         data != null
             ? (string.IsNullOrWhiteSpace(data.DisplayName) ? data.name : data.DisplayName)
@@ -53,44 +54,87 @@ public class Spirit : IBattleUnit
                 synergyModels.Add(new SynergyModel(this, synergy));
             }
         }
+
+        // 初始化技能：从所有技能中随机选择3个
+        InitializeBattleSkills();
+    }
+
+    /// <summary>
+    /// 从所有技能中随机选择最多3个技能作为战斗技能
+    /// </summary>
+    private void InitializeBattleSkills()
+    {
+        battleSkills.Clear();
+
+        if (data == null || data.Skills == null || data.Skills.Length == 0)
+        {
+            UnityEngine.Debug.LogWarning($"Spirit {DisplayName}: No skills available");
+            return;
+        }
+
+        // 收集所有有效技能
+        var allSkills = new List<ISkill>();
+        for (int i = 0; i < data.Skills.Length; i++)
+        {
+            var skillObj = data.Skills[i];
+            if (skillObj == null)
+                continue;
+
+            // 尝试直接作为 ISkill
+            if (skillObj is ISkill skill)
+            {
+                allSkills.Add(skill);
+                continue;
+            }
+
+            // 如果是 SkillData，用 Skill 类包装
+            if (skillObj is SkillData skillData)
+            {
+                allSkills.Add(new Skill(skillData));
+            }
+        }
+
+        if (allSkills.Count == 0)
+        {
+            UnityEngine.Debug.LogWarning($"Spirit {DisplayName}: No valid skills found");
+            return;
+        }
+
+        // 随机选择最多3个技能
+        int skillCount = Mathf.Min(3, allSkills.Count);
+
+        // 使用Fisher-Yates洗牌算法随机选择
+        var selectedIndices = new List<int>();
+        for (int i = 0; i < allSkills.Count; i++)
+        {
+            selectedIndices.Add(i);
+        }
+
+        // 打乱顺序
+        for (int i = selectedIndices.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+            int temp = selectedIndices[i];
+            selectedIndices[i] = selectedIndices[randomIndex];
+            selectedIndices[randomIndex] = temp;
+        }
+
+        // 选择前skillCount个
+        for (int i = 0; i < skillCount; i++)
+        {
+            battleSkills.Add(allSkills[selectedIndices[i]]);
+            UnityEngine.Debug.Log(
+                $"Spirit {DisplayName}: Selected skill {i + 1}/{skillCount}: {allSkills[selectedIndices[i]].DisplayName}"
+            );
+        }
+
+        UnityEngine.Debug.Log($"Spirit {DisplayName}: Initialized with {battleSkills.Count} battle skills");
     }
 
     public IReadOnlyList<ISkill> GetSkills()
     {
-        var list = new List<ISkill>();
-        if (Data != null && Data.Skills != null)
-        {
-            UnityEngine.Debug.Log($"Spirit.GetSkills: Found {Data.Skills.Length} skill objects");
-            for (int i = 0; i < Data.Skills.Length; i++)
-            {
-                var skillObj = Data.Skills[i];
-                UnityEngine.Debug.Log(
-                    $"Spirit.GetSkills[{i}]: Type={skillObj?.GetType().Name ?? "null"}, IsISkill={(skillObj is ISkill)}, IsSkillData={(skillObj is SkillData)}"
-                );
-
-                if (skillObj == null)
-                    continue;
-
-                // 尝试直接作为 ISkill
-                if (skillObj is ISkill skill)
-                {
-                    UnityEngine.Debug.Log($"Spirit.GetSkills[{i}]: Added as direct ISkill");
-                    list.Add(skill);
-                    continue;
-                }
-
-                // 如果是 SkillData，用 Skill 类包装
-                if (skillObj is SkillData skillData)
-                {
-                    UnityEngine.Debug.Log(
-                        $"Spirit.GetSkills[{i}]: Wrapping SkillData with Skill class"
-                    );
-                    list.Add(new Skill(skillData));
-                }
-            }
-        }
-        UnityEngine.Debug.Log($"Spirit.GetSkills: Returning {list.Count} skills");
-        return list;
+        // 直接返回缓存的战斗技能列表（已在构造函数中随机选择）
+        return battleSkills;
     }
 
     public bool IsDead => HP <= 0;
@@ -102,7 +146,7 @@ public class Spirit : IBattleUnit
             return;
 
         float reduction = 1f;
-        float denominator = Defense + 10f;
+        float denominator = Defense + 20f;
         if (denominator > 0f)
         {
             reduction = Mathf.Clamp01(1f - (Defense / denominator));

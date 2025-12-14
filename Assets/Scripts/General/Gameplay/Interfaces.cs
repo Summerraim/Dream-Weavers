@@ -26,6 +26,7 @@ public interface ISkill
     int ManaCost { get; }
     int CooldownTurns { get; }
     int MaxUsesPerBattle { get; } // 每场战斗最大使用次数，0表示无限制
+    AnimationClip SkillAnimation { get; } // 技能动画（可选）
     void Execute(IBattleUnit caster, IBattleUnit target);
 }
 

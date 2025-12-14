@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0d2289348227c64393d82f6356747a8, type: 3}
+  m_Name: "\u68EE\u6797\u4E4B\u5B50"
+  m_EditorClassIdentifier: 
+  synergyId: "\u68EE\u6797\u4E4B\u5B50"
+  displayName: "\u68EE\u6797\u4E4B\u5B50"
+  description: 
+  image: {fileID: -2095486522, guid: a3439a98b65d26e4792308fe97210051, type: 3}
+  triggerCounts: 020000000400000006000000
+  tierTwoHpBonus: 0.1
+  tierTwoManaBonus: 0.1
+  tierFourHpBonus: 0.2
+  tierFourManaBonus: 0.2
+  tierSixHpBonus: 0.3
+  tierSixManaBonus: 0.3
+  tierSixLifeSteal: 0.1

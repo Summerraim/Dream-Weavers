@@ -16,6 +16,6 @@ MonoBehaviour:
   description: 
   image: {fileID: 0}
   initShield: 100
-  percentMaxHP: 0.2
+  percentMaxHP: 0.1
   duration: 3
   applyToCaster: 1

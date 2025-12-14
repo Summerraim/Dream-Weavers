@@ -18,5 +18,5 @@ MonoBehaviour:
   usePercentDamage: 1
   reflectPercent: 0.2
   flatDamage: 5
-  duration: 3
+  duration: 2
   applyToCaster: 1
