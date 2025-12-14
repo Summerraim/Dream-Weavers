@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: 183e458d9880dc442b8d3a3b9a8def5d, type: 3}
   usePercentDamage: 0
   percentDamage: 0.05
   initDamage: 15

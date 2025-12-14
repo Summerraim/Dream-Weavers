@@ -15,11 +15,14 @@ MonoBehaviour:
   PlayerName: Player
   InitialItems: []
   OwnedSpirits:
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
+  - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   DeployedSpirits:
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
+  - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
-  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
+  - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
+  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
+  - {fileID: 11400000, guid: 2eff06b5d5a060e4d99f4011ebdec9b7, type: 2}
   MaxDeployedSpirits: 6

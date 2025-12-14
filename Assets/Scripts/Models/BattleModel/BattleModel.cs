@@ -42,6 +42,7 @@ public class BattleModel
     private readonly Dictionary<int, int> skillCooldowns; // 技能索引 -> 剩余冷却回合数
     private readonly Dictionary<int, int> skillUsageCount; // 技能索引 -> 当前战斗已使用次数
     private readonly List<Buff> activeBuffs; // 所有活跃的Buff
+    private readonly Dictionary<SpiritData, SpiritBattleState> spiritStates; // 每个Spirit的战斗状态
 
     public BattleModel()
     {
@@ -52,6 +53,7 @@ public class BattleModel
         skillCooldowns = new Dictionary<int, int>();
         skillUsageCount = new Dictionary<int, int>();
         activeBuffs = new List<Buff>();
+        spiritStates = new Dictionary<SpiritData, SpiritBattleState>();
     }
 
     /// <summary>
@@ -67,6 +69,12 @@ public class BattleModel
         }
         CurrentTurn = 1;
 
+        // 为初始Spirit创建并保存战斗状态
+        if (player != null && player.Data != null)
+        {
+            SaveCurrentSpiritState();
+        }
+
         UpdateActiveSynergies();
     }
 
@@ -75,15 +83,16 @@ public class BattleModel
     /// </summary>
     public void UpdatePlayer(Spirit newPlayer)
     {
-        // 先保存旧的玩家单位引用
+        // 先保存旧的玩家单位引用和状态
         var oldPlayer = PlayerUnit;
+        if (oldPlayer != null && oldPlayer.Data != null)
+        {
+            SaveCurrentSpiritState();
+            Debug.Log($"BattleModel: Saved state for {oldPlayer.DisplayName}");
+        }
 
         // 更新玩家单位
         PlayerUnit = newPlayer;
-
-        // 清除旧Spirit的技能冷却和使用次数
-        skillCooldowns.Clear();
-        skillUsageCount.Clear();
 
         // 移除旧Spirit的所有Buff
         for (int i = activeBuffs.Count - 1; i >= 0; i--)
@@ -94,6 +103,12 @@ public class BattleModel
                 activeBuffs.RemoveAt(i);
                 buff.OnRemoved();
             }
+        }
+
+        // 恢复新Spirit的战斗状态（技能、冷却、使用次数）
+        if (newPlayer != null && newPlayer.Data != null)
+        {
+            RestoreSpiritState(newPlayer);
         }
 
         UpdateActiveSynergies();
@@ -280,6 +295,7 @@ public class BattleModel
         skillCooldowns.Clear();
         skillUsageCount.Clear();
         activeBuffs.Clear();
+        spiritStates.Clear();
     }
 
     /// <summary>
@@ -630,5 +646,100 @@ public class BattleModel
 
         // 没有护盾
         return (0, 0);
+    }
+
+    /// <summary>
+    /// 获取指定SpiritData的战斗状态
+    /// </summary>
+    public SpiritBattleState GetSpiritState(SpiritData spiritData)
+    {
+        if (spiritData == null)
+            return null;
+
+        return spiritStates.TryGetValue(spiritData, out SpiritBattleState state) ? state : null;
+    }
+
+    /// <summary>
+    /// 保存当前Spirit的战斗状态
+    /// </summary>
+    private void SaveCurrentSpiritState()
+    {
+        if (PlayerUnit == null)
+            return;
+
+        var spirit = PlayerUnit as Spirit;
+        if (spirit == null || spirit.Data == null)
+            return;
+
+        // 创建新状态或更新现有状态
+        SpiritBattleState state;
+        if (spiritStates.ContainsKey(spirit.Data))
+        {
+            state = spiritStates[spirit.Data];
+        }
+        else
+        {
+            state = new SpiritBattleState();
+            spiritStates[spirit.Data] = state;
+        }
+
+        // 保存技能列表
+        state.SelectedSkills.Clear();
+        state.SelectedSkills.AddRange(spirit.GetSkills());
+
+        // 保存技能冷却
+        state.SkillCooldowns.Clear();
+        foreach (var kvp in skillCooldowns)
+        {
+            state.SkillCooldowns[kvp.Key] = kvp.Value;
+        }
+
+        // 保存技能使用次数
+        state.SkillUsageCount.Clear();
+        foreach (var kvp in skillUsageCount)
+        {
+            state.SkillUsageCount[kvp.Key] = kvp.Value;
+        }
+
+        Debug.Log($"BattleModel: Saved state for {spirit.DisplayName} - {state.SelectedSkills.Count} skills, {state.SkillCooldowns.Count} cooldowns");
+    }
+
+    /// <summary>
+    /// 恢复Spirit的战斗状态
+    /// </summary>
+    private void RestoreSpiritState(Spirit newPlayer)
+    {
+        if (newPlayer == null || newPlayer.Data == null)
+            return;
+
+        // 清空当前技能状态
+        skillCooldowns.Clear();
+        skillUsageCount.Clear();
+
+        // 检查是否有保存的状态
+        if (spiritStates.TryGetValue(newPlayer.Data, out SpiritBattleState state))
+        {
+            // 恢复技能冷却
+            foreach (var kvp in state.SkillCooldowns)
+            {
+                skillCooldowns[kvp.Key] = kvp.Value;
+            }
+
+            // 恢复技能使用次数
+            foreach (var kvp in state.SkillUsageCount)
+            {
+                skillUsageCount[kvp.Key] = kvp.Value;
+            }
+
+            Debug.Log($"BattleModel: Restored state for {newPlayer.DisplayName} - {state.SkillCooldowns.Count} cooldowns, {state.SkillUsageCount.Count} usage counts");
+        }
+        else
+        {
+            // 首次出场，创建新状态
+            var state2 = new SpiritBattleState();
+            state2.SelectedSkills.AddRange(newPlayer.GetSkills());
+            spiritStates[newPlayer.Data] = state2;
+            Debug.Log($"BattleModel: Created new state for {newPlayer.DisplayName} - {state2.SelectedSkills.Count} skills");
+        }
     }
 }

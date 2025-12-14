@@ -14,15 +14,15 @@ public class ManaRegenerationBuff : Buff
             ? $"每回合恢复{(percentRegeneration * 100):F0}%最大法力值"
             : $"每回合恢复{flatRegeneration}点法力值";
 
-    public ManaRegenerationBuff(IBattleUnit owner, int duration, float percentRegen)
-        : base(owner, duration)
+    public ManaRegenerationBuff(IBattleUnit owner, int duration, float percentRegen, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatRegeneration = 0;
         percentRegeneration = Mathf.Clamp01(percentRegen);
     }
 
-    public ManaRegenerationBuff(IBattleUnit owner, int duration, int flatRegen)
-        : base(owner, duration)
+    public ManaRegenerationBuff(IBattleUnit owner, int duration, int flatRegen, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatRegeneration = Mathf.Max(0, flatRegen);
         percentRegeneration = 0f;

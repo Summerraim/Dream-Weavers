@@ -27,7 +27,7 @@ public class ManaRegeneration : Effect
             return;
         }
 
-        var buff = new ManaRegenerationBuff(receiver, duration, percentRegeneration);
+        var buff = new ManaRegenerationBuff(receiver, duration, percentRegeneration, this);
         CurrentBattle.AddBuff(buff);
     }
 }

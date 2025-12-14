@@ -8,7 +8,8 @@ public class FrozenDebuff : Buff
     public override string DisplayName => "冰冻";
     public override string Description => "被冰冻，无法行动";
 
-    public FrozenDebuff(IBattleUnit owner, int duration) : base(owner, duration)
+    public FrozenDebuff(IBattleUnit owner, int duration, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
     }
 

@@ -10,8 +10,8 @@ public class ToughSkinBuff : Buff
     public override string DisplayName => "坚韧皮肤";
     public override string Description => $"受到伤害减少{(damageReduction * 100):F0}%";
 
-    public ToughSkinBuff(IBattleUnit owner, int duration, float reduction)
-        : base(owner, duration)
+    public ToughSkinBuff(IBattleUnit owner, int duration, float reduction, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damageReduction = Mathf.Clamp01(reduction);
     }

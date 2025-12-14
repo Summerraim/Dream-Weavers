@@ -39,7 +39,7 @@ public class Shield : Effect
         if (totalShield <= 0)
             return;
 
-        var buff = new ShieldBuff(receiver, duration, totalShield);
+        var buff = new ShieldBuff(receiver, duration, totalShield, this);
         CurrentBattle.AddBuff(buff);
     }
 }

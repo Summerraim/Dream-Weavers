@@ -30,7 +30,7 @@ public class ManaShield : Effect
             return;
         }
 
-        var buff = new ManaShieldBuff(receiver, duration, absorptionPercent, damageToManaRatio);
+        var buff = new ManaShieldBuff(receiver, duration, absorptionPercent, damageToManaRatio, this);
         CurrentBattle.AddBuff(buff);
     }
 }
