@@ -11,8 +11,8 @@ public class ReviveBuff : Buff
     public override string Description =>
         $"死亡时复活并恢复{(reviveHealthPercent * 100):F0}%生命值";
 
-    public ReviveBuff(IBattleUnit owner, float healthPercent)
-        : base(owner, 999) // 持续到触发为止
+    public ReviveBuff(IBattleUnit owner, float healthPercent, Effect sourceEffect = null)
+        : base(owner, 999, sourceEffect) // 持续到触发为止
     {
         reviveHealthPercent = Mathf.Clamp01(healthPercent);
         IsOneTime = true;

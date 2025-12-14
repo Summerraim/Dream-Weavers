@@ -150,8 +150,23 @@ public class BattleController : MonoBehaviour
             }
         }
 
-        // 创建第一个Spirit
-        player = new Spirit(spiritQueue[currentSpiritIndex]);
+        // 先创建BattleModel（但不初始化），以便查询保存的Spirit状态
+        if (model == null)
+        {
+            model = new BattleModel();
+        }
+
+        // 创建第一个Spirit（使用保存的技能列表，如果存在）
+        var firstSpiritData = spiritQueue[currentSpiritIndex];
+        SpiritBattleState savedState = model.GetSpiritState(firstSpiritData);
+        if (savedState != null && savedState.SelectedSkills.Count > 0)
+        {
+            player = new Spirit(firstSpiritData, savedState.SelectedSkills);
+        }
+        else
+        {
+            player = new Spirit(firstSpiritData); // 首次出场，随机选择技能
+        }
 
         // 恢复第一个Spirit的运行时数据（HP/MP）
         if (spiritRuntimeData.ContainsKey(currentSpiritIndex))
@@ -183,8 +198,7 @@ public class BattleController : MonoBehaviour
         enemy = new Enemy(enemyData);
         enemyAI = new AIController();
 
-        // 创建并初始化战斗模型，由本 Controller 管理
-        model = new BattleModel();
+        // 初始化战斗模型
         model.InitializeBattle(player, enemy);
 
         // 设置Buff系统的静态引用
@@ -921,7 +935,17 @@ public class BattleController : MonoBehaviour
         // 切换索引
         currentSpiritIndex = targetIndex;
         var nextSpiritData = spiritQueue[currentSpiritIndex];
-        player = new Spirit(nextSpiritData);
+
+        // 使用BattleModel中保存的技能列表创建Spirit（如果存在）
+        SpiritBattleState savedState = model.GetSpiritState(nextSpiritData);
+        if (savedState != null && savedState.SelectedSkills.Count > 0)
+        {
+            player = new Spirit(nextSpiritData, savedState.SelectedSkills);
+        }
+        else
+        {
+            player = new Spirit(nextSpiritData); // 首次出场，随机选择技能
+        }
 
         // 恢复目标Spirit的运行时数据
         if (spiritRuntimeData.ContainsKey(targetIndex))
@@ -1247,11 +1271,20 @@ public class BattleController : MonoBehaviour
             return player;
         }
 
-        // 否则，创建临时Spirit实例作为目标
+        // 否则，创建临时Spirit实例作为目标（使用保存的技能列表，如果存在）
         if (spiritIndex >= 0 && spiritIndex < spiritQueue.Count)
         {
             var spiritData = spiritQueue[spiritIndex];
-            var tempSpirit = new Spirit(spiritData);
+            SpiritBattleState savedState = model.GetSpiritState(spiritData);
+            Spirit tempSpirit;
+            if (savedState != null && savedState.SelectedSkills.Count > 0)
+            {
+                tempSpirit = new Spirit(spiritData, savedState.SelectedSkills);
+            }
+            else
+            {
+                tempSpirit = new Spirit(spiritData);
+            }
 
             // 恢复该Spirit的运行时数据（HP/MP）
             if (spiritRuntimeData.ContainsKey(spiritIndex))

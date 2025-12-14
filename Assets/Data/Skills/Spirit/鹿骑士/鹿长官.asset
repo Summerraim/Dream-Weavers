@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u9E7F\u957F\u5B98"
   m_EditorClassIdentifier: 
   DisplayName: "\u9E7F\u9A91\u58EB"
-  Image: {fileID: -762458204, guid: 8eb93e01f160b0d4289c3f097adee8b8, type: 3}
+  Image: {fileID: -1794171169, guid: 78a46a2c3148f3f4ca0611dcf6843c18, type: 3}
   MaxHP: 210
   MaxMana: 100
   Damage: 25

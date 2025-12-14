@@ -24,7 +24,7 @@ public class Frozen : Effect
             return;
         }
 
-        var debuff = new FrozenDebuff(receiver, duration);
+        var debuff = new FrozenDebuff(receiver, duration, this);
         CurrentBattle.AddBuff(debuff);
     }
 }

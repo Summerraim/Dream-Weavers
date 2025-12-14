@@ -36,11 +36,11 @@ public class Thorns : Effect
         Buff buff;
         if (usePercentDamage)
         {
-            buff = new ThornsBuff(receiver, duration, reflectPercent);
+            buff = new ThornsBuff(receiver, duration, reflectPercent, this);
         }
         else
         {
-            buff = new ThornsBuff(receiver, duration, flatDamage);
+            buff = new ThornsBuff(receiver, duration, flatDamage, this);
         }
 
         CurrentBattle.AddBuff(buff);

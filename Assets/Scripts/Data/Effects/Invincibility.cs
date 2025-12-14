@@ -24,7 +24,7 @@ public class Invincibility : Effect
             return;
         }
 
-        var buff = new InvincibilityBuff(receiver, duration);
+        var buff = new InvincibilityBuff(receiver, duration, this);
         CurrentBattle.AddBuff(buff);
     }
 }

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c1919623efaf7479c67ad467b3e45b, type: 3}
+  m_Name: "\u68EE\u6797"
+  m_EditorClassIdentifier: 
+  PoolId: "\u673D\u751F\u4E4B\u68EE"
+  DisplayName: "\u673D\u751F\u4E4B\u68EE"
+  Description: 
+  Enemies:
+  - {fileID: 11400000, guid: d730b2399e94b5849b5d91682d2d675f, type: 2}
+  - {fileID: 11400000, guid: 623706ecaebd596428d1c22c3bd752e5, type: 2}
+  - {fileID: 11400000, guid: ddb74fb08a062f945a60893798efd3f8, type: 2}
+  - {fileID: 11400000, guid: 06332b2bb05b24848b0cb61964816af0, type: 2}
+  - {fileID: 11400000, guid: e878b36f01ad0784b9eb619ffda8a4ba, type: 2}
+  - {fileID: 11400000, guid: 2e3596c74b28da344860a769b91bba5d, type: 2}
+  - {fileID: 11400000, guid: 7eede2f5c467f6149aede7ec2ba07706, type: 2}
+  - {fileID: 11400000, guid: 70c9cf13587272c449cc95e5980b4a0f, type: 2}
+  Spirits:
+  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
+  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
+  - {fileID: 11400000, guid: 82af54d61012e194795c86ebaa00ce7a, type: 2}
+  - {fileID: 11400000, guid: 78003c3559da2f0408db566c28608f90, type: 2}
+  - {fileID: 11400000, guid: 8bfe84823f5ec6c4abff1fd24d54cad0, type: 2}
+  - {fileID: 11400000, guid: d6ffbeee3feba4c4ba167417e9b62a57, type: 2}
+  - {fileID: 11400000, guid: 2eff06b5d5a060e4d99f4011ebdec9b7, type: 2}
+  - {fileID: 11400000, guid: 4500ea37d9759f647967c53f3f37adbb, type: 2}
+  UseWeights: 0
+  Weights: 

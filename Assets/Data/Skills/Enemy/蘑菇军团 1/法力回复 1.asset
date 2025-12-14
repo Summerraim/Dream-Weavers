@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: -1432704173, guid: 4983470c9c0a3c9449e2ce7dff850924, type: 3}
   percentRegeneration: 0.12
   duration: 2
   applyToCaster: 1

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: 97264311, guid: 039e7a54c8bd631439b2718abe83bba4, type: 3}
   missChance: 0.5
   duration: 2
   applyToTarget: 1
