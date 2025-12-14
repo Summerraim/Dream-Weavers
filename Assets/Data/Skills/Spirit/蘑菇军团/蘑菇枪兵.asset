@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DisplayName: "\u8611\u83C7\u67AA\u5175"
   Image: {fileID: -60219627, guid: a1d2f7c9f671b5f42a31639ec8b13e5d, type: 3}
-  MaxHP: 160
+  MaxHP: 180
   MaxMana: 100
   Damage: 10
-  Defense: 2
+  Defense: 5
   Skills:
   - {fileID: 11400000, guid: 83f797868f7120a478172343951cfd76, type: 2}
   - {fileID: 11400000, guid: c2a3775ed130d4649943a7fdaf286fc2, type: 2}
