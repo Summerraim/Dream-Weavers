@@ -9,11 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f4f490e281f83d47a3896f9979023cc, type: 3}
-  m_Name: DialogData
+  m_Script: {fileID: 0}
+  m_Name: NewDialogueData
   m_EditorClassIdentifier: Assembly-CSharp::DialogueData
-  dialogView: {fileID: 0}
-  defaultDisplayTime: 3
-  pauseGameDuringDialogue: 1
-  currentDialogue: {fileID: 0}
-  currentEntryIndex: -1
+  dialogueId: 
+  dialogueEntries: []
+  canSkip: 1
+  canAutoPlay: 1
+  onCompleteEvent: 

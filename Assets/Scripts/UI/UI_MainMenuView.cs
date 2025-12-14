@@ -197,24 +197,31 @@ public class UI_MainMenuView : MonoBehaviour
     
     private void OnMasterVolumeChanged(float value)
     {
-        // 实时预览（仅更新 UI 或播放预览音效，不调用 setter）
-        // 如果 AudioManagerService 支持 setter，可在此调用
-        // if (audioManager != null)
-        //     audioManager.SetMasterVolume(value);
+        // 实时应用音量到音频管理器
+        if (audioManager != null)
+            audioManager.SetMasterVolume(value);
         
-        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        // 同时保存到 PlayerPrefs
         PlayerPrefs.SetFloat("MasterVolume", value);
     }
     
     private void OnMusicVolumeChanged(float value)
     {
-        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        // 实时应用音量到音频管理器
+        if (audioManager != null)
+            audioManager.SetBGMVolume(value);
+        
+        // 同时保存到 PlayerPrefs
         PlayerPrefs.SetFloat("MusicVolume", value);
     }
     
     private void OnSFXVolumeChanged(float value)
     {
-        // 备选方案：保存到 PlayerPrefs（不实时应用）
+        // 实时应用音量到音频管理器
+        if (audioManager != null)
+            audioManager.SetSFXVolume(value);
+        
+        // 同时保存到 PlayerPrefs
         PlayerPrefs.SetFloat("SFXVolume", value);
     }
     
@@ -229,13 +236,18 @@ public class UI_MainMenuView : MonoBehaviour
         float musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
         float sfxVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
         
-        // 不调用 audioManager.SetXxxVolume，仅更新 UI 滑块
-        // 如果需要应用音量到 AudioManagerService，需要等待其实现 setter 方法
-        
         // 更新UI滑块
         if (masterVolumeSlider != null) masterVolumeSlider.value = masterVolume;
         if (musicVolumeSlider != null) musicVolumeSlider.value = musicVolume;
         if (sfxVolumeSlider != null) sfxVolumeSlider.value = sfxVolume;
+        
+        // 应用音量设置到音频管理器
+        if (audioManager != null)
+        {
+            audioManager.SetMasterVolume(masterVolume);
+            audioManager.SetBGMVolume(musicVolume);
+            audioManager.SetSFXVolume(sfxVolume);
+        }
     }
     
     private void SaveVolumeSettings()
@@ -251,7 +263,13 @@ public class UI_MainMenuView : MonoBehaviour
         PlayerPrefs.SetFloat("SFXVolume", sfxVolume);
         PlayerPrefs.Save();
         
-        // 不调用 audioManager.SetXxxVolume，等待其实现对应方法后再集成
+        // 应用音量设置到音频管理器（确保设置被应用）
+        if (audioManager != null)
+        {
+            audioManager.SetMasterVolume(masterVolume);
+            audioManager.SetBGMVolume(musicVolume);
+            audioManager.SetSFXVolume(sfxVolume);
+        }
     }
     
     #endregion
