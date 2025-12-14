@@ -8,8 +8,8 @@ public class InvincibilityBuff : Buff
     public override string DisplayName => "无敌";
     public override string Description => "不受任何伤害";
 
-    public InvincibilityBuff(IBattleUnit owner, int duration)
-        : base(owner, duration)
+    public InvincibilityBuff(IBattleUnit owner, int duration, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
     }
 

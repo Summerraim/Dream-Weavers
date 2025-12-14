@@ -28,7 +28,7 @@ public class Strengthen : Effect
             return;
         }
 
-        var buff = new StrengthBuff(receiver, duration, damageMultiplier);
+        var buff = new StrengthBuff(receiver, duration, damageMultiplier, this);
         CurrentBattle.AddBuff(buff);
     }
 }

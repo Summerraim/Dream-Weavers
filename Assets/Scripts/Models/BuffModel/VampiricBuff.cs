@@ -10,8 +10,8 @@ public class VampiricBuff : Buff
     public override string DisplayName => "吸血";
     public override string Description => $"造成伤害的{(lifeStealPercent * 100):F0}%转化为生命值";
 
-    public VampiricBuff(IBattleUnit owner, int duration, float percent)
-        : base(owner, duration)
+    public VampiricBuff(IBattleUnit owner, int duration, float percent, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         lifeStealPercent = Mathf.Clamp01(percent);
     }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: ba5a07d17e8999c4fa1ed33020c8ea03, type: 3}
   duration: 3
   damageReduction: 0.2
   defenseReduction: 0.3

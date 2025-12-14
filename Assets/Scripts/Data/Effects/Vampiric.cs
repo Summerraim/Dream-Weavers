@@ -27,7 +27,7 @@ public class Vampiric : Effect
             return;
         }
 
-        var buff = new VampiricBuff(receiver, duration, lifeStealPercent);
+        var buff = new VampiricBuff(receiver, duration, lifeStealPercent, this);
         CurrentBattle.AddBuff(buff);
     }
 }

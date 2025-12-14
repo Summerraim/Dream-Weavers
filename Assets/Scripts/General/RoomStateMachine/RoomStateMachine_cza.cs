@@ -16,6 +16,8 @@ public class RoomStateMachine_cza : MonoBehaviour
     public event Action<IReadOnlyList<int>> OnBranchChoicesUpdated;
     // 新增：初始化完成（进入首房后）可交互通知
     public event Action OnReady;
+    // 新增：楼层初始化完成事件（用于UI在跨楼层时做清理/隐藏）
+    public event Action<int> OnFloorInitialized;
 
     // 新增：是否处于“等待玩家选择分支”的状态
     private bool awaitingChoice;
@@ -77,6 +79,7 @@ public class RoomStateMachine_cza : MonoBehaviour
         visitedOrderDebug.Clear();
         branchChoices.Clear();
         CurrentMap = MapGenerator_cza.GenerateFloor(floor, rng);
+        EnsureAtLeastOnePropsRoom(CurrentMap, rng);
         int roomsCount = CurrentMap != null && CurrentMap.Rooms != null ? CurrentMap.Rooms.Count : -1;
         Debug.Log($"[RoomState] 楼层生成完成: map={(CurrentMap!=null)} roomsCount={roomsCount}");
         // 选择有效的起始房间：优先 1，否则取最小可用 Id
@@ -97,9 +100,43 @@ public class RoomStateMachine_cza : MonoBehaviour
         Debug.Log($"[RoomState] 计划进入起始房 startId={startId}");
         EnterRoom(startId); // 进入起始房（记录为 visited）
         Debug.Log($"[RoomState] 初始化楼层 {floor} 完成，CurrentRoom={(CurrentRoom!=null ? CurrentRoom.Id.ToString() : "null")}");
+        // 通知：楼层初始化完成（用于UI隐藏上一层残留）
+        try { OnFloorInitialized?.Invoke(floor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnFloorInitialized 异常: {ex}"); }
         // 初始化后（并已进入首房）通知 UI 可交互
         Debug.Log("[RoomState] OnReady 触发（已进入首房）");
         OnReady?.Invoke();
+    }
+
+    private void EnsureAtLeastOnePropsRoom(FloorMap_cza map, SeedRNG_cza rng)
+    {
+        if (map == null || map.Rooms == null || map.Rooms.Count == 0) return;
+        bool hasProps = false;
+        foreach (var kv in map.Rooms)
+        {
+            if (kv.Value != null && kv.Value.Type == RoomType_cza.Props)
+            {
+                hasProps = true;
+                break;
+            }
+        }
+        if (hasProps) return;
+
+        var candidates = new List<int>();
+        foreach (var kv in map.Rooms)
+        {
+            var id = kv.Key;
+            var node = kv.Value;
+            if (node == null) continue;
+            if (id == 1) continue; // 避免将起始房改为 Props
+            if (node.Type == RoomType_cza.Boss) continue;
+            candidates.Add(id);
+        }
+        if (candidates.Count == 0) return;
+        int pickIndex = rng != null ? rng.NextInt(0, candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
+        int pickId = candidates[pickIndex];
+        var beforeType = map.Rooms[pickId].Type;
+        map.Rooms[pickId].Type = RoomType_cza.Props;
+        Debug.Log($"[RoomState] 保底 Props: Floor={map.FloorIndex} 将房间 {pickId} 类型 {beforeType} 替换为 Props");
     }
 
     // 进入指定房间
@@ -303,20 +340,117 @@ public class RoomStateMachine_cza : MonoBehaviour
         switch (room.Type)
         {
             case RoomType_cza.Combat:
-                // TODO: 触发战斗初始化
+            {
+                var combat = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+                if (combat == null)
+                {
+                    // 兼容未激活对象
+                    var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.CombatRoom_cza>();
+                    if (all != null && all.Length > 0)
+                    {
+                        combat = all[0];
+                        if (combat != null && !combat.gameObject.activeInHierarchy)
+                        {
+                            Debug.Log("[RoomState] CombatRoom_cza found inactive, activating GameObject");
+                            combat.gameObject.SetActive(true);
+                        }
+                    }
+                }
+                if (combat != null)
+                {
+                    Debug.Log("[RoomState] Enter CombatRoom -> calling EnterRoom()");
+                    combat.EnterRoom();
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomState] CombatRoom_cza not found (active or inactive)");
+                }
                 break;
+            }
             case RoomType_cza.Rest:
-                // TODO: 恢复玩家状态
+            {
+                var rest = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.RestRoom_cza>();
+                if (rest == null)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.RestRoom_cza>();
+                    if (all != null && all.Length > 0)
+                    {
+                        rest = all[0];
+                        if (rest != null && !rest.gameObject.activeInHierarchy)
+                        {
+                            Debug.Log("[RoomState] RestRoom_cza found inactive, activating GameObject");
+                            rest.gameObject.SetActive(true);
+                        }
+                    }
+                }
+                if (rest != null)
+                {
+                    Debug.Log("[RoomState] Enter RestRoom -> calling EnterRoom()");
+                    rest.EnterRoom();
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomState] RestRoom_cza not found (active or inactive)");
+                }
                 break;
+            }
             case RoomType_cza.Props:
-                // TODO: 刷新道具商店或掉落
+            {
+                var props = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.PropsRoom_cza>();
+                if (props == null)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.PropsRoom_cza>();
+                    if (all != null && all.Length > 0)
+                    {
+                        props = all[0];
+                        if (props != null && !props.gameObject.activeInHierarchy)
+                        {
+                            Debug.Log("[RoomState] PropsRoom_cza found inactive, activating GameObject");
+                            props.gameObject.SetActive(true);
+                        }
+                    }
+                }
+                if (props != null)
+                {
+                    Debug.Log("[RoomState] Enter PropsRoom -> calling EnterRoom()");
+                    props.EnterRoom();
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomState] PropsRoom_cza not found (active or inactive)");
+                }
                 break;
+            }
             case RoomType_cza.Events:
-                // TODO
+                // TODO: 事件房逻辑接入
                 break;
             case RoomType_cza.Boss:
-                // TODO: 触发Boss战
+            {
+                var boss = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.BossRoom_cza>();
+                if (boss == null)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.BossRoom_cza>();
+                    if (all != null && all.Length > 0)
+                    {
+                        boss = all[0];
+                        if (boss != null && !boss.gameObject.activeInHierarchy)
+                        {
+                            Debug.Log("[RoomState] BossRoom_cza found inactive, activating GameObject");
+                            boss.gameObject.SetActive(true);
+                        }
+                    }
+                }
+                if (boss != null)
+                {
+                    Debug.Log("[RoomState] Enter BossRoom -> calling EnterRoom()");
+                    boss.EnterRoom();
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomState] BossRoom_cza not found (active or inactive)");
+                }
                 break;
+            }
         }
     }
 }

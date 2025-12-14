@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace DreamWeavers.Rooms
+{
 public class RestRoom_cza : RoomBase_cza
 {
     private void Awake()
@@ -45,4 +47,5 @@ public class RestRoom_cza : RoomBase_cza
         // TODO: 如有队伍/编队管理器，可在此补充收集逻辑
         return list;
     }
+}
 }

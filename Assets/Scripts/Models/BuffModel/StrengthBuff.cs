@@ -11,15 +11,15 @@ public class StrengthBuff : Buff
     public override string DisplayName => "力量祝福";
     public override string Description => $"攻击力提升{(damageMultiplier * 100):F0}%";
 
-    public StrengthBuff(IBattleUnit owner, int duration, float multiplier)
-        : base(owner, duration)
+    public StrengthBuff(IBattleUnit owner, int duration, float multiplier, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damageMultiplier = Mathf.Max(0f, multiplier);
         damageBonus = 0;
     }
 
-    public StrengthBuff(IBattleUnit owner, int duration, int flatBonus)
-        : base(owner, duration)
+    public StrengthBuff(IBattleUnit owner, int duration, int flatBonus, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damageMultiplier = 0f;
         damageBonus = Mathf.Max(0, flatBonus);

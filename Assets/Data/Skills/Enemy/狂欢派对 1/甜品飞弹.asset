@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
   m_Name: "\u751C\u54C1\u98DE\u5F39"
   m_EditorClassIdentifier: 
-  displayNameOverride: "\u6E38\u8361"
-  <Description>k__BackingField: "\u6E38\u8361"
+  displayNameOverride: "\u751C\u54C1\u98DE\u5F39"
+  <Description>k__BackingField: "\u751C\u54C1\u98DE\u5F39"
   <Mana>k__BackingField: 0
   <CooldownTurns>k__BackingField: 1
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
-  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 8978b2e27c049be44801b158b3097f78,
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: e152b472b0155e24ca425425f3d2c30f,
     type: 2}
   effects:
   - {fileID: 11400000, guid: 8864fc3f218a8c5498b15cdfb54852be, type: 2}

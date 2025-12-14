@@ -27,7 +27,7 @@ public class HealthRegeneration : Effect
             return;
         }
 
-        var buff = new HealthRegenerationBuff(receiver, duration, percentRegeneration);
+        var buff = new HealthRegenerationBuff(receiver, duration, percentRegeneration, this);
         CurrentBattle.AddBuff(buff);
     }
 }

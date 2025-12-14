@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: -2035702710, guid: ce8c180d7302a444587f2acbb22e9c67, type: 3}
   lifeStealPercent: 0.3
   duration: 3
   applyToCaster: 1
