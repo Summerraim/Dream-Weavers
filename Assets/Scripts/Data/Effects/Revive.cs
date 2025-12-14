@@ -24,7 +24,7 @@ public class Revive : Effect
             return;
         }
 
-        var buff = new ReviveBuff(receiver, reviveHealthPercent);
+        var buff = new ReviveBuff(receiver, reviveHealthPercent, this);
         CurrentBattle.AddBuff(buff);
     }
 }

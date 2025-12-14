@@ -16,8 +16,8 @@ public class ThornsBuff : Buff
     /// <summary>
     /// 基于百分比的反伤
     /// </summary>
-    public ThornsBuff(IBattleUnit owner, int duration, float percent)
-        : base(owner, duration)
+    public ThornsBuff(IBattleUnit owner, int duration, float percent, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatDamage = 0;
         damagePercent = Mathf.Clamp01(percent);
@@ -26,8 +26,8 @@ public class ThornsBuff : Buff
     /// <summary>
     /// 基于固定值的反伤
     /// </summary>
-    public ThornsBuff(IBattleUnit owner, int duration, int fixedDamage)
-        : base(owner, duration)
+    public ThornsBuff(IBattleUnit owner, int duration, int fixedDamage, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatDamage = Mathf.Max(0, fixedDamage);
         damagePercent = 0f;

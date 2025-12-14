@@ -11,8 +11,8 @@ public class ShieldBuff : Buff
     private int shieldAmount;
     private int maxShieldAmount; // 记录初始最大护盾值
 
-    public ShieldBuff(IBattleUnit owner, int duration, int shield)
-        : base(owner, duration)
+    public ShieldBuff(IBattleUnit owner, int duration, int shield, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         shieldAmount = Mathf.Max(0, shield);
         maxShieldAmount = shieldAmount;

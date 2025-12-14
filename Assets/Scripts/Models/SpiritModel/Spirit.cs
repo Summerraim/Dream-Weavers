@@ -32,7 +32,16 @@ public class Spirit : IBattleUnit
     public int BaseDefense => baseDefense;
     public IReadOnlyList<SynergyModel> Synergies => synergyModels;
 
-    public Spirit(SpiritData data)
+    public Spirit(SpiritData data) : this(data, null)
+    {
+    }
+
+    /// <summary>
+    /// 创建Spirit实例，可选地使用预定义的技能列表
+    /// </summary>
+    /// <param name="data">Spirit数据</param>
+    /// <param name="predefinedSkills">预定义的技能列表（用于恢复战斗状态），为null时随机选择</param>
+    public Spirit(SpiritData data, List<ISkill> predefinedSkills)
     {
         this.data = data;
         baseMaxHP = data.MaxHP;
@@ -55,17 +64,27 @@ public class Spirit : IBattleUnit
             }
         }
 
-        // 初始化技能：从所有技能中随机选择3个
-        InitializeBattleSkills();
+        // 初始化技能：使用预定义列表或随机选择
+        InitializeBattleSkills(predefinedSkills);
     }
 
     /// <summary>
-    /// 从所有技能中随机选择最多3个技能作为战斗技能
+    /// 从所有技能中随机选择最多3个技能作为战斗技能，或使用预定义的技能列表
     /// </summary>
-    private void InitializeBattleSkills()
+    /// <param name="predefinedSkills">预定义的技能列表，为null时随机选择</param>
+    private void InitializeBattleSkills(List<ISkill> predefinedSkills = null)
     {
         battleSkills.Clear();
 
+        // 如果提供了预定义技能列表，直接使用
+        if (predefinedSkills != null && predefinedSkills.Count > 0)
+        {
+            battleSkills.AddRange(predefinedSkills);
+            UnityEngine.Debug.Log($"Spirit {DisplayName}: Restored {battleSkills.Count} battle skills from saved state");
+            return;
+        }
+
+        // 否则，随机选择技能
         if (data == null || data.Skills == null || data.Skills.Length == 0)
         {
             UnityEngine.Debug.LogWarning($"Spirit {DisplayName}: No skills available");

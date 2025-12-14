@@ -18,8 +18,8 @@ public class ManaShieldBuff : Buff
     /// <param name="duration">持续回合</param>
     /// <param name="absorption">吸收的伤害百分比</param>
     /// <param name="ratio">伤害转魔法的比例（1.0表示1点伤害=1点魔法）</param>
-    public ManaShieldBuff(IBattleUnit owner, int duration, float absorption, float ratio = 1.0f)
-        : base(owner, duration)
+    public ManaShieldBuff(IBattleUnit owner, int duration, float absorption, float ratio = 1.0f, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         absorptionPercent = Mathf.Clamp01(absorption);
         damageToManaRatio = Mathf.Max(0f, ratio);

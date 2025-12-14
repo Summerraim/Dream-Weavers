@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: -188278068, guid: 3aa3b48d87c868d44994103ff7072d41, type: 3}
   reviveHealthPercent: 0.3
   applyToCaster: 1

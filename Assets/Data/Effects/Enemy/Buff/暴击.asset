@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: 796368c4b855c9f4f9398a22248e240c, type: 3}
   damageBonus: 0.3
   critChance: 0.3
   critMultiplier: 2

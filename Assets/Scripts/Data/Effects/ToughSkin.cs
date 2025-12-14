@@ -27,7 +27,7 @@ public class ToughSkin : Effect
             return;
         }
 
-        var buff = new ToughSkinBuff(receiver, duration, damageReduction);
+        var buff = new ToughSkinBuff(receiver, duration, damageReduction, this);
         CurrentBattle.AddBuff(buff);
     }
 }

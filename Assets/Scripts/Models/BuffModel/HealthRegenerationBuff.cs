@@ -13,15 +13,15 @@ public class HealthRegenerationBuff : Buff
         ? $"每回合恢复{(percentRegeneration * 100):F0}%最大生命值"
         : $"每回合恢复{flatRegeneration}点生命值";
 
-    public HealthRegenerationBuff(IBattleUnit owner, int duration, float percentRegen)
-        : base(owner, duration)
+    public HealthRegenerationBuff(IBattleUnit owner, int duration, float percentRegen, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatRegeneration = 0;
         percentRegeneration = Mathf.Clamp01(percentRegen);
     }
 
-    public HealthRegenerationBuff(IBattleUnit owner, int duration, int flatRegen)
-        : base(owner, duration)
+    public HealthRegenerationBuff(IBattleUnit owner, int duration, int flatRegen, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatRegeneration = Mathf.Max(0, flatRegen);
         percentRegeneration = 0f;

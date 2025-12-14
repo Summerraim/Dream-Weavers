@@ -1253,12 +1253,12 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "维京熊")
         {
-            rectTransform.sizeDelta = new Vector2(90, 105);
-            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x105");
+            rectTransform.sizeDelta = new Vector2(98, 112);
+            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为98x112");
         }
         if (displayName == "派对熊")
         {
-            rectTransform.sizeDelta = new Vector2(90, 100);
+            rectTransform.sizeDelta = new Vector2(90, 103);
             Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
         }
         if (displayName == "巴甫洛夫")
@@ -1298,8 +1298,13 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "眼球史莱姆")
         {
-            rectTransform.sizeDelta = new Vector2(100, 80);
-            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为100x80");
+            rectTransform.sizeDelta = new Vector2(102, 75);
+            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为102x75");
+        }
+        if (displayName == "蘑菇枪兵")
+        {
+            rectTransform.sizeDelta = new Vector2(78, 102);
+            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x102");
         }
     }
 
@@ -1321,12 +1326,27 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "维京熊")
         {
-            rectTransform.sizeDelta = new Vector2(90, 105);
-            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x105");
+            rectTransform.sizeDelta = new Vector2(90, 110);
+            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x110");
+        }
+        if (displayName == "寒冰大炮手")
+        {
+            rectTransform.sizeDelta = new Vector2(88, 88);
+            Debug.Log($"[UI_BattleView] 调整寒冰大炮手图片大小为88x88");
+        }
+        if (displayName == "森林大炮手")
+        {
+            rectTransform.sizeDelta = new Vector2(88, 88);
+            Debug.Log($"[UI_BattleView] 调整森林大炮手图片大小为88x88");
+        }
+        if (displayName == "糖果大炮手")
+        {
+            rectTransform.sizeDelta = new Vector2(88, 88);
+            Debug.Log($"[UI_BattleView] 调整糖果大炮手图片大小为88x88");
         }
         if (displayName == "派对熊")
         {
-            rectTransform.sizeDelta = new Vector2(90, 100);
+            rectTransform.sizeDelta = new Vector2(90, 102);
             Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
         }
         if (displayName == "巴甫洛夫")
@@ -1366,8 +1386,13 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "眼球史莱姆")
         {
-            rectTransform.sizeDelta = new Vector2(98, 80);
-            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为98x80");
+            rectTransform.sizeDelta = new Vector2(100, 76);
+            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为100x76");
+        }
+        if (displayName == "蘑菇枪兵")
+        {
+            rectTransform.sizeDelta = new Vector2(80, 95);
+            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为80x95");
         }
         // 特殊处理：根据Spirit的DisplayName调整图片大小
         // 示例：如果Spirit名为"巨型守护者"，设置为180x180
