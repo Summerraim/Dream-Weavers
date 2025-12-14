@@ -121,6 +121,54 @@ namespace DreamWeavers.Rooms
         // 提供当前敌人/精灵数据访问
         public EnemyData GetSelectedEnemyData() => selectedEnemy;
         public SpiritData GetSelectedSpiritData() => selectedSpirit;
+
+        /// <summary>
+        /// 尝试捕捉当前敌人对应的精灵
+        /// </summary>
+        /// <param name="earlyCapture">是否为提前捕捉（狩猎大师羁绊）</param>
+        /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
+        public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
+        {
+            // 检查房间是否已清理（或是否为提前捕捉）
+            if (!earlyCapture && !IsCleared())
+            {
+                Debug.Log("[CombatRoom] 房间未清理完成，无法捕捉");
+                return (false, null);
+            }
+
+            // 确定要捕捉的SpiritData
+            SpiritData spiritToCapture = selectedSpirit;
+            if (spiritToCapture == null && enemyPool != null && selectedEnemy != null)
+            {
+                spiritToCapture = enemyPool.GetSpiritForEnemy(selectedEnemy);
+            }
+
+            if (spiritToCapture == null)
+            {
+                Debug.LogWarning("[CombatRoom] 无法确定要捕捉的SpiritData");
+                return (false, null);
+            }
+
+            // TODO: 添加捕捉概率系统（目前100%成功）
+            // 可以在这里添加随机数判定或其他捕捉机制
+
+            // 添加到 PlayerData.OwnedSpirits
+            if (playerData != null)
+            {
+                var owned = playerData.GetOwnedSpirits();
+                owned.Add(spiritToCapture);
+                playerData.OwnedSpirits = owned.ToArray();
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+                string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
+                Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
+                return (true, spiritToCapture);
+            }
+
+            Debug.LogWarning("[CombatRoom] PlayerData为null，无法捕捉");
+            return (false, null);
+        }
         public override void ExitRoom()
         {
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表

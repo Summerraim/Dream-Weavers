@@ -708,6 +708,11 @@ MonoBehaviour:
   menuBGM: {fileID: 0}
   gameplayBGM: {fileID: 0}
   battleBGM: {fileID: 0}
+  level1BGM: {fileID: 8300000, guid: ec2c4b91518786644be0ca5e5fcd8522, type: 3}
+  level2BGM: {fileID: 0}
+  level3BGM: {fileID: 0}
+  level4BGM: {fileID: 0}
+  enableSceneMusicAutoSwitch: 1
   buttonClickSFX: {fileID: 0}
   buttonHoverSFX: {fileID: 0}
   notificationSFX: {fileID: 0}

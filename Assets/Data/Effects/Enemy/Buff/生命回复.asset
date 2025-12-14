@@ -16,5 +16,5 @@ MonoBehaviour:
   description: 
   image: {fileID: 0}
   percentRegeneration: 0.1
-  duration: 3
+  duration: 2
   applyToCaster: 1

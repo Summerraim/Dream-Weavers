@@ -615,10 +615,21 @@ public class UI_InventoryView : MonoBehaviour
         if (selectedSlot != null)
         {
             InventoryItem item = selectedSlot.GetItem();
-            if (item != null)
+            if (item != null && item.data != null)
             {
-                // 直接使用选中实例，内部会处理数量与事件
-                InventoryManager.Instance.UseItem(item);
+                // 尝试通过BattleController使用道具（支持TargetingMode流程）
+                var battleController = FindObjectOfType<BattleController>();
+                if (battleController != null)
+                {
+                    Debug.Log($"[InventoryUI] Requesting item use via BattleController: {item.data.DisplayName}");
+                    battleController.OnItemUseRequested(item.data);
+                }
+                else
+                {
+                    // 如果没有BattleController（非战斗场景），直接使用
+                    Debug.LogWarning("[InventoryUI] BattleController not found, using item directly");
+                    InventoryManager.Instance.UseItem(item);
+                }
 
                 // 隐藏信息面板
                 if (itemInfoPanel != null)

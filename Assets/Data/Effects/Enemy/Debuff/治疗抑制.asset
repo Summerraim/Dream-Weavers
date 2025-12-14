@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  reductionPercent: 0.5
+  reductionPercent: 0.3
   duration: 3
   applyToTarget: 1

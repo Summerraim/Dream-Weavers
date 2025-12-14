@@ -100,12 +100,12 @@ TextureImporter:
       name: "\u8611\u83C7\u76FE\u5175_0"
       rect:
         serializedVersion: 2
-        x: 668
+        x: 607
         y: 195
-        width: 1296
-        height: 1454
+        width: 1390
+        height: 1469
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

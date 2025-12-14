@@ -17,5 +17,5 @@ MonoBehaviour:
   image: {fileID: 0}
   duration: 3
   damageReduction: 0.2
-  defenseReduction: 0.2
+  defenseReduction: 0.3
   applyToCaster: 0

@@ -139,12 +139,22 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private Transform enemyDeathSlotContainer;
 
+    [Header("Capture UI")]
+    [SerializeField]
+    private GameObject capturePanel;
+
+    [SerializeField]
+    private TMP_Text captureResultText;
+
     private BattleController controller;
     private BattleModel model;
     private List<SynergySlot> spiritSynergySlots = new List<SynergySlot>();
     private SpiritSlot[] spiritSlots;
     private List<EffectSlot> playerEffectSlots = new List<EffectSlot>();
     private List<EffectSlot> enemyEffectSlots = new List<EffectSlot>();
+
+    // 道具目标选择模式
+    private bool isSelectingItemTarget = false;
 
     public void Bind(BattleController ctrl, BattleModel m)
     {
@@ -172,6 +182,10 @@ public class UI_BattleView : MonoBehaviour
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
+
+        // 初始化捕捉UI面板（默认隐藏）
+        if (capturePanel != null)
+            capturePanel.SetActive(false);
 
         // 初始化羁绊槽位
         InitializeSynergySlots();
@@ -287,7 +301,10 @@ public class UI_BattleView : MonoBehaviour
         if (spiritImage2 != null && player != null)
         {
             if (player.Image != null)
+            {
                 spiritImage2.sprite = player.Image;
+                AdjustSpiritImageSize(spiritImage2, player.DisplayName);
+            }
         }
 
         if (enemyImage2 != null && enemy != null)
@@ -540,9 +557,7 @@ public class UI_BattleView : MonoBehaviour
 
         if (spiritSynergiesContainer == null)
         {
-            Debug.LogWarning(
-                "[UI_BattleView] spiritSynergiesContainer为null，无法初始化羁绊槽位"
-            );
+            Debug.LogWarning("[UI_BattleView] spiritSynergiesContainer为null，无法初始化羁绊槽位");
             return;
         }
 
@@ -572,7 +587,9 @@ public class UI_BattleView : MonoBehaviour
             spiritSynergySlots.Add(slot);
         }
 
-        Debug.Log($"[UI_BattleView] InitializeSynergySlots完成，创建{spiritSynergySlots.Count}个槽位");
+        Debug.Log(
+            $"[UI_BattleView] InitializeSynergySlots完成，创建{spiritSynergySlots.Count}个槽位"
+        );
     }
 
     /// <summary>
@@ -631,11 +648,7 @@ public class UI_BattleView : MonoBehaviour
             int synergyIndex = 0;
             if (synergies != null)
             {
-                for (
-                    int i = 0;
-                    i < synergies.Count && synergyIndex < spiritSynergySlots.Count;
-                    i++
-                )
+                for (int i = 0; i < synergies.Count && synergyIndex < spiritSynergySlots.Count; i++)
                 {
                     var synergy = synergies[i];
                     if (synergy != null && synergy.Synergy != null)
@@ -789,8 +802,24 @@ public class UI_BattleView : MonoBehaviour
         if (controller == null)
             return;
 
-        Debug.Log($"UI_BattleView: Spirit Slot {slotIndex} clicked");
+        Debug.Log(
+            $"UI_BattleView: Spirit Slot {slotIndex} clicked, isSelectingItemTarget={isSelectingItemTarget}"
+        );
 
+        // 如果是道具目标选择模式
+        if (isSelectingItemTarget)
+        {
+            // 通知BattleController选择了目标
+            controller.OnSpiritSelectedAsItemTarget(slotIndex);
+
+            // 重置状态
+            isSelectingItemTarget = false;
+
+            Debug.Log($"UI_BattleView: Spirit {slotIndex} selected as item target");
+            return;
+        }
+
+        // 正常的Spirit切换逻辑
         bool success = controller.SwitchToSpirit(slotIndex);
 
         if (success)
@@ -845,6 +874,25 @@ public class UI_BattleView : MonoBehaviour
         {
             spiritSwitcherPanel.SetActive(false);
         }
+
+        // 重置道具目标选择状态
+        isSelectingItemTarget = false;
+    }
+
+    /// <summary>
+    /// 显示Spirit切换器面板用于选择道具目标
+    /// </summary>
+    public void ShowSpiritSwitcherForItemTarget()
+    {
+        isSelectingItemTarget = true;
+
+        if (spiritSwitcherPanel != null)
+        {
+            spiritSwitcherPanel.SetActive(true);
+            RefreshSpiritSlots();
+        }
+
+        Debug.Log("UI_BattleView: Showing Spirit Switcher for item target selection");
     }
 
     // ========== Effect Display功能 ==========
@@ -913,7 +961,9 @@ public class UI_BattleView : MonoBehaviour
             slotList.Add(slot);
         }
 
-        Debug.Log($"[UI_BattleView] CreateEffectSlotPool完成: {poolName}, 成功创建{slotList.Count}个槽位");
+        Debug.Log(
+            $"[UI_BattleView] CreateEffectSlotPool完成: {poolName}, 成功创建{slotList.Count}个槽位"
+        );
     }
 
     /// <summary>
@@ -981,11 +1031,7 @@ public class UI_BattleView : MonoBehaviour
     /// <summary>
     /// 刷新单个单位的Effect显示
     /// </summary>
-    private void RefreshUnitEffects(
-        IBattleUnit unit,
-        List<EffectSlot> slotList,
-        GameObject panel
-    )
+    private void RefreshUnitEffects(IBattleUnit unit, List<EffectSlot> slotList, GameObject panel)
     {
         if (unit == null || model == null)
         {
@@ -1200,5 +1246,193 @@ public class UI_BattleView : MonoBehaviour
         // {
         //     rectTransform.sizeDelta = new Vector2(width, height);
         // }
+        if (displayName == "霸王龙角斗士")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 100);
+            Debug.Log($"[UI_BattleView] 调整霸王龙角斗士图片大小为100x100");
+        }
+        if (displayName == "维京熊")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 105);
+            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x105");
+        }
+        if (displayName == "派对熊")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 100);
+            Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
+        }
+        if (displayName == "巴甫洛夫")
+        {
+            rectTransform.sizeDelta = new Vector2(105, 90);
+            Debug.Log($"[UI_BattleView] 调整巴甫洛夫图片大小为105x90");
+        }
+        if (displayName == "默德拉斯")
+        {
+            rectTransform.sizeDelta = new Vector2(105, 90);
+            Debug.Log($"[UI_BattleView] 调整默德拉斯图片大小为105x90");
+        }
+        if (displayName == "雕塑")
+        {
+            rectTransform.sizeDelta = new Vector2(85, 105);
+            Debug.Log($"[UI_BattleView] 调整雕塑图片大小为85x105");
+        }
+        if (displayName == "飞鲸")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 100);
+            Debug.Log($"[UI_BattleView] 调整飞鲸图片大小为90x100");
+        }
+        if (displayName == "破坏者雷克")
+        {
+            rectTransform.sizeDelta = new Vector2(120, 115);
+            Debug.Log($"[UI_BattleView] 调整破坏者雷克图片大小为120x115");
+        }
+        if (displayName == "鹿骑士")
+        {
+            rectTransform.sizeDelta = new Vector2(102, 90);
+            Debug.Log($"[UI_BattleView] 调整鹿骑士图片大小为102x90");
+        }
+        if (displayName == "德芬斯")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 90);
+            Debug.Log($"[UI_BattleView] 调整德芬斯图片大小为100x90");
+        }
+        if (displayName == "眼球史莱姆")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 80);
+            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为100x80");
+        }
+    }
+
+    /// <summary>
+    /// 调整Spirit图片大小（特殊处理）
+    /// </summary>
+    private void AdjustSpiritImageSize(Image spiritImage, string displayName)
+    {
+        if (spiritImage == null)
+            return;
+
+        var rectTransform = spiritImage.GetComponent<RectTransform>();
+        if (rectTransform == null)
+            return;
+        if (displayName == "霸王龙角斗士")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 100);
+            Debug.Log($"[UI_BattleView] 调整霸王龙角斗士图片大小为100x100");
+        }
+        if (displayName == "维京熊")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 105);
+            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x105");
+        }
+        if (displayName == "派对熊")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 100);
+            Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
+        }
+        if (displayName == "巴甫洛夫")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 87);
+            Debug.Log($"[UI_BattleView] 调整巴甫洛夫图片大小为100x87");
+        }
+        if (displayName == "默德拉斯")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 87);
+            Debug.Log($"[UI_BattleView] 调整默德拉斯图片大小为100x87");
+        }
+        if (displayName == "雕塑")
+        {
+            rectTransform.sizeDelta = new Vector2(85, 105);
+            Debug.Log($"[UI_BattleView] 调整雕塑图片大小为85x105");
+        }
+        if (displayName == "飞鲸")
+        {
+            rectTransform.sizeDelta = new Vector2(90, 100);
+            Debug.Log($"[UI_BattleView] 调整飞鲸图片大小为90x100");
+        }
+        if (displayName == "鹿骑士")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 88);
+            Debug.Log($"[UI_BattleView] 调整鹿骑士图片大小为100x88");
+        }
+        if (displayName == "鹿长官")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 88);
+            Debug.Log($"[UI_BattleView] 调整鹿长官图片大小为100x88");
+        }
+        if (displayName == "德芬斯")
+        {
+            rectTransform.sizeDelta = new Vector2(100, 90);
+            Debug.Log($"[UI_BattleView] 调整德芬斯图片大小为100x90");
+        }
+        if (displayName == "眼球史莱姆")
+        {
+            rectTransform.sizeDelta = new Vector2(98, 80);
+            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为98x80");
+        }
+        // 特殊处理：根据Spirit的DisplayName调整图片大小
+        // 示例：如果Spirit名为"巨型守护者"，设置为180x180
+        // if (displayName == "巨型守护者")
+        // {
+        //     rectTransform.sizeDelta = new Vector2(180, 180);
+        //     Debug.Log($"[UI_BattleView] 调整{displayName}图片大小为180x180");
+        // }
+
+        // 可以在这里添加特殊Spirit的尺寸处理
+        // else if (displayName == "其他Spirit名称")
+        // {
+        //     rectTransform.sizeDelta = new Vector2(width, height);
+        // }
+    }
+
+    // ========== Capture UI功能 ==========
+
+    /// <summary>
+    /// 显示捕捉成功UI
+    /// </summary>
+    public void ShowCaptureSuccess(string spiritName)
+    {
+        if (capturePanel != null)
+        {
+            capturePanel.SetActive(true);
+        }
+
+        if (captureResultText != null)
+        {
+            captureResultText.text = $"捕捉成功！获得：{spiritName}";
+            captureResultText.color = Color.green;
+        }
+
+        Debug.Log($"[UI_BattleView] 显示捕捉成功: {spiritName}");
+    }
+
+    /// <summary>
+    /// 显示捕捉失败UI
+    /// </summary>
+    public void ShowCaptureFailed()
+    {
+        if (capturePanel != null)
+        {
+            capturePanel.SetActive(true);
+        }
+
+        if (captureResultText != null)
+        {
+            captureResultText.text = "捕捉失败...";
+            captureResultText.color = Color.red;
+        }
+
+        Debug.Log("[UI_BattleView] 显示捕捉失败");
+    }
+
+    /// <summary>
+    /// 隐藏捕捉UI面板
+    /// </summary>
+    public void HideCapturePanel()
+    {
+        if (capturePanel != null)
+        {
+            capturePanel.SetActive(false);
+            Debug.Log("[UI_BattleView] 隐藏捕捉面板");
+        }
     }
 }

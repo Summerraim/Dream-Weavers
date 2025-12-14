@@ -20,8 +20,12 @@ public enum GameState
 public enum SceneType
 {
     MainMenu,   // 主菜单场景
-    Gameplay,   // 游戏场景
-    Battle      // 战斗场景
+    Gameplay,   // 游戏场景（通用，用于未明确分类的场景）
+    Battle,     // 战斗场景
+    Level1,     // 第一关
+    Level2,     // 第二关
+    Level3,     // 第三关
+    Level4      // 第四关
 }
 
 /// <summary>
@@ -166,6 +170,26 @@ public class GameManagerService : MonoBehaviour
         else if (sceneName.Contains("Battle"))
         {
             _currentSceneType = SceneType.Battle;
+            SetGameState(GameState.Playing);
+        }
+        else if (sceneName.Contains("Level1") || sceneName.Contains("level1"))
+        {
+            _currentSceneType = SceneType.Level1;
+            SetGameState(GameState.Playing);
+        }
+        else if (sceneName.Contains("Level2") || sceneName.Contains("level2"))
+        {
+            _currentSceneType = SceneType.Level2;
+            SetGameState(GameState.Playing);
+        }
+        else if (sceneName.Contains("Level3") || sceneName.Contains("level3"))
+        {
+            _currentSceneType = SceneType.Level3;
+            SetGameState(GameState.Playing);
+        }
+        else if (sceneName.Contains("Level4") || sceneName.Contains("level4"))
+        {
+            _currentSceneType = SceneType.Level4;
             SetGameState(GameState.Playing);
         }
         else
@@ -368,6 +392,14 @@ public class GameManagerService : MonoBehaviour
                 return $"GameplayLevel{currentLevel}"; // 游戏场景名称
             case SceneType.Battle:
                 return $"BattleScene{currentLevel}"; // 战斗场景名称
+            case SceneType.Level1:
+                return "Level1Scene"; // 第一关场景名称
+            case SceneType.Level2:
+                return "Level2Scene"; // 第二关场景名称
+            case SceneType.Level3:
+                return "Level3Scene"; // 第三关场景名称
+            case SceneType.Level4:
+                return "Level4Scene"; // 第四关场景名称
             default:
                 return "";
         }

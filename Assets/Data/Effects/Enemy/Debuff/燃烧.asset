@@ -17,6 +17,6 @@ MonoBehaviour:
   image: {fileID: 0}
   usePercentDamage: 0
   percentDamage: 0.05
-  initDamage: 20
+  initDamage: 15
   duration: 3
   applyToTarget: 1
