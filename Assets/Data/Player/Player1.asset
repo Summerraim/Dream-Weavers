@@ -13,7 +13,13 @@ MonoBehaviour:
   m_Name: Player1
   m_EditorClassIdentifier: 
   PlayerName: Player
-  InitialItems: []
+  InitialItems:
+  - Item: {fileID: 11400000, guid: f30262f4781cdf44e875dc40d396ecd6, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 3f05a6edb40992c4f820de80e247a91e, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: f30262f4781cdf44e875dc40d396ecd6, type: 2}
+    Count: 1
   OwnedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
