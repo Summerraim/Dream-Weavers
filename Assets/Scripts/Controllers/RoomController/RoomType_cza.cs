@@ -9,4 +9,5 @@ public enum RoomType_cza
     Props,
     Events,
     Boss,
+    Skill,
 }

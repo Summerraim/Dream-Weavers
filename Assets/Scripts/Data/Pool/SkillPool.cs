@@ -34,6 +34,10 @@ public class SkillPool : ScriptableObject
     [Tooltip("为每个技能添加标签，用于分类（如：攻击、治疗、控制等）")]
     public List<string> Tags = new List<string>();
 
+    [Header("精灵映射（可选）")]
+    [Tooltip("为每个技能指定对应的精灵DisplayName，多个精灵用逗号分隔（如：火精灵,冰精灵）（需与Skills数量一致）")]
+    public List<string> SpiritNames = new List<string>();
+
     /// <summary>
     /// 获取对象池中的技能数量
     /// </summary>
@@ -232,6 +236,130 @@ public class SkillPool : ScriptableObject
     }
 
     /// <summary>
+    /// 按精灵名称获取对应的技能（支持一个技能对应多个精灵，用逗号分隔）
+    /// </summary>
+    /// <param name="spiritDisplayName">精灵的DisplayName</param>
+    /// <returns>该精灵对应的技能，如果没有找到则返回null</returns>
+    public ScriptableObject GetSkillBySpiritName(string spiritDisplayName)
+    {
+        if (IsEmpty || SpiritNames == null || SpiritNames.Count != Skills.Count)
+        {
+            Debug.LogWarning($"SkillPool [{DisplayName}]: SpiritNames not configured properly!");
+            return null;
+        }
+
+        for (int i = 0; i < Skills.Count; i++)
+        {
+            if (string.IsNullOrEmpty(SpiritNames[i]) || Skills[i] == null)
+                continue;
+
+            // 支持逗号分隔的多个精灵名称
+            string[] spirits = SpiritNames[i].Split(',');
+            foreach (var spirit in spirits)
+            {
+                string trimmedName = spirit.Trim();
+                if (trimmedName == spiritDisplayName)
+                {
+                    return Skills[i];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 按精灵名称获取所有对应的技能（一个精灵可能有多个技能）
+    /// </summary>
+    /// <param name="spiritDisplayName">精灵的DisplayName</param>
+    /// <returns>该精灵对应的所有技能列表</returns>
+    public List<ScriptableObject> GetAllSkillsBySpiritName(string spiritDisplayName)
+    {
+        List<ScriptableObject> result = new List<ScriptableObject>();
+
+        if (IsEmpty || SpiritNames == null || SpiritNames.Count != Skills.Count)
+        {
+            Debug.LogWarning($"SkillPool [{DisplayName}]: SpiritNames not configured properly!");
+            return result;
+        }
+
+        for (int i = 0; i < Skills.Count; i++)
+        {
+            if (string.IsNullOrEmpty(SpiritNames[i]) || Skills[i] == null)
+                continue;
+
+            // 支持逗号分隔的多个精灵名称
+            string[] spirits = SpiritNames[i].Split(',');
+            foreach (var spirit in spirits)
+            {
+                string trimmedName = spirit.Trim();
+                if (trimmedName == spiritDisplayName)
+                {
+                    result.Add(Skills[i]);
+                    break; // 避免重复添加同一个技能
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 按精灵名称获取对应的ISkill接口实例
+    /// </summary>
+    /// <param name="spiritDisplayName">精灵的DisplayName</param>
+    /// <returns>该精灵对应的ISkill实例</returns>
+    public ISkill GetISkillBySpiritName(string spiritDisplayName)
+    {
+        var skillObj = GetSkillBySpiritName(spiritDisplayName);
+        if (skillObj == null)
+            return null;
+
+        if (skillObj is ISkill skill)
+            return skill;
+
+        if (skillObj is SkillData skillData)
+            return new Skill(skillData);
+
+        Debug.LogWarning($"SkillPool [{DisplayName}]: Skill object is not compatible with ISkill interface!");
+        return null;
+    }
+
+    /// <summary>
+    /// 获取所有精灵名称与技能的映射（支持一个技能对应多个精灵）
+    /// </summary>
+    /// <returns>精灵名称到技能的字典（每个精灵只返回第一个匹配的技能）</returns>
+    public Dictionary<string, ScriptableObject> GetSpiritSkillMapping()
+    {
+        var mapping = new Dictionary<string, ScriptableObject>();
+
+        if (IsEmpty || SpiritNames == null || SpiritNames.Count != Skills.Count)
+        {
+            Debug.LogWarning($"SkillPool [{DisplayName}]: SpiritNames not configured properly!");
+            return mapping;
+        }
+
+        for (int i = 0; i < Skills.Count; i++)
+        {
+            if (string.IsNullOrEmpty(SpiritNames[i]) || Skills[i] == null)
+                continue;
+
+            // 支持逗号分隔的多个精灵名称
+            string[] spirits = SpiritNames[i].Split(',');
+            foreach (var spirit in spirits)
+            {
+                string trimmedName = spirit.Trim();
+                if (!string.IsNullOrEmpty(trimmedName) && !mapping.ContainsKey(trimmedName))
+                {
+                    mapping[trimmedName] = Skills[i];
+                }
+            }
+        }
+
+        return mapping;
+    }
+
+    /// <summary>
     /// 获取多个随机技能（不重复）
     /// </summary>
     public List<ScriptableObject> GetRandomSkills(int count, bool allowDuplicates = false)
@@ -416,6 +544,19 @@ public class SkillPool : ScriptableObject
             while (Tags.Count > Skills.Count)
             {
                 Tags.RemoveAt(Tags.Count - 1);
+            }
+        }
+
+        // 自动调整精灵名称列表大小以匹配技能列表
+        if (SpiritNames != null && Skills != null)
+        {
+            while (SpiritNames.Count < Skills.Count)
+            {
+                SpiritNames.Add(""); // 默认为空
+            }
+            while (SpiritNames.Count > Skills.Count)
+            {
+                SpiritNames.RemoveAt(SpiritNames.Count - 1);
             }
         }
     }

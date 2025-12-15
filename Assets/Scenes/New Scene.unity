@@ -779,7 +779,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentRoomText: {fileID: 2014776611}
   nextRoomsText: {fileID: 1322342907}
-  btnComplete: {fileID: 1058784962}
   btnNext1: {fileID: 1110262286}
   btnNext2: {fileID: 1629425800}
   btnNext3: {fileID: 1507324541}
@@ -801,6 +800,8 @@ MonoBehaviour:
   chooseRoot: {fileID: 0}
   usePrefabOnlyForChoices: 1
   floorChoosePrefabs: []
+  skillInfoText: {fileID: 0}
+  spiritInfoText: {fileID: 0}
 --- !u!1 &207116463
 GameObject:
   m_ObjectHideFlags: 0

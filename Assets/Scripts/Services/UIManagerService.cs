@@ -114,6 +114,12 @@ public class UIManagerService : MonoBehaviour
             if (debugMode)
                 Debug.Log($"UIManager: 递归注册 {count} 个面板（含子孙）");
         }
+
+        // 可选自动初始化（创建Canvas/层级 + 注册panelConfigs + 实例化常驻）
+        if (autoInitialize)
+        {
+            Initialize();
+        }
     }
 
     #endregion
@@ -244,8 +250,18 @@ public class UIManagerService : MonoBehaviour
     {
         if (!_panelDictionary.ContainsKey(panelName))
         {
-            Debug.LogError($"面板 '{panelName}' 未注册");
-            return null;
+            // 特例：LoadingPanel 已废弃，直接忽略调用
+            if (string.Equals(panelName, "LoadingPanel", StringComparison.Ordinal))
+            {
+                if (debugMode) Debug.Log("ShowPanel 调用了已废弃的 'LoadingPanel'，已忽略");
+                return null;
+            }
+            // 尝试在场景中按名称查找并注册一个同名对象，降低配置缺失导致的阻断
+            if (!TryResolveAndRegister(panelName))
+            {
+                Debug.LogError($"面板 '{panelName}' 未注册");
+                return null;
+            }
         }
         
         UIPanelInfo panelInfo = _panelDictionary[panelName];
@@ -293,6 +309,12 @@ public class UIManagerService : MonoBehaviour
     {
         if (!_panelDictionary.ContainsKey(panelName))
         {
+            // 特例：LoadingPanel 已废弃，忽略隐藏请求
+            if (string.Equals(panelName, "LoadingPanel", StringComparison.Ordinal))
+            {
+                if (debugMode) Debug.Log("HidePanel 调用了已废弃的 'LoadingPanel'，已忽略");
+                return;
+            }
             Debug.LogError($"面板 '{panelName}' 未注册");
             return;
         }
@@ -459,6 +481,74 @@ public class UIManagerService : MonoBehaviour
             panelInfo.instance.transform.SetParent(parent);
             panelInfo.instance.transform.SetAsLastSibling(); // 确保在最上面
         }
+    }
+
+    /// <summary>
+    /// 兜底：在场景中查找同名 GameObject 作为面板并注册
+    /// </summary>
+    private bool TryResolveAndRegister(string panelName)
+    {
+        // 先在已知容器下找
+        Transform found = null;
+        if (panelsRoot != null)
+        {
+            found = FindChildRecursive(panelsRoot, panelName);
+        }
+        // 若未在容器下找到，尝试全局查找激活对象
+        if (found == null)
+        {
+            var go = GameObject.Find(panelName);
+            if (go != null)
+                found = go.transform;
+        }
+        // 仍未找到，尝试包含未激活对象的全局查找
+        if (found == null)
+        {
+            var all = Resources.FindObjectsOfTypeAll<GameObject>();
+            for (int i = 0; i < all.Length; i++)
+            {
+                var g = all[i];
+                if (g != null && string.Equals(g.name, panelName, StringComparison.Ordinal))
+                {
+                    found = g.transform;
+                    break;
+                }
+            }
+        }
+        if (found != null)
+        {
+            // 确保对象处于激活以便显示
+            if (!found.gameObject.activeInHierarchy)
+            {
+                found.gameObject.SetActive(true);
+            }
+            RegisterPanel(panelName, found.gameObject);
+            return true;
+        }
+        return false;
+    }
+
+    private Transform FindChildRecursive(Transform root, string name)
+    {
+        if (root == null) return null;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var c = root.GetChild(i);
+            if (string.Equals(c.name, name, StringComparison.Ordinal))
+                return c;
+            var nested = FindChildRecursive(c, name);
+            if (nested != null) return nested;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 确保指定面板已注册；若未注册则尝试查找并注册。
+    /// </summary>
+    public bool EnsurePanelRegistered(string panelName)
+    {
+        if (_panelDictionary.ContainsKey(panelName)) return true;
+        return TryResolveAndRegister(panelName);
     }
     
     /// <summary>
