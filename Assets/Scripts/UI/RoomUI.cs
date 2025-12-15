@@ -16,9 +16,6 @@ public class RoomUIActions_cza : MonoBehaviour
 
     [Header("按钮")]
     [SerializeField]
-    private Button btnComplete;
-
-    [SerializeField]
     private Button btnNext1;
 
     [SerializeField]
@@ -35,8 +32,8 @@ public class RoomUIActions_cza : MonoBehaviour
     private bool subscribed;
     private Coroutine waitCo;
     private Coroutine enemyWatchCo; // 监听战斗房间敌人状态的协程
-    private bool overrideCompleteByEnemy; // 是否由敌人状态接管 Complete 的交互
-    private bool combatCompleteReady; // 敌人击败后允许完成房间
+    // private bool overrideCompleteByEnemy; // 已废弃
+    // private bool combatCompleteReady; // 已废弃
 
     [Header("调试开关")]
     [Tooltip("测试模式：强制 Complete 按钮始终可见且可点击，忽略战斗房间的敌人状态")] 
@@ -78,6 +75,14 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private GameObject currentChooseInstance;
 
+    [Header("技能房 UI")]
+    [Tooltip("显示技能信息的文本（技能名字、法力消耗、描述）")]
+    [SerializeField]
+    private TextMeshProUGUI skillInfoText;
+    
+    [Tooltip("显示技能将添加给哪个精灵的文本")]
+    [SerializeField]
+    private TextMeshProUGUI spiritInfoText;
     [Serializable]
     public struct TypePanelMapping
     {
@@ -88,8 +93,6 @@ public class RoomUIActions_cza : MonoBehaviour
     private void Awake()
     {
         // 强校验：关键引用不能为空
-        if (btnComplete == null)
-            Debug.LogError("[RoomUI] btnComplete 未赋值，请在 Inspector 绑定 Complete 按钮");
         if (btnNext1 == null)
             Debug.LogError("[RoomUI] btnNext1 未赋值，请在 Inspector 绑定 Next1 按钮");
         if (btnNext2 == null)
@@ -105,29 +108,6 @@ public class RoomUIActions_cza : MonoBehaviour
         AutoBindReferences();
 
         // 绑定按钮
-        if (btnComplete)
-            btnComplete.onClick.AddListener(() =>
-            {
-                Debug.Log("[RoomUI] Click Complete");
-                if (RoomStateMachine_cza.Instance != null)
-                {
-                    // 触发当前房间完成，状态机会生成分支并标记选择阶段
-                {
-                    // 触发当前房间完成，状态机会生成分支并标记选择阶段
-                    RoomStateMachine_cza.Instance.CompleteCurrentRoom();
-                    // 立即显式显示选择面板，确保 UI 及时可见
-                    ShowPanel(choosePanelName, true);
-                }
-                    // 立即显式显示选择面板，确保 UI 及时可见
-                    ShowPanel(choosePanelName, true);
-                }
-                else
-                {
-                {
-                    Debug.LogWarning("[RoomUI] RoomStateMachine Instance 为空，未挂载或未初始化");
-                }
-                }
-            });
         if (btnNext1)
             btnNext1.onClick.AddListener(() =>
             {
@@ -156,12 +136,9 @@ public class RoomUIActions_cza : MonoBehaviour
             nextRoomsText.raycastTarget = false;
 
         // 若关键引用缺失，主动禁用所有按钮，避免误操作
-        bool refsOk =
-            btnComplete != null && btnNext1 != null && btnNext2 != null && btnNext3 != null;
+        bool refsOk = btnNext1 != null && btnNext2 != null && btnNext3 != null;
         if (!refsOk)
         {
-            if (btnComplete)
-                btnComplete.interactable = false;
             if (btnNext1)
                 btnNext1.interactable = false;
             if (btnNext2)
@@ -206,10 +183,6 @@ public class RoomUIActions_cza : MonoBehaviour
         }
 
         // 按钮
-        if (btnComplete == null)
-        {
-            btnComplete = FindInChildrenByName<Button>(new[] { "Complete", "Button_Complete" });
-        }
         if (btnNext1 == null)
         {
             btnNext1 = FindInChildrenByName<Button>(new[] { "Next1", "Next01", "Next_1" });
@@ -267,8 +240,6 @@ public class RoomUIActions_cza : MonoBehaviour
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
         }
-        overrideCompleteByEnemy = false;
-        combatCompleteReady = false;
     }
 
     private void RefreshRoomInfo(RoomNode_cza node)
@@ -295,7 +266,15 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 进入房间后尝试监听战斗房间敌人状态
         RestartWatchEnemyIfCombatRoom();
-    }
+        // 技能房：更新技能信息 UI
+        if (node.Type == RoomType_cza.Skill)
+        {
+            UpdateSkillRoomUI();
+        }
+        else
+        {
+            ClearSkillRoomUI();
+        }    }
 
     private string FormatList(System.Collections.Generic.List<int> list)
     {
@@ -345,8 +324,6 @@ public class RoomUIActions_cza : MonoBehaviour
                 StopCoroutine(enemyWatchCo);
                 enemyWatchCo = null;
             }
-            overrideCompleteByEnemy = false;
-            combatCompleteReady = false;
         }
         else
         {
@@ -379,35 +356,7 @@ public class RoomUIActions_cza : MonoBehaviour
         var sm = RoomStateMachine_cza.Instance;
         bool ready = sm != null && sm.CurrentRoom != null;
         bool selecting = sm != null && sm.IsAwaitingChoice;
-        if (btnComplete)
-        {
-            // 测试模式：强制保持激活
-            if (forceCompleteAlwaysActive)
-            {
-                btnComplete.gameObject.SetActive(true);
-                btnComplete.interactable = true;
-                Debug.Log($"[RoomUI] ApplyInteractableState[{reason}]: testing forced active -> Complete.interactable=true");
-            }
-            else
-            {
-                // 若战斗房间监听开启，则由敌人状态决定 Complete 是否可点击
-                if (overrideCompleteByEnemy)
-                {
-                    // 战斗房间：只有敌人被击败时才显示并可点击
-                    btnComplete.gameObject.SetActive(combatCompleteReady);
-                    btnComplete.interactable = combatCompleteReady;
-                }
-                else
-                {
-                    // 非战斗房间：始终可见且可点击
-                    btnComplete.gameObject.SetActive(true);
-                    btnComplete.interactable = true;
-                }
-                Debug.Log(
-                    $"[RoomUI] ApplyInteractableState[{reason}]: ready={ready} selecting={selecting} -> Complete.interactable={btnComplete.interactable}"
-                );
-            }
-        }
+        // 仅保留Next按钮交互由RefreshChoiceUI设置
         // Next 按钮的交互由 RefreshChoiceUI 设置，这里不重复处理
     }
 
@@ -449,8 +398,6 @@ public class RoomUIActions_cza : MonoBehaviour
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
         }
-        overrideCompleteByEnemy = false;
-        combatCompleteReady = false;
     }
 
     // 新增：楼层初始化完成时，统一隐藏上一层的类型面板以避免皮肤残留
@@ -467,8 +414,6 @@ public class RoomUIActions_cza : MonoBehaviour
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
         }
-        overrideCompleteByEnemy = false;
-        combatCompleteReady = false;
     }
 
     private void BuildTypePanelMap()
@@ -487,10 +432,12 @@ public class RoomUIActions_cza : MonoBehaviour
             return;
         if (typePanelMap == null || typePanelMap.Count == 0)
             BuildTypePanelMap();
+
+        // 先隐藏所有已注册的房间类型面板和分支选择面板，确保只显示当前房间UI
+        HideAllRegisteredPanels();
+
         if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName)) //通过传入的房间类型找到对应面板
         {
-            // 简单策略：隐藏所有已注册面板，再显示目标面板；选择面板按需叠加
-            HideAllRegisteredPanels();
             ShowPanel(panelName, true);
             currentRoomPanelName = panelName;
 
@@ -617,13 +564,7 @@ public class RoomUIActions_cza : MonoBehaviour
     // 根据当前房间类型更新 Complete 按钮的显示文本
     private void UpdateCompleteButtonLabel(RoomType_cza type)
     {
-        if (btnComplete == null) return;
-        var label = btnComplete.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (label == null) return;
-        // CombatRoom 显示“捕捉”，其他房间显示“离开房间”
-        // 注意：根据项目枚举值命名，若战斗房间类型不同，请调整判断
-        bool isCombat = type.ToString().IndexOf("Combat", StringComparison.OrdinalIgnoreCase) >= 0;
-        label.text = isCombat ? "捕捉" : "离开房间";
+        // 已废弃
     }
 
     // 战斗房间监听：若存在 CombatRoom_cza，则监控其敌人模型的 HP/Mana
@@ -638,19 +579,23 @@ public class RoomUIActions_cza : MonoBehaviour
                 StopCoroutine(enemyWatchCo);
                 enemyWatchCo = null;
             }
-            overrideCompleteByEnemy = false;
-            combatCompleteReady = false;
             return;
         }
-        // 开启由敌人状态接管 Complete 交互
-        overrideCompleteByEnemy = true;
-        combatCompleteReady = false;
+        var combatRoom = FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+        if (combatRoom == null)
+        {
+            if (enemyWatchCo != null)
+            {
+                StopCoroutine(enemyWatchCo);
+                enemyWatchCo = null;
+            }
+            return;
+        }
         if (enemyWatchCo != null)
         {
             StopCoroutine(enemyWatchCo);
         }
-        enemyWatchCo = StartCoroutine(WatchEnemyState(room));
-        ApplyInteractableState("RestartWatchEnemyIfCombatRoom");
+        enemyWatchCo = StartCoroutine(WatchEnemyState(combatRoom));
     }
 
     private IEnumerator WatchEnemyState(DreamWeavers.Rooms.CombatRoom_cza room)
@@ -670,11 +615,98 @@ public class RoomUIActions_cza : MonoBehaviour
         {
             if (model.HP <= 0 || model.Mana <= 0)
             {
-                combatCompleteReady = true;
-                ApplyInteractableState("EnemyDefeated");
+                // 直接完成房间并进入路线选择
+                if (RoomStateMachine_cza.Instance != null)
+                {
+                    RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+                    ShowPanel(choosePanelName, true);
+                }
                 yield break;
             }
             yield return null;
         }
     }
+
+    #region 技能房 UI
+
+    /// <summary>
+    /// 更新技能房 UI 显示
+    /// </summary>
+    private void UpdateSkillRoomUI()
+    {
+        var skillRoom = FindObjectOfType<DreamWeavers.Rooms.SkillRoom_cza>();
+        if (skillRoom == null)
+        {
+            Debug.LogWarning("[RoomUI] 未找到 SkillRoom_cza 实例");
+            ClearSkillRoomUI();
+            return;
+        }
+
+        // 获取技能信息
+        var selectedSkill = skillRoom.GetSelectedSkill();
+        var matchedSpirit = skillRoom.GetMatchedSpirit();
+        bool granted = skillRoom.IsSkillGranted();
+
+        // 更新技能信息文本
+        if (skillInfoText != null)
+        {
+            if (selectedSkill != null)
+            {
+                string skillName = selectedSkill.DisplayName;
+                int manaCost = selectedSkill.ManaCost;
+                string description = selectedSkill.Description ?? "无描述";
+                
+                skillInfoText.text = $"<b>{skillName}</b>\n" +
+                                     $"<color=#4A90D9>法力消耗: {manaCost}</color>\n" +
+                                     $"{description}";
+            }
+            else
+            {
+                skillInfoText.text = "未获取到技能";
+            }
+        }
+
+        // 更新精灵信息文本
+        if (spiritInfoText != null)
+        {
+            if (matchedSpirit != null)
+            {
+                string spiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName) 
+                    ? matchedSpirit.name 
+                    : matchedSpirit.DisplayName;
+                
+                if (granted)
+                {
+                    spiritInfoText.text = $"<color=#00FF00>已成功添加给: <b>{spiritName}</b></color>";
+                }
+                else
+                {
+                    spiritInfoText.text = $"将添加给: <b><color=#FFD700>{spiritName}</color></b>";
+                }
+            }
+            else
+            {
+                spiritInfoText.text = "无匹配精灵";
+            }
+        }
+
+        Debug.Log($"[RoomUI] UpdateSkillRoomUI: skill={(selectedSkill != null ? selectedSkill.DisplayName : "null")}, spirit={(matchedSpirit != null ? matchedSpirit.DisplayName : "null")}, granted={granted}");
+    }
+
+    /// <summary>
+    /// 清空技能房 UI
+    /// </summary>
+    private void ClearSkillRoomUI()
+    {
+        if (skillInfoText != null)
+        {
+            skillInfoText.text = "";
+        }
+        if (spiritInfoText != null)
+        {
+            spiritInfoText.text = "";
+        }
+    }
+
+    #endregion
 }

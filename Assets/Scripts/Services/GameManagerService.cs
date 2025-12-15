@@ -37,10 +37,18 @@ public class GameManagerService : MonoBehaviour
     #region 单例实例
     
     private static GameManagerService _instance;
+    private static bool _applicationIsQuitting = false;
+    
     public static GameManagerService Instance
     {
         get
         {
+            // 防止在应用退出时创建新实例
+            if (_applicationIsQuitting)
+            {
+                return null;
+            }
+            
             if (_instance == null)
             {
                 _instance = FindObjectOfType<GameManagerService>();
@@ -153,6 +161,11 @@ public class GameManagerService : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoadedCallback;
     }
     
+    private void OnApplicationQuit()
+    {
+        _applicationIsQuitting = true;
+    }
+    
     #endregion
     
     #region 初始化
@@ -260,16 +273,10 @@ public class GameManagerService : MonoBehaviour
         if (CurrentGameState == GameState.Playing)
         {
             SetGameState(GameState.Paused);
-            
-            // 显示暂停菜单
-            UIManagerService.Instance?.ShowPanel("PausePanel");
         }
         else if (CurrentGameState == GameState.Paused)
         {
             SetGameState(GameState.Playing);
-            
-            // 隐藏暂停菜单
-            UIManagerService.Instance?.HidePanel("PausePanel");
         }
     }
     
