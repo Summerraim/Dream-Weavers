@@ -65,15 +65,29 @@ public class RoomUISkinController : MonoBehaviour
             skinRoot = transform;
         if (chooseUIRoot == null)
             chooseUIRoot = transform;
-        Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Awake skinRoot={(skinRoot!=null?skinRoot.name:"null")} chooseUIRoot={(chooseUIRoot!=null?chooseUIRoot.name:"null")} floorSkins.Count={floorSkins.Count}");
+        Debug.Log($"[SkinCtl] Awake skinRoot={(skinRoot!=null?skinRoot.name:"null")} chooseUIRoot={(chooseUIRoot!=null?chooseUIRoot.name:"null")} floorSkins.Count={floorSkins.Count} on {gameObject.name}");
     }
+
+    // 调试用：返回配置的皮肤数量
+    public int GetFloorSkinsCount() => floorSkins != null ? floorSkins.Count : 0;
 
     // 在进入房间时调用，按楼层切换皮肤。重复调用同一楼层会跳过。
     public void ApplySkin(int floorIndex)
     {
+        Debug.Log($"[SkinCtl] ApplySkin called: floorIndex={floorIndex} currentAppliedFloor={currentAppliedFloor} currentSkinInstance={(currentSkinInstance!=null?currentSkinInstance.name:"null")} floorSkins.Count={floorSkins.Count} on {gameObject.name}");
+        
         if (floorIndex == currentAppliedFloor && currentSkinInstance != null)
         {
-            Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] ApplySkin skip (same floor) floor={floorIndex} instance={currentSkinInstance.name}");
+            // 即使是同一楼层，也要确保皮肤是激活的（可能被其他逻辑隐藏过）
+            if (!currentSkinInstance.activeSelf)
+            {
+                currentSkinInstance.SetActive(true);
+                Debug.Log($"[SkinCtl] ApplySkin re-activate (same floor) floor={floorIndex} instance={currentSkinInstance.name} activeInHierarchy={currentSkinInstance.activeInHierarchy}");
+            }
+            else
+            {
+                Debug.Log($"[SkinCtl] ApplySkin skip (same floor) floor={floorIndex} instance={currentSkinInstance.name} activeSelf={currentSkinInstance.activeSelf} activeInHierarchy={currentSkinInstance.activeInHierarchy}");
+            }
             return;
         }
 
@@ -83,7 +97,7 @@ public class RoomUISkinController : MonoBehaviour
             if (hidePreviousOnApply)
             {
                 currentSkinInstance.SetActive(false);
-                Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Hide previous skin -> {currentSkinInstance.name}");
+                Debug.Log($"[SkinCtl] Hide previous skin -> {currentSkinInstance.name}");
             }
             else
             {
@@ -91,13 +105,13 @@ public class RoomUISkinController : MonoBehaviour
                     Destroy(currentSkinInstance);
                 else
                     DestroyImmediate(currentSkinInstance);
-                Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Destroy previous skin -> {currentSkinInstance.name}");
+                Debug.Log($"[SkinCtl] Destroy previous skin -> {currentSkinInstance.name}");
             }
             currentSkinInstance = null;
         }
 
         var prefab = ResolvePrefab(floorIndex);
-        Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Resolve prefab floor={floorIndex} -> {(prefab!=null?prefab.name:"null")}");
+        Debug.Log($"[SkinCtl] Resolve prefab floor={floorIndex} -> {(prefab!=null?prefab.name:"null")} (defaultSkinPrefab={(defaultSkinPrefab!=null?defaultSkinPrefab.name:"null")})");
         if (prefab != null)
         {
             // 可选：收编已存在的同名子物体，避免重复生成
@@ -107,11 +121,13 @@ public class RoomUISkinController : MonoBehaviour
                 if (existing != null)
                 {
                     currentSkinInstance = existing.gameObject;
-                    Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Adopt existing child -> {existing.name}");
+                    // 确保被收编的皮肤是激活状态（可能之前被隐藏过）
+                    currentSkinInstance.SetActive(true);
+                    Debug.Log($"[SkinCtl] Adopt existing child -> {existing.name} (activated)");
                 }
                 else
                 {
-                    Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] No existing child named {prefab.name}, will instantiate");
+                    Debug.Log($"[SkinCtl] No existing child named {prefab.name}, will instantiate");
                 }
             }
 
@@ -120,7 +136,9 @@ public class RoomUISkinController : MonoBehaviour
             {
                 currentSkinInstance = Instantiate(prefab, skinRoot);
                 currentSkinInstance.name = prefab.name;
-                Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Instantiate skin -> {currentSkinInstance.name} under {skinRoot.name}");
+                // 确保新实例化的皮肤是激活状态
+                currentSkinInstance.SetActive(true);
+                Debug.Log($"[SkinCtl] Instantiate skin -> {currentSkinInstance.name} under {skinRoot.name}");
             }
 
             // 可选：清理除当前皮肤外的其他子物体，保证唯一（支持隐藏或销毁）
@@ -129,17 +147,17 @@ public class RoomUISkinController : MonoBehaviour
                 if (hidePreviousOnApply)
                 {
                     DeactivateOtherChildren(skinRoot, currentSkinInstance.transform);
-                    Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Deactivate other children under {skinRoot.name}");
+                    Debug.Log($"[SkinCtl] Deactivate other children under {skinRoot.name}");
                 }
                 else
                 {
                     CleanupOtherChildren(skinRoot, currentSkinInstance.transform);
-                    Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Cleanup other children under {skinRoot.name}");
+                    Debug.Log($"[SkinCtl] Cleanup other children under {skinRoot.name}");
                 }
             }
         }
         currentAppliedFloor = floorIndex;
-        Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] Applied floor={floorIndex} currentSkin={(currentSkinInstance!=null?currentSkinInstance.name:"null")}");
+        Debug.Log($"[SkinCtl] Applied floor={floorIndex} currentSkin={(currentSkinInstance!=null?currentSkinInstance.name:"null")} activeSelf={(currentSkinInstance!=null?currentSkinInstance.activeSelf.ToString():"N/A")} activeInHierarchy={(currentSkinInstance!=null?currentSkinInstance.activeInHierarchy.ToString():"N/A")} skinRoot.activeInHierarchy={skinRoot.gameObject.activeInHierarchy}");
     }
 
     // 在进入选择阶段时调用：只显示当前楼层对应的路线选择UI，隐藏其他楼层的选择UI。
@@ -148,20 +166,36 @@ public class RoomUISkinController : MonoBehaviour
     {
         if (floorChooseUIs == null || floorChooseUIs.Count == 0)
             return;
-        Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] ApplyChooseUI floor={floorIndex} active={active} entries={floorChooseUIs.Count}");
+        Debug.Log($"[SkinCtl] ApplyChooseUI floor={floorIndex} active={active} entries={floorChooseUIs.Count}");
         for (int i = 0; i < floorChooseUIs.Count; i++)
         {
             var entry = floorChooseUIs[i];
             var go = entry.uiRoot;
             if (go == null) continue;
+            
+            // 跳过当前皮肤实例，避免皮肤被错误隐藏
+            if (currentSkinInstance != null && go == currentSkinInstance)
+            {
+                Debug.Log($"[SkinCtl] ChooseUI entry floor={entry.floorIndex} -> Skip (is current skin) {go.name}");
+                continue;
+            }
+            
             bool show = active && entry.floorIndex == floorIndex;
             go.SetActive(show);
-            Debug.unityLogger.Log("RoomUISkin", $"[SkinCtl] ChooseUI entry floor={entry.floorIndex} -> {(show?"Show":"Hide")} {go.name}");
+            Debug.Log($"[SkinCtl] ChooseUI entry floor={entry.floorIndex} -> {(show?"Show":"Hide")} {go.name}");
         }
     }
 
     private GameObject ResolvePrefab(int floorIndex)
     {
+        // 调试：打印所有配置条目
+        Debug.Log($"[SkinCtl] ResolvePrefab: checking {floorSkins.Count} entries for floor={floorIndex}");
+        for (int i = 0; i < floorSkins.Count; i++)
+        {
+            var entry = floorSkins[i];
+            Debug.Log($"[SkinCtl]   Entry[{i}]: floorIndex={entry.floorIndex} skinPrefab={(entry.skinPrefab != null ? entry.skinPrefab.name : "NULL")}");
+        }
+        
         // 精确匹配
         for (int i = 0; i < floorSkins.Count; i++)
         {

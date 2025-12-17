@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
  
 
 namespace DreamWeavers.Rooms
@@ -21,86 +22,266 @@ namespace DreamWeavers.Rooms
         [Min(1)] [SerializeField] private int dropQuantity = 1; // 掉落数量
         [SerializeField] private GameObject pickupPrefab; // 掉落展示用预制体（可选）
 
+        [Header("战斗UI引用")]
+        [SerializeField] private BattleController battleController; // 战斗控制器引用
+        [SerializeField] private UI_BattleView battleView; // 战斗UI视图引用
+
         // 运行时状态
         private bool spawned = false;
         private Enemy enemyModel; // 敌人模型（非 MonoBehaviour），来自 EnemyModel
         private SpiritData selectedSpirit; // 与当前敌人对应的精灵数据
         private EnemyData selectedEnemy; // 当前选中的敌人数据（来自对象池或手动配置）
         private bool itemDropped; // 是否已触发掉落，避免重复
+        private bool roomCleared; // 外部标记房间已清理（由 BattleController 调用）
+
+        // private void OnEnable()
+        // {
+        //     Debug.Log("[CombatRoom] OnEnable: 激活战斗房间");
+            
+        //     // 自动查找 BattleController 和 BattleView（如果未在 Inspector 中配置）
+        //     if (battleController == null)
+        //     {
+        //         battleController = FindObjectOfType<BattleController>(true);
+        //     }
+        //     if (battleView == null)
+        //     {
+        //         battleView = FindObjectOfType<UI_BattleView>(true);
+        //     }
+            
+        //     // 注意：不在 OnEnable 中激活战斗，因为 Panel 显隐会频繁触发 OnEnable/OnDisable
+        //     // 战斗的激活/停止由 EnterRoom/ExitRoom 控制
+        //     Debug.Log("[CombatRoom] OnEnable: 战斗房间组件启用（等待 EnterRoom 开始战斗）");
+        // }
+
+        private void OnDisable()
+        {
+            // Panel 被隐藏时会触发 OnDisable，不做任何处理
+            // 实际清理由 ExitRoom 或战斗结束逻辑处理
+        }
 
         public override void EnterRoom()
         {
-            // 进入房间时从对象池选择一个敌人（仅一次）
-            TrySelectEnemy();
+            Debug.Log("[CombatRoom] ========== EnterRoom 被调用 ==========");
+            Debug.Log($"[CombatRoom] spawned={spawned}, enemyPool={(enemyPool != null ? "已配置" : "未配置")}, playerData={(playerData != null ? playerData.name : "null")}");
+            
+            // 每次进入房间都重新选择敌人（重置spawned标志）
+            // 这样每次进入新的战斗房间都会从pool随机获取敌人
+            ResetRoom();
+            
+            // 1. 从对象池随机选择敌人
+            SelectEnemyFromPool();
+            spawned = true;
 
-            // 将玩家与敌人数据传递给战斗控制器并初始化战斗
-            TryStartBattle();
+            // 2. 激活 BattleController 并传入数据
+            StartBattle();
         }
 
-        private void TrySelectEnemy()
+        /// <summary>
+        /// 重置房间状态，准备新的战斗
+        /// </summary>
+        public void ResetRoom()
         {
-            if (spawned) return;
-            // 通过对象池选取敌人与对应精灵（优先对象池）
+            Debug.Log($"[CombatRoom] ResetRoom: 重置房间状态 (当前enemyModel={(enemyModel != null ? $"HP={enemyModel.HP}" : "null")})");
+            spawned = false;
+            itemDropped = false;
+            roomCleared = false;
+            enemyModel = null;
             selectedEnemy = null;
             selectedSpirit = null;
-            if (enemyPool != null && !enemyPool.IsEmpty)
+        }
+
+        /// <summary>
+        /// 重置敌人池（在新楼层开始时调用）
+        /// </summary>
+        public void ResetEnemyPool()
+        {
+            EnemyPool.ClearDefeatedEnemies();
+            Debug.Log("[CombatRoom] ResetEnemyPool: 敌人击败记录已清除");
+        }
+
+        /// <summary>
+        /// 从对象池中移除当前选中的敌人（战斗胜利后调用）
+        /// </summary>
+        public void RemoveCurrentEnemyFromPool()
+        {
+            Debug.Log($"[CombatRoom] RemoveCurrentEnemyFromPool 被调用: enemyPool={(enemyPool != null ? enemyPool.DisplayName : "null")}, selectedEnemy={(selectedEnemy != null ? selectedEnemy.name : "null")}");
+            
+            if (enemyPool == null)
             {
-                var pair = useWeightedRandom
-                    ? enemyPool.GetWeightedRandomEnemyWithSpirit()
-                    : enemyPool.GetRandomEnemyWithSpirit();
-
-                selectedEnemy = pair.enemy;
-                selectedSpirit = pair.spirit;
+                Debug.LogWarning("[CombatRoom] RemoveCurrentEnemyFromPool: enemyPool 为 null，无法移除");
+                return;
             }
-
-            // 若未从对象池取到，则回退到手动配置的 enemyData
+            
             if (selectedEnemy == null)
             {
-                selectedEnemy = enemyData;
-                if (selectedEnemy == null)
+                Debug.LogWarning("[CombatRoom] RemoveCurrentEnemyFromPool: selectedEnemy 为 null，无法移除");
+                return;
+            }
+            
+            Debug.Log($"[CombatRoom] 移除前 - EnemyPool 敌人数={enemyPool.Count}, 已击败记录数={EnemyPool.DefeatedCount}");
+            
+            bool removed = enemyPool.RemoveEnemy(selectedEnemy);
+            
+            Debug.Log($"[CombatRoom] 移除后 - 结果={removed}, EnemyPool 敌人数={enemyPool.Count}, 已击败记录数={EnemyPool.DefeatedCount}");
+        }
+
+        /// <summary>
+        /// 获取当前战斗房间的敌人池引用
+        /// </summary>
+        public EnemyPool GetEnemyPool()
+        {
+            return enemyPool;
+        }
+
+        /// <summary>
+        /// 从对象池随机选择敌人和对应精灵
+        /// </summary>
+        private void SelectEnemyFromPool()
+        {
+            Debug.Log("[CombatRoom] SelectEnemyFromPool 开始...");
+            selectedEnemy = null;
+            selectedSpirit = null;
+
+            // 优先从对象池获取（EnemyPool会自动跳过已击败的敌人）
+            if (enemyPool != null)
+            {
+                Debug.Log($"[CombatRoom] EnemyPool 已配置: Name={enemyPool.DisplayName}, Count={enemyPool.Count}, AvailableCount={enemyPool.AvailableCount}, IsEmpty={enemyPool.IsEmpty}, 已击败={EnemyPool.DefeatedCount}");
+                
+                // 打印 EnemyPool 中所有敌人
+                if (enemyPool.Enemies != null)
                 {
-                    Debug.LogWarning("[CombatRoom] 未能获取到敌人数据（对象池为空或未配置，且未提供手动 EnemyData）");
+                    Debug.Log($"[CombatRoom] EnemyPool.Enemies 列表内容 (共{enemyPool.Enemies.Count}个):");
+                    for (int i = 0; i < enemyPool.Enemies.Count; i++)
+                    {
+                        var e = enemyPool.Enemies[i];
+                        Debug.Log($"  [{i}] {(e != null ? e.name : "null")}");
+                    }
                 }
-                // 尝试根据敌人从对象池获取对应精灵（如果池存在且包含该敌人）
+                else
+                {
+                    Debug.LogWarning("[CombatRoom] EnemyPool.Enemies 列表为 null!");
+                }
+                
+                if (!enemyPool.IsEmpty)
+                {
+                    var pair = useWeightedRandom
+                        ? enemyPool.GetWeightedRandomEnemyWithSpirit()
+                        : enemyPool.GetRandomEnemyWithSpirit();
+
+                    selectedEnemy = pair.enemy;
+                    selectedSpirit = pair.spirit;
+                    Debug.Log($"[CombatRoom] 从对象池选择敌人: {(selectedEnemy != null ? selectedEnemy.name : "null")}, 精灵: {(selectedSpirit != null ? selectedSpirit.name : "null")}");
+                }
+                else
+                {
+                    Debug.LogWarning("[CombatRoom] EnemyPool 为空！");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] EnemyPool 未配置！");
+            }
+
+            // 回退到手动配置的 enemyData
+            if (selectedEnemy == null)
+            {
+                Debug.Log($"[CombatRoom] 尝试使用备用 enemyData: {(enemyData != null ? enemyData.name : "null")}");
+                selectedEnemy = enemyData;
                 if (enemyPool != null && selectedEnemy != null)
                 {
                     selectedSpirit = enemyPool.GetSpiritForEnemy(selectedEnemy);
                 }
             }
-            spawned = true;
 
-            // 初始化敌人模型数据（用于HP/Mana等判定）
+            // 初始化敌人模型（用于HP/Mana判定）
             if (selectedEnemy != null)
             {
                 enemyModel = new Enemy(selectedEnemy);
+                Debug.Log($"[CombatRoom] 敌人模型已创建: Name={selectedEnemy.name}, HP={enemyModel.HP}, Mana={enemyModel.Mana}");
+            }
+            else
+            {
+                Debug.LogError("[CombatRoom] 未能获取敌人数据！请检查 EnemyPool 或 EnemyData 配置");
             }
         }
 
-        private void TryStartBattle()
+        /// <summary>
+        /// 激活 BattleController 并开始战斗
+        /// </summary>
+        private void StartBattle()
         {
-            var bc = GameObject.FindObjectOfType<BattleController>();
+            Debug.Log("[CombatRoom] StartBattle 开始...");
+            
+            // 使用已缓存的引用，如果没有则查找
+            var bc = battleController;
             if (bc == null)
             {
-                Debug.LogWarning("[CombatRoom] 未找到 BattleController，无法开始战斗");
+                bc = FindObjectOfType<BattleController>();
+                if (bc == null)
+                {
+                    // 尝试查找未激活的
+                    var all = Resources.FindObjectsOfTypeAll<BattleController>();
+                    if (all != null && all.Length > 0)
+                    {
+                        bc = all[0];
+                        Debug.Log($"[CombatRoom] 找到未激活的 BattleController: {bc.gameObject.name}");
+                    }
+                }
+                battleController = bc; // 缓存引用
+            }
+            
+            if (bc == null)
+            {
+                Debug.LogError("[CombatRoom] 未找到 BattleController！请确保场景中存在 BattleController");
                 return;
             }
+            
+            Debug.Log($"[CombatRoom] 找到 BattleController: {bc.gameObject.name}, active={bc.gameObject.activeInHierarchy}");
+
+            // 检查必要数据
             if (playerData == null)
             {
-                Debug.LogWarning("[CombatRoom] 未配置 PlayerData，无法开始战斗");
+                Debug.LogError("[CombatRoom] PlayerData 未配置！请在 Inspector 中配置 PlayerData");
                 return;
             }
             if (selectedEnemy == null)
             {
-                Debug.LogWarning("[CombatRoom] 未配置或选取 EnemyData，无法开始战斗");
+                Debug.LogError("[CombatRoom] EnemyData 未获取！请检查 EnemyPool 配置");
                 return;
             }
-            // 将从对象池选取的敌人数据传递到战斗控制器
-            bc.BeginBattleWith(playerData, selectedEnemy);
+
+            // 确保 BattleController 激活（OnEnable 应该已经激活了，这里做双重保险）
+            if (!bc.gameObject.activeInHierarchy)
+            {
+                bc.gameObject.SetActive(true);
+                Debug.Log("[CombatRoom] 激活 BattleController");
+            }
+
+            // 显示战斗UI（OnEnable 应该已经显示了，这里做双重保险）
+            if (battleView != null)
+            {
+                battleView.ShowBattlePanel();
+            }
+
+            // 传入数据并开始战斗（同时传入自身引用，用于战斗胜利后移除敌人）
+            Debug.Log($"[CombatRoom] 开始战斗: Player={playerData.name}, Enemy={selectedEnemy.name}");
+            bc.BeginBattleWith(playerData, selectedEnemy, this);
         }
 
         public bool IsCleared()
         {
-            // 房间清理判定：如果已生成且该敌人实例被销毁（死亡），则视为清理完成
+            // 房间清理判定：优先检查外部标记（由 BattleController 设置）
+            if (roomCleared)
+            {
+                if (!itemDropped)
+                {
+                    TryDropRandomItem();
+                    itemDropped = true;
+                }
+                return true;
+            }
+            
+            // 次选：如果已生成且该敌人实例被销毁（死亡），则视为清理完成
             if (!spawned) return false;
             if (enemyModel != null)
             {
@@ -113,6 +294,15 @@ namespace DreamWeavers.Rooms
                 return defeated;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 外部标记房间已清理（由 BattleController 在敌人死亡时调用）
+        /// </summary>
+        public void MarkAsCleared()
+        {
+            roomCleared = true;
+            Debug.Log("[CombatRoom] 房间已被外部标记为清理完成");
         }
 
         // 提供敌人模型访问，便于其他系统修改其 HP/Mana
@@ -129,6 +319,8 @@ namespace DreamWeavers.Rooms
         /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
         public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
         {
+            Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
+            
             // 检查房间是否已清理（或是否为提前捕捉）
             if (!earlyCapture && !IsCleared())
             {
@@ -141,13 +333,16 @@ namespace DreamWeavers.Rooms
             if (spiritToCapture == null && enemyPool != null && selectedEnemy != null)
             {
                 spiritToCapture = enemyPool.GetSpiritForEnemy(selectedEnemy);
+                Debug.Log($"[CombatRoom] selectedSpirit为null，从EnemyPool获取: {(spiritToCapture != null ? spiritToCapture.name : "null")}");
             }
 
             if (spiritToCapture == null)
             {
-                Debug.LogWarning("[CombatRoom] 无法确定要捕捉的SpiritData");
+                Debug.LogWarning("[CombatRoom] 无法确定要捕捉的SpiritData - selectedSpirit和EnemyPool都无法获取");
                 return (false, null);
             }
+
+            Debug.Log($"[CombatRoom] 准备捕捉精灵: {spiritToCapture.DisplayName}");
 
             // TODO: 添加捕捉概率系统（目前100%成功）
             // 可以在这里添加随机数判定或其他捕捉机制
@@ -156,8 +351,12 @@ namespace DreamWeavers.Rooms
             if (playerData != null)
             {
                 var owned = playerData.GetOwnedSpirits();
+                int beforeCount = owned.Count;
                 owned.Add(spiritToCapture);
                 playerData.OwnedSpirits = owned.ToArray();
+                
+                Debug.Log($"[CombatRoom] 捕捉成功! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
+                
 #if UNITY_EDITOR
                 UnityEditor.EditorUtility.SetDirty(playerData);
 #endif

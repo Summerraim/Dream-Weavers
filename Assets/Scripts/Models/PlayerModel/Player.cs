@@ -264,6 +264,58 @@ public class Player
         OnDataChanged?.Invoke();
     }
 
+    /// <summary>
+    /// 从 PlayerData 同步精灵数据（添加新的精灵，保持已部署状态）
+    /// </summary>
+    public void SyncFromPlayerData(PlayerData playerData)
+    {
+        if (playerData == null)
+        {
+            Debug.LogWarning("[Player] SyncFromPlayerData: PlayerData is null");
+            return;
+        }
+
+        bool changed = false;
+
+        // 同步拥有的精灵：添加 PlayerData 中有但本地没有的精灵
+        if (playerData.OwnedSpirits != null)
+        {
+            foreach (var spirit in playerData.OwnedSpirits)
+            {
+                if (spirit != null && !ownedSpirits.Contains(spirit))
+                {
+                    ownedSpirits.Add(spirit);
+                    changed = true;
+                    Debug.Log($"[Player] SyncFromPlayerData: 添加新精灵 {spirit.DisplayName}");
+                }
+            }
+        }
+
+        // 同步部署的精灵：确保部署列表中的精灵都在拥有列表中
+        if (playerData.DeployedSpirits != null)
+        {
+            foreach (var spirit in playerData.DeployedSpirits)
+            {
+                if (spirit != null && !ownedSpirits.Contains(spirit))
+                {
+                    ownedSpirits.Add(spirit);
+                    changed = true;
+                }
+                if (spirit != null && !deployedSpirits.Contains(spirit) && deployedSpirits.Count < maxDeployedSpirits)
+                {
+                    deployedSpirits.Add(spirit);
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed)
+        {
+            Debug.Log($"[Player] SyncFromPlayerData: 同步完成，当前拥有 {ownedSpirits.Count} 个精灵，部署 {deployedSpirits.Count} 个");
+            OnDataChanged?.Invoke();
+        }
+    }
+
     #endregion
 }
 

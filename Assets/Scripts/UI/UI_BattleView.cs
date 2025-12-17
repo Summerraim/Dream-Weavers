@@ -8,6 +8,11 @@ using UnityEngine.UI;
 /// </summary>
 public class UI_BattleView : MonoBehaviour
 {
+    [Header("Main Battle Panel")]
+    [SerializeField]
+    [Tooltip("战斗主面板，包含所有战斗UI组件。Bind时自动激活，Unbind时自动隐藏。")]
+    private GameObject battlePanel;
+
     [Header("Background")]
     [SerializeField]
     private Image backgroundImage;
@@ -139,6 +144,10 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private Transform enemyDeathSlotContainer;
 
+    [SerializeField]
+    [Tooltip("战斗胜利后点击继续/离开房间的按钮")]
+    private Button continueButton;
+
     [Header("Capture UI")]
     [SerializeField]
     private GameObject capturePanel;
@@ -156,12 +165,52 @@ public class UI_BattleView : MonoBehaviour
     // 道具目标选择模式
     private bool isSelectingItemTarget = false;
 
+    private void Awake()
+    {
+        // 确保战斗面板初始状态为隐藏
+        if (battlePanel != null)
+        {
+            battlePanel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 显示战斗面板
+    /// </summary>
+    public void ShowBattlePanel()
+    {
+        if (battlePanel != null)
+        {
+            battlePanel.SetActive(true);
+            Debug.Log("[UI_BattleView] ShowBattlePanel called");
+        }
+    }
+
+    /// <summary>
+    /// 隐藏战斗面板
+    /// </summary>
+    public void HideBattlePanel()
+    {
+        if (battlePanel != null)
+        {
+            battlePanel.SetActive(false);
+            Debug.Log("[UI_BattleView] HideBattlePanel called");
+        }
+    }
+
     public void Bind(BattleController ctrl, BattleModel m)
     {
         Unbind();
 
         controller = ctrl;
         model = m;
+
+        // 激活战斗主面板
+        if (battlePanel != null)
+        {
+            battlePanel.SetActive(true);
+            Debug.Log("[UI_BattleView] Battle panel activated");
+        }
 
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
@@ -182,6 +231,10 @@ public class UI_BattleView : MonoBehaviour
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
+
+        // 绑定继续按钮（战斗胜利后离开房间）
+        if (continueButton != null)
+            continueButton.onClick.AddListener(OnContinueButtonClicked);
 
         // 初始化捕捉UI面板（默认隐藏）
         if (capturePanel != null)
@@ -216,11 +269,22 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherToggleButton != null)
             spiritSwitcherToggleButton.onClick.RemoveListener(ToggleSpiritSwitcherPanel);
 
+        // 移除继续按钮监听
+        if (continueButton != null)
+            continueButton.onClick.RemoveListener(OnContinueButtonClicked);
+
         // 清空羁绊槽位
         ClearSynergySlots();
 
         // 清空Effect槽位
         ClearAllEffectSlots();
+
+        // 隐藏战斗主面板
+        if (battlePanel != null)
+        {
+            battlePanel.SetActive(false);
+            Debug.Log("[UI_BattleView] Battle panel deactivated");
+        }
 
         controller = null;
         model = null;
@@ -1220,6 +1284,31 @@ public class UI_BattleView : MonoBehaviour
         {
             enemyDeathPanel.SetActive(false);
             Debug.Log("[UI_BattleView] 隐藏敌人死亡面板");
+        }
+    }
+
+    /// <summary>
+    /// 继续按钮点击回调：战斗胜利后离开房间，触发路线选择
+    /// </summary>
+    private void OnContinueButtonClicked()
+    {
+        Debug.Log("[UI_BattleView] 继续按钮被点击，准备离开房间");
+        
+        // 隐藏敌人死亡面板
+        HideEnemyDeathPanel();
+        
+        // 隐藏捕捉结果面板
+        HideCapturePanel();
+        
+        // 通知 RoomStateMachine 完成当前房间，触发路线选择
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            Debug.Log("[UI_BattleView] 通知 RoomStateMachine 完成房间");
+            RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+        }
+        else
+        {
+            Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
         }
     }
 

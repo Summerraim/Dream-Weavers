@@ -122,6 +122,13 @@ public class SpiritPanelController : MonoBehaviour
         Debug.Log("[SpiritPanelController] ===== ShowPanel called =====");
         Debug.Log($"[SpiritPanelController] spiritPanel is null: {spiritPanel == null}");
 
+        // 在显示面板前，从 PlayerData 同步最新数据（确保捕捉的精灵能显示）
+        if (player != null && playerData != null)
+        {
+            Debug.Log("[SpiritPanelController] 同步 PlayerData 到 Player 实例...");
+            player.SyncFromPlayerData(playerData);
+        }
+
         if (spiritPanel != null)
         {
             Debug.Log("[SpiritPanelController] Calling spiritPanel.ShowPanel()...");

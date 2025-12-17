@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DreamWeavers.Rooms;
 
 public class RoomUIActions_cza : MonoBehaviour
 {
@@ -152,6 +153,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
         if (chooseRoot == null)
             chooseRoot = transform;
+
+        // 启动时隐藏所有已注册的房间类型面板和选择面板，避免多余UI显示
+        HideAllRegisteredPanels();
     }
 
     private void OnEnable()
@@ -244,6 +248,9 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private void RefreshRoomInfo(RoomNode_cza node)
     {
+        Debug.Log($"[RoomUI] ========== RefreshRoomInfo 开始 ==========");
+        Debug.Log($"[RoomUI] 房间信息: Id={node.Id}, Type={node.Type}");
+        
         if (currentRoomText)
             currentRoomText.text = $"Room {node.Id} / Type: {node.Type}";
 
@@ -259,6 +266,7 @@ public class RoomUIActions_cza : MonoBehaviour
         ApplyInteractableState("OnRoomEntered");
 
         // 进入房间时进行UI面板切换
+        Debug.Log($"[RoomUI] 准备调用 SwitchToRoomTypePanel, type={node.Type}");
         SwitchToRoomTypePanel(node.Type);
 
         // 根据房间类型更新 Complete 按钮文案：战斗房间显示“捕捉”，其他显示“离开房间”
@@ -286,6 +294,8 @@ public class RoomUIActions_cza : MonoBehaviour
         bool selecting =
             RoomStateMachine_cza.Instance != null && RoomStateMachine_cza.Instance.IsAwaitingChoice;
         int count = choices != null ? choices.Count : 0;
+        Debug.Log($"[RoomUI] RefreshChoiceUI: selecting={selecting}, count={count}, usePrefabOnlyForChoices={usePrefabOnlyForChoices}");
+        
         if (btnNext1)
             btnNext1.interactable = selecting && count >= 1;
         if (btnNext2)
@@ -305,13 +315,17 @@ public class RoomUIActions_cza : MonoBehaviour
         // 选择阶段显示选择面板；非选择阶段隐藏选择面板
         if (selecting)
         {
+            Debug.Log($"[RoomUI] 进入选择阶段，隐藏当前房间面板: {currentRoomPanelName}");
             // 立即隐藏当前房间的类型面板，实现进入选择阶段就遮蔽上一房间UI
             if (!string.IsNullOrEmpty(currentRoomPanelName))
             {
                 ShowPanel(currentRoomPanelName, false);
             }
-            if (!usePrefabOnlyForChoices)
-                ShowPanel(choosePanelName, true);
+            
+            // 无论usePrefabOnlyForChoices如何，都显示choosePanelName面板作为路线选择UI
+            Debug.Log($"[RoomUI] 显示选择面板: {choosePanelName}");
+            ShowPanel(choosePanelName, true);
+            
             // 显示按楼层路选择Prefab
             ShowChoosePrefab(true);
             // 同步调用房间类型面板上的皮肤控制器，显示当前楼层的路线选择 UI（场景内已存在的 uiRoot）
@@ -327,8 +341,8 @@ public class RoomUIActions_cza : MonoBehaviour
         }
         else
         {
-            if (!usePrefabOnlyForChoices)
-                ShowPanel(choosePanelName, false);
+            Debug.Log($"[RoomUI] 退出选择阶段，隐藏选择面板: {choosePanelName}");
+            ShowPanel(choosePanelName, false);
             ShowChoosePrefab(false);
             // 退出选择阶段隐藏所有路线选择 UI
             var sm = RoomStateMachine_cza.Instance;
@@ -362,13 +376,27 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private IEnumerator WaitAndSubscribe()
     {
+        Debug.Log("[RoomUI] WaitAndSubscribe 开始等待 RoomStateMachine.Instance...");
         yield return new WaitUntil(() => RoomStateMachine_cza.Instance != null);
+        Debug.Log("[RoomUI] RoomStateMachine.Instance 已存在，订阅事件");
         waitCo = null;
         TrySubscribe();
+        
+        // 额外等待一帧，确保 InitFloor 已经执行完毕
+        yield return null;
+        
+        // 再次检查并刷新当前房间（防止 InitFloor 在订阅后立即执行导致错过事件）
+        if (RoomStateMachine_cza.Instance != null && RoomStateMachine_cza.Instance.CurrentRoom != null)
+        {
+            Debug.Log($"[RoomUI] 延迟刷新当前房间: {RoomStateMachine_cza.Instance.CurrentRoom.Id} Type={RoomStateMachine_cza.Instance.CurrentRoom.Type}");
+            RefreshRoomInfo(RoomStateMachine_cza.Instance.CurrentRoom);
+        }
     }
 
     private void TrySubscribe()
     {
+        Debug.Log($"[RoomUI] TrySubscribe 调用: subscribed={subscribed}, Instance={(RoomStateMachine_cza.Instance != null)}");
+        
         if (subscribed || RoomStateMachine_cza.Instance == null)
             return;
         RoomStateMachine_cza.Instance.OnRoomEntered += RefreshRoomInfo;
@@ -377,9 +405,17 @@ public class RoomUIActions_cza : MonoBehaviour
         RoomStateMachine_cza.Instance.OnRoomCompleted += OnRoomCompletedHideCurrent;
         RoomStateMachine_cza.Instance.OnFloorInitialized += OnFloorInitializedHidePanels;
         subscribed = true;
+        
+        Debug.Log($"[RoomUI] 已订阅事件, IsReady={RoomStateMachine_cza.Instance.IsReady}, CurrentRoom={(RoomStateMachine_cza.Instance.CurrentRoom != null ? RoomStateMachine_cza.Instance.CurrentRoom.Id.ToString() : "null")}");
+        
         RefreshChoiceUI(RoomStateMachine_cza.Instance.GetCurrentBranchChoices());
+        
+        // 如果状态机已经准备好（已进入房间），立即刷新当前房间UI
         if (RoomStateMachine_cza.Instance.IsReady)
+        {
+            Debug.Log("[RoomUI] 状态机已就绪，调用 OnStateReady 刷新当前房间");
             OnStateReady();
+        }
     }
 
     // 房间完成时（包括Boss房触发楼层切换前），立即隐藏当前房间UI，避免跨楼层残留
@@ -428,16 +464,29 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private void SwitchToRoomTypePanel(RoomType_cza type)
     {
+        Debug.Log($"[RoomUI] SwitchToRoomTypePanel 开始: type={type}");
+        
         if (UIManagerService.Instance == null)
+        {
+            Debug.LogWarning("[RoomUI] SwitchToRoomTypePanel: UIManagerService.Instance 为 null!");
             return;
+        }
         if (typePanelMap == null || typePanelMap.Count == 0)
+        {
             BuildTypePanelMap();
+            Debug.Log($"[RoomUI] BuildTypePanelMap 完成，映射数量={typePanelMap.Count}");
+            foreach (var kv in typePanelMap)
+            {
+                Debug.Log($"[RoomUI]   映射: {kv.Key} -> {kv.Value}");
+            }
+        }
 
         // 先隐藏所有已注册的房间类型面板和分支选择面板，确保只显示当前房间UI
         HideAllRegisteredPanels();
 
         if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName)) //通过传入的房间类型找到对应面板
         {
+            Debug.Log($"[RoomUI] 找到映射: type={type} -> panelName={panelName}");
             ShowPanel(panelName, true);
             currentRoomPanelName = panelName;
 
@@ -446,6 +495,14 @@ public class RoomUIActions_cza : MonoBehaviour
             Debug.Log($"[RoomUI] SwitchToRoomTypePanel: panelName={panelName} panelGO={(panelGO!=null ? panelGO.name : "null")} type={type}");
             if (panelGO != null)
             {
+                // 调试：列出面板下所有子物体和组件
+                var allSkinCtls = panelGO.GetComponentsInChildren<RoomUISkinController>(true);
+                Debug.Log($"[RoomUI] Found {allSkinCtls.Length} RoomUISkinController(s) under {panelGO.name}");
+                for (int i = 0; i < allSkinCtls.Length; i++)
+                {
+                    Debug.Log($"[RoomUI] SkinCtl[{i}]: {allSkinCtls[i].gameObject.name} active={allSkinCtls[i].gameObject.activeInHierarchy} floorSkins={allSkinCtls[i].GetFloorSkinsCount()}");
+                }
+                
                 var skinCtl = panelGO.GetComponentInChildren<RoomUISkinController>(true);
                 int floor = 0;
                 var sm = RoomStateMachine_cza.Instance;
@@ -455,6 +512,14 @@ public class RoomUIActions_cza : MonoBehaviour
                 if (skinCtl != null)
                     skinCtl.ApplySkin(floor);
             }
+            else
+            {
+                Debug.LogWarning($"[RoomUI] panelGO is null for panelName={panelName}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[RoomUI] No panel mapping found for type={type}");
         }
     }
 
@@ -495,22 +560,45 @@ public class RoomUIActions_cza : MonoBehaviour
 
         foreach (var name in namesToHide)
         {
-            var go = ui.GetPanel(name);
-            if (go != null)
+            // 只隐藏已注册或可解析的面板，避免报错
+            if (ui.EnsurePanelRegistered(name))
             {
-                ui.HidePanel(name);
+                var go = ui.GetPanel(name);
+                if (go != null)
+                {
+                    ui.HidePanel(name);
+                }
             }
         }
     }
 
     private void ShowPanel(string panelName, bool active)
     {
+        Debug.Log($"[RoomUI] ShowPanel 调用: panelName={panelName}, active={active}");
+        
         if (UIManagerService.Instance == null || string.IsNullOrEmpty(panelName))
+        {
+            Debug.LogWarning($"[RoomUI] ShowPanel 跳过: UIManagerService={(UIManagerService.Instance != null)}, panelName={panelName}");
             return;
+        }
+        
+        // 先确保面板已注册，避免报错
+        if (!UIManagerService.Instance.EnsurePanelRegistered(panelName))
+        {
+            Debug.LogWarning($"[RoomUI] ShowPanel: 面板 '{panelName}' 未注册且无法自动解析，跳过");
+            return;
+        }
+        
         if (active)
-            UIManagerService.Instance.ShowPanel(panelName);
+        {
+            var result = UIManagerService.Instance.ShowPanel(panelName);
+            Debug.Log($"[RoomUI] UIManagerService.ShowPanel 返回: {(result != null ? result.name : "null")}, activeInHierarchy={(result != null ? result.activeInHierarchy : false)}");
+        }
         else
+        {
             UIManagerService.Instance.HidePanel(panelName);
+            Debug.Log($"[RoomUI] UIManagerService.HidePanel 调用完成");
+        }
     }
 
     private GameObject ResolveChoosePrefabForCurrentFloor()
@@ -570,10 +658,11 @@ public class RoomUIActions_cza : MonoBehaviour
     // 战斗房间监听：若存在 CombatRoom_cza，则监控其敌人模型的 HP/Mana
     private void RestartWatchEnemyIfCombatRoom()
     {
-        var room = FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
-        if (room == null)
+        // 只在当前房间是战斗房间时才监听
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm == null || sm.CurrentRoom == null || sm.CurrentRoom.Type != RoomType_cza.Combat)
         {
-            // 无战斗房间，关闭覆盖
+            Debug.Log($"[RoomUI] RestartWatchEnemyIfCombatRoom: 当前不是战斗房间，不启动监听");
             if (enemyWatchCo != null)
             {
                 StopCoroutine(enemyWatchCo);
@@ -581,9 +670,11 @@ public class RoomUIActions_cza : MonoBehaviour
             }
             return;
         }
-        var combatRoom = FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+        
+        var combatRoom = FindObjectOfType<CombatRoom_cza>();
         if (combatRoom == null)
         {
+            Debug.LogWarning("[RoomUI] RestartWatchEnemyIfCombatRoom: 未找到CombatRoom_cza实例");
             if (enemyWatchCo != null)
             {
                 StopCoroutine(enemyWatchCo);
@@ -595,11 +686,13 @@ public class RoomUIActions_cza : MonoBehaviour
         {
             StopCoroutine(enemyWatchCo);
         }
+        Debug.Log("[RoomUI] RestartWatchEnemyIfCombatRoom: 启动敌人状态监听协程");
         enemyWatchCo = StartCoroutine(WatchEnemyState(combatRoom));
     }
 
-    private IEnumerator WatchEnemyState(DreamWeavers.Rooms.CombatRoom_cza room)
+    private IEnumerator WatchEnemyState(CombatRoom_cza room)
     {
+        Debug.Log("[RoomUI] WatchEnemyState 协程启动");
         // 等待敌人模型就绪
         while (room != null && room.GetEnemyModel() == null)
         {
@@ -608,23 +701,27 @@ public class RoomUIActions_cza : MonoBehaviour
         var model = room != null ? room.GetEnemyModel() : null;
         if (model == null)
         {
+            Debug.LogWarning("[RoomUI] WatchEnemyState: 敌人模型为空，退出监听");
             yield break;
         }
+        Debug.Log($"[RoomUI] WatchEnemyState: 开始监听敌人状态 HP={model.HP} Mana={model.Mana}");
         // 轮询检查生命/法力
         while (room != null && model != null)
         {
             if (model.HP <= 0 || model.Mana <= 0)
             {
-                // 直接完成房间并进入路线选择
+                Debug.Log($"[RoomUI] WatchEnemyState: 敌人 HP={model.HP} Mana={model.Mana} 触发房间完成");
+                // 通过CompleteCurrentRoom触发事件，让RefreshChoiceUI通过OnBranchChoicesUpdated事件自动更新UI
                 if (RoomStateMachine_cza.Instance != null)
                 {
                     RoomStateMachine_cza.Instance.CompleteCurrentRoom();
-                    ShowPanel(choosePanelName, true);
+                    // 不在这里直接ShowPanel，由事件驱动的RefreshChoiceUI处理UI显示
                 }
                 yield break;
             }
             yield return null;
         }
+        Debug.Log("[RoomUI] WatchEnemyState: 协程正常结束");
     }
 
     #region 技能房 UI
@@ -634,7 +731,7 @@ public class RoomUIActions_cza : MonoBehaviour
     /// </summary>
     private void UpdateSkillRoomUI()
     {
-        var skillRoom = FindObjectOfType<DreamWeavers.Rooms.SkillRoom_cza>();
+        var skillRoom = FindObjectOfType<SkillRoom_cza>();
         if (skillRoom == null)
         {
             Debug.LogWarning("[RoomUI] 未找到 SkillRoom_cza 实例");
