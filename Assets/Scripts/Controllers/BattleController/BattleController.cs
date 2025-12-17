@@ -1,4 +1,5 @@
 using UnityEngine;
+using DreamWeavers.Rooms;
 
 public enum BattleState
 {
@@ -63,6 +64,10 @@ public class BattleController : MonoBehaviour
     private BattleInputState inputState = BattleInputState.Normal;
     private ItemData pendingItem; // 待使用的道具
 
+    [Header("初始化设置")]
+    [Tooltip("是否在Start时自动初始化战斗（建议关闭，由CombatRoom传入数据后初始化）")]
+    [SerializeField] private bool autoInitOnStart = false;
+
     private void Start()
     {
         // 禁用技能动画的Root Motion（防止动画影响物体位置）
@@ -71,9 +76,17 @@ public class BattleController : MonoBehaviour
         if (enemySkillAnimator != null)
             enemySkillAnimator.applyRootMotion = false;
 
-        // 场景加载时自动初始化战斗
-        InitializeBattle();
-        Debug.Log("BattleController: InitializeBattle called in Start()");
+        // 仅当启用自动初始化时才在Start中初始化战斗
+        // 正常流程应由CombatRoom调用BeginBattleWith传入数据后初始化
+        if (autoInitOnStart)
+        {
+            InitializeBattle();
+            Debug.Log("BattleController: InitializeBattle called in Start() (autoInitOnStart=true)");
+        }
+        else
+        {
+            Debug.Log("BattleController: 等待CombatRoom调用BeginBattleWith初始化战斗");
+        }
     }
 
     // 允许外部（如房间控制器）传入玩家/敌人数据并开始战斗
@@ -91,10 +104,18 @@ public class BattleController : MonoBehaviour
 
     public void InitializeBattle()
     {
+        Debug.Log($"BattleController: InitializeBattle starting - enemyData={(enemyData != null ? enemyData.name : "null")}, MaxHP={(enemyData != null ? enemyData.MaxHP.ToString() : "N/A")}");
+        
         // 从PlayerData获取出场的Spirit队列
         if (playerData == null)
         {
             Debug.LogError("BattleController: PlayerData is null!");
+            return;
+        }
+
+        if (enemyData == null)
+        {
+            Debug.LogError("BattleController: EnemyData is null! Cannot initialize battle without enemy.");
             return;
         }
 
@@ -156,6 +177,9 @@ public class BattleController : MonoBehaviour
             model = new BattleModel();
         }
 
+        // 新战斗开始时，重置所有技能冷却和使用次数
+        model.ResetSkillCooldownsAndUsage();
+
         // 创建第一个Spirit（使用保存的技能列表，如果存在）
         var firstSpiritData = spiritQueue[currentSpiritIndex];
         SpiritBattleState savedState = model.GetSpiritState(firstSpiritData);
@@ -196,6 +220,7 @@ public class BattleController : MonoBehaviour
         }
 
         enemy = new Enemy(enemyData);
+        Debug.Log($"BattleController: Enemy created with full stats - HP: {enemy.HP}/{enemy.MaxHP}, Mana: {enemy.Mana}/{enemy.MaxMana}");
         enemyAI = new AIController();
 
         // 初始化战斗模型
@@ -275,6 +300,14 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride)
     {
+        BeginBattleWith(playerDataOverride, enemyDataOverride, null);
+    }
+
+    /// <summary>
+    /// Allows external systems (ex: rooms) to begin a battle with runtime data and combat room reference.
+    /// </summary>
+    public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride, DreamWeavers.Rooms.CombatRoom_cza room)
+    {
         if (playerDataOverride == null)
         {
             Debug.LogWarning("BattleController: BeginBattleWith called without PlayerData");
@@ -287,10 +320,78 @@ public class BattleController : MonoBehaviour
             return;
         }
 
+        // 设置战斗房间引用（用于捕捉精灵和移除敌人）
+        if (room != null)
+        {
+            combatRoom = room;
+            Debug.Log($"BattleController: CombatRoom reference set to {room.gameObject.name}");
+        }
+
+        // 检查敌人是否已被击败（HP/Mana为0的情况）
+        if (EnemyPool.IsEnemyDefeated(enemyDataOverride))
+        {
+            Debug.Log($"BattleController: 敌人 {enemyDataOverride.name} 已被击败，跳过战斗直接进入下一房间");
+            SkipBattleAndContinue();
+            return;
+        }
+
+        // 重置之前的战斗状态
+        ResetBattleState();
+
         playerData = playerDataOverride;
         enemyData = enemyDataOverride;
 
+        Debug.Log($"BattleController: BeginBattleWith - PlayerData={playerData.name}, EnemyData={enemyData.name}, CombatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}");
+
         InitializeBattle();
+    }
+
+    /// <summary>
+    /// 跳过战斗直接进入下一房间（当敌人已被击败时调用）
+    /// </summary>
+    private void SkipBattleAndContinue()
+    {
+        Debug.Log("[BattleController] SkipBattleAndContinue: 敌人已被击败，跳过战斗");
+        
+        // 标记房间已清理
+        if (combatRoom != null)
+        {
+            combatRoom.MarkAsCleared();
+        }
+        
+        // 隐藏战斗UI
+        if (battleView != null)
+        {
+            battleView.HideBattlePanel();
+        }
+        
+        // 通知 RoomStateMachine 完成当前房间
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            Debug.Log("[BattleController] 通知 RoomStateMachine 完成房间");
+            RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+        }
+        else
+        {
+            Debug.LogWarning("[BattleController] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+        }
+    }
+
+    /// <summary>
+    /// 重置战斗状态（在开始新战斗前调用）
+    /// </summary>
+    private void ResetBattleState()
+    {
+        // 清空当前敌人引用
+        enemy = null;
+        enemyAI = null;
+        
+        // 重置战斗状态
+        State = BattleState.None;
+        inputState = BattleInputState.Normal;
+        pendingItem = null;
+        
+        Debug.Log("BattleController: Battle state reset for new battle");
     }
 
     /// <summary>
@@ -771,9 +872,12 @@ public class BattleController : MonoBehaviour
                 battleView.ShowEnemyDeathPanel();
             }
 
-            // 立即尝试捕捉精灵
+            // 先尝试捕捉精灵（在移除数据之前）
             if (combatRoom != null)
             {
+                // 先标记房间已清理，这样 AttemptCapture 中的 IsCleared 检查才能通过
+                combatRoom.MarkAsCleared();
+                
                 var (success, capturedSpirit) = combatRoom.AttemptCapture();
                 if (battleView != null)
                 {
@@ -786,12 +890,24 @@ public class BattleController : MonoBehaviour
                         battleView.ShowCaptureFailed();
                     }
                 }
+
+                // 捕捉完成后，从对象池中移除已击败的敌人和精灵数据
+                combatRoom.RemoveCurrentEnemyFromPool();
+                
+                // 不再自动切换房间，由玩家点击"继续"按钮后触发
+                Debug.Log("BattleController: 战斗胜利，等待玩家点击继续按钮离开房间");
             }
             else
             {
                 Debug.LogWarning(
                     "BattleController: combatRoom reference is null, cannot attempt capture"
                 );
+            }
+
+            // 标记敌人为已击败（作为备用机制）
+            if (enemyData != null)
+            {
+                EnemyPool.MarkEnemyAsDefeated(enemyData);
             }
 
             return;

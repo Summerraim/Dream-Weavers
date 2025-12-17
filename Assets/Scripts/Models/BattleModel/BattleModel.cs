@@ -61,11 +61,14 @@ public class BattleModel
     /// </summary>
     public void InitializeBattle(Spirit player, Enemy enemy)
     {
+        Debug.Log($"BattleModel.InitializeBattle: Starting - Enemy={(enemy != null ? $"{enemy.DisplayName} HP={enemy.HP}/{enemy.MaxHP}" : "null")}");
+        
         PlayerUnit = player;
         enemyUnits.Clear();
         if (enemy != null)
         {
             enemyUnits.Add(enemy);
+            Debug.Log($"BattleModel.InitializeBattle: Added enemy to list - HP={enemy.HP}/{enemy.MaxHP}, Mana={enemy.Mana}/{enemy.MaxMana}");
         }
         CurrentTurn = 1;
 
@@ -76,6 +79,8 @@ public class BattleModel
         }
 
         UpdateActiveSynergies();
+        
+        Debug.Log($"BattleModel.InitializeBattle: Complete - EnemyUnits.Count={enemyUnits.Count}");
     }
 
     /// <summary>
@@ -226,6 +231,33 @@ public class BattleModel
             return false; // 无限制
 
         return GetSkillUsageCount(skillIndex) >= skill.MaxUsesPerBattle;
+    }
+
+    /// <summary>
+    /// 重置所有技能的冷却和使用次数（新战斗开始时调用）
+    /// </summary>
+    public void ResetSkillCooldownsAndUsage()
+    {
+        skillCooldowns.Clear();
+        skillUsageCount.Clear();
+        spiritStates.Clear(); // 清空保存的Spirit状态，开始新战斗
+        
+        // 清除所有残留的Buff
+        for (int i = activeBuffs.Count - 1; i >= 0; i--)
+        {
+            var buff = activeBuffs[i];
+            activeBuffs.RemoveAt(i);
+            buff.OnRemoved();
+        }
+        activeBuffs.Clear();
+        
+        // 清除敌人列表
+        enemyUnits.Clear();
+        
+        // 重置回合数
+        CurrentTurn = 0;
+        
+        Debug.Log("BattleModel: All skill cooldowns, usage counts, buffs and battle state reset for new battle");
     }
 
     /// <summary>

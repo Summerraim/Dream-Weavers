@@ -265,13 +265,32 @@ namespace DreamWeavers.Rooms
         /// </summary>
         private void OnClickGetSkill()
         {
-            if (granted)
+            // 如果技能尚未获取，先获取技能
+            if (!granted)
             {
-                Debug.Log("[SkillRoom] 技能已被获取，无法重复获取");
-                return;
+                GrantSkillToMatchedSpirit();
+            }
+            else
+            {
+                Debug.Log("[SkillRoom] 技能已被获取（可能是autoGrantOnEnter），直接进入路线选择");
             }
             
-            GrantSkillToMatchedSpirit();
+            // 禁用按钮
+            if (getSkillButton != null)
+            {
+                getSkillButton.interactable = false;
+            }
+            
+            // 触发路线选择
+            if (RoomStateMachine_cza.Instance != null)
+            {
+                Debug.Log("[SkillRoom] 技能获取完成，触发路线选择");
+                RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+            }
+            else
+            {
+                Debug.LogWarning("[SkillRoom] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+            }
         }
 
         /// <summary>

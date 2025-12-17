@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DreamWeavers.Rooms
 {
@@ -186,13 +186,38 @@ namespace DreamWeavers.Rooms
         /// </summary>
         public void OnClickGetProp()
         {
-            if (selectedItem == null)
+            // 如果道具尚未获取，先获取道具
+            if (!granted)
             {
-                Debug.LogWarning("[PropsRoom] OnClickGetProp: 尚未抽取到道具，无法发放");
-                return;
+                if (selectedItem == null)
+                {
+                    Debug.LogWarning("[PropsRoom] OnClickGetProp: 尚未抽取到道具，无法发放");
+                    return;
+                }
+                Debug.Log($"[PropsRoom] OnClickGetProp: granting {selectedItem.DisplayName} x{quantity}");
+                GrantItemToPlayer();
             }
-            Debug.Log($"[PropsRoom] OnClickGetProp: granting {selectedItem.DisplayName} x{quantity}");
-            GrantItemToPlayer();
+            else
+            {
+                Debug.Log("[PropsRoom] 道具已被获取（可能是autoGrantOnEnter），直接进入路线选择");
+            }
+
+            // 禁用按钮
+            if (getPropButton != null)
+            {
+                getPropButton.interactable = false;
+            }
+            
+            // 触发路线选择
+            if (RoomStateMachine_cza.Instance != null)
+            {
+                Debug.Log("[PropsRoom] 道具获取完成，触发路线选择");
+                RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+            }
+            else
+            {
+                Debug.LogWarning("[PropsRoom] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+            }
         }
     }
 }

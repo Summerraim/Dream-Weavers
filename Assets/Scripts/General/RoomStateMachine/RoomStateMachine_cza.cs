@@ -78,6 +78,10 @@ public class RoomStateMachine_cza : MonoBehaviour
         visitedRooms.Clear();
         visitedOrderDebug.Clear();
         branchChoices.Clear();
+        
+        // 重置敌人池（新楼层开始时恢复所有敌人为可用）
+        ResetCombatRoomEnemyPool();
+        
         CurrentMap = MapGenerator_cza.GenerateFloor(floor, rng);
         EnsureAtLeastOnePropsRoom(CurrentMap, rng);
         int roomsCount = CurrentMap != null && CurrentMap.Rooms != null ? CurrentMap.Rooms.Count : -1;
@@ -105,6 +109,16 @@ public class RoomStateMachine_cza : MonoBehaviour
         // 初始化后（并已进入首房）通知 UI 可交互
         Debug.Log("[RoomState] OnReady 触发（已进入首房）");
         OnReady?.Invoke();
+    }
+
+    /// <summary>
+    /// 重置战斗房间的敌人池
+    /// </summary>
+    private void ResetCombatRoomEnemyPool()
+    {
+        // 清除已击败敌人记录
+        EnemyPool.ClearDefeatedEnemies();
+        Debug.Log("[RoomState] 已清除 EnemyPool 已击败敌人记录");
     }
 
     private void EnsureAtLeastOnePropsRoom(FloorMap_cza map, SeedRNG_cza rng)
@@ -337,33 +351,42 @@ public class RoomStateMachine_cza : MonoBehaviour
     // 根据房间类型执行进入时处理（可在此扩展生成怪物/刷新 UI 等）
     private void HandleRoomEnter(RoomNode_cza room)
     {
+        Debug.Log($"[RoomState] HandleRoomEnter: 房间类型={room.Type}");
+        
         switch (room.Type)
         {
             case RoomType_cza.Combat:
             {
+                Debug.Log("[RoomState] 正在查找 CombatRoom_cza 组件...");
                 var combat = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.CombatRoom_cza>();
+                
                 if (combat == null)
                 {
+                    Debug.Log("[RoomState] FindObjectOfType 未找到激活的 CombatRoom_cza，尝试查找未激活的...");
                     // 兼容未激活对象
                     var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.CombatRoom_cza>();
+                    Debug.Log($"[RoomState] FindObjectsOfTypeAll 找到 {(all != null ? all.Length : 0)} 个 CombatRoom_cza");
+                    
                     if (all != null && all.Length > 0)
                     {
                         combat = all[0];
-                        if (combat != null && !combat.gameObject.activeInHierarchy)
-                        {
-                            Debug.Log("[RoomState] CombatRoom_cza found inactive, activating GameObject");
-                            combat.gameObject.SetActive(true);
-                        }
+                        Debug.Log($"[RoomState] 使用第一个 CombatRoom_cza: {combat.gameObject.name}, active={combat.gameObject.activeInHierarchy}");
+                        // 不在这里激活 GameObject，由 RoomUI.SwitchToRoomTypePanel 控制面板显示
                     }
                 }
+                else
+                {
+                    Debug.Log($"[RoomState] FindObjectOfType 找到激活的 CombatRoom_cza: {combat.gameObject.name}");
+                }
+                
                 if (combat != null)
                 {
-                    Debug.Log("[RoomState] Enter CombatRoom -> calling EnterRoom()");
+                    Debug.Log($"[RoomState] Enter CombatRoom -> calling EnterRoom() on {combat.gameObject.name}");
                     combat.EnterRoom();
                 }
                 else
                 {
-                    Debug.LogWarning("[RoomState] CombatRoom_cza not found (active or inactive)");
+                    Debug.LogError("[RoomState] CombatRoom_cza not found! 请确保场景中有挂载 CombatRoom_cza 组件的 GameObject");
                 }
                 break;
             }
@@ -376,11 +399,7 @@ public class RoomStateMachine_cza : MonoBehaviour
                     if (all != null && all.Length > 0)
                     {
                         rest = all[0];
-                        if (rest != null && !rest.gameObject.activeInHierarchy)
-                        {
-                            Debug.Log("[RoomState] RestRoom_cza found inactive, activating GameObject");
-                            rest.gameObject.SetActive(true);
-                        }
+                        // 不在这里激活 GameObject，由 RoomUI.SwitchToRoomTypePanel 控制面板显示
                     }
                 }
                 if (rest != null)
@@ -403,11 +422,7 @@ public class RoomStateMachine_cza : MonoBehaviour
                     if (all != null && all.Length > 0)
                     {
                         props = all[0];
-                        if (props != null && !props.gameObject.activeInHierarchy)
-                        {
-                            Debug.Log("[RoomState] PropsRoom_cza found inactive, activating GameObject");
-                            props.gameObject.SetActive(true);
-                        }
+                        // 不在这里激活 GameObject，由 RoomUI.SwitchToRoomTypePanel 控制面板显示
                     }
                 }
                 if (props != null)
@@ -433,11 +448,7 @@ public class RoomStateMachine_cza : MonoBehaviour
                     if (all != null && all.Length > 0)
                     {
                         boss = all[0];
-                        if (boss != null && !boss.gameObject.activeInHierarchy)
-                        {
-                            Debug.Log("[RoomState] BossRoom_cza found inactive, activating GameObject");
-                            boss.gameObject.SetActive(true);
-                        }
+                        // 不在这里激活 GameObject，由 RoomUI.SwitchToRoomTypePanel 控制面板显示
                     }
                 }
                 if (boss != null)
