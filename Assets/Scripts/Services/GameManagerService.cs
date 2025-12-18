@@ -239,26 +239,55 @@ public class GameManagerService : MonoBehaviour
         {
             case GameState.Playing:
                 Time.timeScale = 1f;
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                // 只在战斗场景中锁定和隐藏光标，其他场景保持光标可见
+                if (_currentSceneType == SceneType.Battle)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
+                else
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                // 游戏进行中禁用UI事件拦截，避免阻挡鼠标事件
+                if (UIManagerService.Instance != null)
+                {
+                    UIManagerService.Instance.SetRaycastingEnabled(false);
+                }
                 break;
                 
             case GameState.Paused:
                 Time.timeScale = 0f;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                // 暂停时启用UI事件拦截，允许UI交互
+                if (UIManagerService.Instance != null)
+                {
+                    UIManagerService.Instance.SetRaycastingEnabled(true);
+                }
                 break;
                 
             case GameState.Menu:
                 Time.timeScale = 1f;
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                // 菜单场景启用UI事件拦截，允许UI交互
+                if (UIManagerService.Instance != null)
+                {
+                    UIManagerService.Instance.SetRaycastingEnabled(true);
+                }
                 break;
                 
             case GameState.GameOver:
                 Time.timeScale = 0.5f; // 慢动作效果
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+                // 游戏结束时启用UI事件拦截，允许UI交互
+                if (UIManagerService.Instance != null)
+                {
+                    UIManagerService.Instance.SetRaycastingEnabled(true);
+                }
                 break;
         }
     }
