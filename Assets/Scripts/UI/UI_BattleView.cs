@@ -200,6 +200,9 @@ public class UI_BattleView : MonoBehaviour
 
     public void Bind(BattleController ctrl, BattleModel m)
     {
+        Debug.Log($"[UI_BattleView] Bind called - ctrl={(ctrl != null ? "valid" : "null")}, model={(m != null ? "valid" : "null")}, battlePanel={(battlePanel != null ? battlePanel.name : "NULL")}");
+        Debug.Log($"[UI_BattleView] UI_BattleView GameObject: {gameObject.name}, activeSelf={gameObject.activeSelf}, activeInHierarchy={gameObject.activeInHierarchy}");
+        
         Unbind();
 
         controller = ctrl;
@@ -208,8 +211,36 @@ public class UI_BattleView : MonoBehaviour
         // 激活战斗主面板
         if (battlePanel != null)
         {
+            // 先检查并激活父级链
+            Transform current = battlePanel.transform.parent;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    Debug.Log($"[UI_BattleView] Activating parent: {current.gameObject.name}");
+                    current.gameObject.SetActive(true);
+                }
+                current = current.parent;
+            }
+            
             battlePanel.SetActive(true);
-            Debug.Log("[UI_BattleView] Battle panel activated");
+            Debug.Log($"[UI_BattleView] Battle panel activated: {battlePanel.name}, activeSelf={battlePanel.activeSelf}, activeInHierarchy={battlePanel.activeInHierarchy}");
+            
+            // 如果仍然不可见，输出父级链状态
+            if (!battlePanel.activeInHierarchy)
+            {
+                Debug.LogError($"[UI_BattleView] battlePanel still not visible! Checking parent chain:");
+                Transform parent = battlePanel.transform.parent;
+                while (parent != null)
+                {
+                    Debug.LogError($"  -> {parent.name}: activeSelf={parent.gameObject.activeSelf}, activeInHierarchy={parent.gameObject.activeInHierarchy}");
+                    parent = parent.parent;
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError("[UI_BattleView] battlePanel is NULL! Cannot show battle UI. Please assign battlePanel in Inspector.");
         }
 
         if (endTurnButton != null)
@@ -1299,6 +1330,9 @@ public class UI_BattleView : MonoBehaviour
         
         // 隐藏捕捉结果面板
         HideCapturePanel();
+        
+        // 隐藏主战斗面板
+        HideBattlePanel();
         
         // 通知 RoomStateMachine 完成当前房间，触发路线选择
         if (RoomStateMachine_cza.Instance != null)

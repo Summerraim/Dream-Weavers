@@ -43,6 +43,9 @@ public class BattleController : MonoBehaviour
 
     [SerializeField]
     private DreamWeavers.Rooms.CombatRoom_cza combatRoom; // 战斗房间引用（用于捕捉精灵）
+    
+    [SerializeField]
+    private DreamWeavers.Rooms.BossRoom_cza bossRoom; // Boss房间引用
 
     private BattleModel model;
 
@@ -77,16 +80,13 @@ public class BattleController : MonoBehaviour
             enemySkillAnimator.applyRootMotion = false;
 
         // 仅当启用自动初始化时才在Start中初始化战斗
-        // 正常流程应由CombatRoom调用BeginBattleWith传入数据后初始化
+        // 正常流程应由CombatRoom/BossRoom调用BeginBattleWith传入数据后初始化
         if (autoInitOnStart)
         {
             InitializeBattle();
             Debug.Log("BattleController: InitializeBattle called in Start() (autoInitOnStart=true)");
         }
-        else
-        {
-            Debug.Log("BattleController: 等待CombatRoom调用BeginBattleWith初始化战斗");
-        }
+        // 不输出等待日志，避免混淆
     }
 
     // 允许外部（如房间控制器）传入玩家/敌人数据并开始战斗
@@ -105,6 +105,7 @@ public class BattleController : MonoBehaviour
     public void InitializeBattle()
     {
         Debug.Log($"BattleController: InitializeBattle starting - enemyData={(enemyData != null ? enemyData.name : "null")}, MaxHP={(enemyData != null ? enemyData.MaxHP.ToString() : "N/A")}");
+        Debug.Log($"BattleController: InitializeBattle - 当前房间引用状态: combatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}, bossRoom={(bossRoom != null ? bossRoom.gameObject.name : "null")}");
         
         // 从PlayerData获取出场的Spirit队列
         if (playerData == null)
@@ -283,8 +284,48 @@ public class BattleController : MonoBehaviour
         }
 
         // 绑定 UI（如果存在）
+        if (battleView == null)
+        {
+            // 尝试自动查找 UI_BattleView
+            battleView = FindObjectOfType<UI_BattleView>();
+            if (battleView == null)
+            {
+                // 尝试查找未激活的
+                var allViews = Resources.FindObjectsOfTypeAll<UI_BattleView>();
+                if (allViews != null && allViews.Length > 0)
+                {
+                    battleView = allViews[0];
+                    Debug.Log($"BattleController: Found inactive UI_BattleView: {battleView.gameObject.name}");
+                }
+            }
+        }
+        
         if (battleView != null)
+        {
+            // 确保 UI_BattleView 的 GameObject 是激活的
+            if (!battleView.gameObject.activeInHierarchy)
+            {
+                Debug.Log($"BattleController: UI_BattleView GameObject is inactive, activating it...");
+                // 尝试激活整个父级链
+                Transform current = battleView.transform;
+                while (current != null)
+                {
+                    if (!current.gameObject.activeSelf)
+                    {
+                        Debug.Log($"BattleController: Activating parent: {current.gameObject.name}");
+                        current.gameObject.SetActive(true);
+                    }
+                    current = current.parent;
+                }
+            }
+            
             battleView.Bind(this, model);
+            Debug.Log($"BattleController: UI_BattleView bound successfully, activeInHierarchy={battleView.gameObject.activeInHierarchy}");
+        }
+        else
+        {
+            Debug.LogWarning("BattleController: UI_BattleView not found! Battle UI will not be displayed.");
+        }
 
         // 初始化缓存值
         lastPlayerHP = player?.HP ?? 0;
@@ -300,13 +341,30 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride)
     {
-        BeginBattleWith(playerDataOverride, enemyDataOverride, null);
+        BeginBattleWith(playerDataOverride, enemyDataOverride, null, null);
     }
 
     /// <summary>
     /// Allows external systems (ex: rooms) to begin a battle with runtime data and combat room reference.
     /// </summary>
     public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride, DreamWeavers.Rooms.CombatRoom_cza room)
+    {
+        BeginBattleWith(playerDataOverride, enemyDataOverride, room, null);
+    }
+
+    /// <summary>
+    /// Allows external systems (ex: rooms) to begin a battle with runtime data and boss room reference.
+    /// </summary>
+    public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride, DreamWeavers.Rooms.BossRoom_cza boss)
+    {
+        Debug.Log($"BattleController: BeginBattleWith(BossRoom) 重载被调用, boss={(boss != null ? boss.gameObject.name : "null")}");
+        BeginBattleWith(playerDataOverride, enemyDataOverride, null, boss);
+    }
+
+    /// <summary>
+    /// Allows external systems (ex: rooms) to begin a battle with runtime data and room references.
+    /// </summary>
+    public void BeginBattleWith(PlayerData playerDataOverride, EnemyData enemyDataOverride, DreamWeavers.Rooms.CombatRoom_cza room, DreamWeavers.Rooms.BossRoom_cza boss)
     {
         if (playerDataOverride == null)
         {
@@ -320,11 +378,30 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        // 设置战斗房间引用（用于捕捉精灵和移除敌人）
+        // 根据传入的参数设置房间引用
+        // 如果传入了 room，则使用 room 并清空 bossRoom（这是普通战斗）
+        // 如果传入了 boss，则使用 boss 并清空 combatRoom（这是Boss战斗）
+        // 这样避免同时存在两个房间引用导致混乱
+        Debug.Log($"BattleController: BeginBattleWith 接收参数 - room={(room != null ? room.gameObject.name : "null")}, boss={(boss != null ? boss.gameObject.name : "null")}");
+        
         if (room != null)
         {
             combatRoom = room;
+            bossRoom = null; // 普通战斗，清空Boss引用
             Debug.Log($"BattleController: CombatRoom reference set to {room.gameObject.name}");
+        }
+        else if (boss != null)
+        {
+            bossRoom = boss;
+            combatRoom = null; // Boss战斗，清空普通房间引用
+            Debug.Log($"BattleController: BossRoom reference set to {boss.gameObject.name}, bossRoom={(bossRoom != null ? bossRoom.gameObject.name : "NULL after assignment!")}");
+        }
+        else
+        {
+            // 两个都没传，清空引用
+            combatRoom = null;
+            bossRoom = null;
+            Debug.LogWarning("BattleController: BeginBattleWith called without room reference");
         }
 
         // 检查敌人是否已被击败（HP/Mana为0的情况）
@@ -341,7 +418,7 @@ public class BattleController : MonoBehaviour
         playerData = playerDataOverride;
         enemyData = enemyDataOverride;
 
-        Debug.Log($"BattleController: BeginBattleWith - PlayerData={playerData.name}, EnemyData={enemyData.name}, CombatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}");
+        Debug.Log($"BattleController: BeginBattleWith - PlayerData={playerData.name}, EnemyData={enemyData.name}, CombatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}, BossRoom={(bossRoom != null ? bossRoom.gameObject.name : "null")}");
 
         InitializeBattle();
     }
@@ -357,6 +434,10 @@ public class BattleController : MonoBehaviour
         if (combatRoom != null)
         {
             combatRoom.MarkAsCleared();
+        }
+        else if (bossRoom != null)
+        {
+            bossRoom.MarkAsCleared();
         }
         
         // 隐藏战斗UI
@@ -897,10 +978,16 @@ public class BattleController : MonoBehaviour
                 // 不再自动切换房间，由玩家点击"继续"按钮后触发
                 Debug.Log("BattleController: 战斗胜利，等待玩家点击继续按钮离开房间");
             }
+            else if (bossRoom != null)
+            {
+                // Boss房间：标记已清理，显示继续按钮
+                bossRoom.MarkAsCleared();
+                Debug.Log("BattleController: Boss战斗胜利，等待玩家点击继续按钮离开房间");
+            }
             else
             {
                 Debug.LogWarning(
-                    "BattleController: combatRoom reference is null, cannot attempt capture"
+                    "BattleController: combatRoom and bossRoom references are both null"
                 );
             }
 

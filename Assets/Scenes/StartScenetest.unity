@@ -6091,7 +6091,7 @@ PrefabInstance:
     - target: {fileID: 4165190340312663984, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -99.99999
+      value: -100
       objectReference: {fileID: 0}
     - target: {fileID: 4165190340312663984, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
@@ -9548,6 +9548,7 @@ Transform:
   - {fileID: 1896369820}
   - {fileID: 1657717815}
   - {fileID: 1195827164}
+  - {fileID: 1897228317}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1167192263
@@ -9617,7 +9618,6 @@ Transform:
   m_Children:
   - {fileID: 687898471}
   - {fileID: 640245461}
-  - {fileID: 1897228317}
   - {fileID: 1527432018}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -10555,6 +10555,7 @@ GameObject:
   - component: {fileID: 1314376469}
   - component: {fileID: 1314376471}
   - component: {fileID: 1314376470}
+  - component: {fileID: 1314376472}
   m_Layer: 5
   m_Name: CombatPanel
   m_TagString: Untagged
@@ -10636,6 +10637,36 @@ MonoBehaviour:
   dropQuantity: 1
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
+  battleController: {fileID: 1896369822}
+  battleView: {fileID: 1896369821}
+--- !u!114 &1314376472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1314376468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 592d94bc24c77f3408a4b70fbf752c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  RoomID: 
+  Type: 4
+  floor1BossData: {fileID: 11400000, guid: d84f2f69082ee2b4aa8d0adeb3031706, type: 2}
+  floor2BossData: {fileID: 11400000, guid: 00681de8ab311b846bfbf163f9655b08, type: 2}
+  floor3BossData: {fileID: 11400000, guid: c1a049471044216419ddcdfdab6cb2f1, type: 2}
+  floor4BossData: {fileID: 11400000, guid: 90aa2ac81bd770840bf5117c89671df5, type: 2}
+  floor1SpiritData: {fileID: 11400000, guid: e36bfdcfef0603d41a4a7222b0b094fd, type: 2}
+  floor2SpiritData: {fileID: 11400000, guid: 3116b20114e32af4aaa45e6d5572b41a, type: 2}
+  floor3SpiritData: {fileID: 11400000, guid: 0fcefb66face54842bdc5eb4095ee519, type: 2}
+  floor4SpiritData: {fileID: 0}
+  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  itemPool: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  dropQuantity: 1
+  pickupPrefab: {fileID: 0}
+  useWeightedRandom: 0
   battleController: {fileID: 1896369822}
   battleView: {fileID: 1896369821}
 --- !u!1 &1323712045
@@ -12740,7 +12771,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1657717814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14042,6 +14073,7 @@ MonoBehaviour:
   playerSkillAnimator: {fileID: 863241326}
   enemySkillAnimator: {fileID: 1243084794}
   combatRoom: {fileID: 1314376471}
+  bossRoom: {fileID: 1314376472}
   autoInitOnStart: 0
 --- !u!1 &1897228316
 GameObject:
@@ -14104,7 +14136,7 @@ RectTransform:
   - {fileID: 513339465}
   - {fileID: 1627151524}
   - {fileID: 1612734560}
-  m_Father: {fileID: 1183017441}
+  m_Father: {fileID: 1159765905}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}

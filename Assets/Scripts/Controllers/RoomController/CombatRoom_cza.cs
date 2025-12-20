@@ -33,6 +33,7 @@ namespace DreamWeavers.Rooms
         private EnemyData selectedEnemy; // 当前选中的敌人数据（来自对象池或手动配置）
         private bool itemDropped; // 是否已触发掉落，避免重复
         private bool roomCleared; // 外部标记房间已清理（由 BattleController 调用）
+        private bool spiritCaptured; // 是否已捕捉精灵，避免重复捕捉
 
         // private void OnEnable()
         // {
@@ -85,6 +86,7 @@ namespace DreamWeavers.Rooms
             spawned = false;
             itemDropped = false;
             roomCleared = false;
+            spiritCaptured = false;
             enemyModel = null;
             selectedEnemy = null;
             selectedSpirit = null;
@@ -257,13 +259,8 @@ namespace DreamWeavers.Rooms
                 Debug.Log("[CombatRoom] 激活 BattleController");
             }
 
-            // 显示战斗UI（OnEnable 应该已经显示了，这里做双重保险）
-            if (battleView != null)
-            {
-                battleView.ShowBattlePanel();
-            }
-
             // 传入数据并开始战斗（同时传入自身引用，用于战斗胜利后移除敌人）
+            // 注意：不要在这里调用 ShowBattlePanel()，因为 BeginBattleWith -> InitializeBattle -> battleView.Bind() 会自动激活并绑定UI
             Debug.Log($"[CombatRoom] 开始战斗: Player={playerData.name}, Enemy={selectedEnemy.name}");
             bc.BeginBattleWith(playerData, selectedEnemy, this);
         }
@@ -319,7 +316,14 @@ namespace DreamWeavers.Rooms
         /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
         public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
         {
-            Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
+            Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, spiritCaptured={spiritCaptured}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
+            
+            // 检查是否已经捕捉过，避免重复捕捉
+            if (spiritCaptured)
+            {
+                Debug.Log("[CombatRoom] 已经捕捉过精灵，跳过重复捕捉");
+                return (false, null);
+            }
             
             // 检查房间是否已清理（或是否为提前捕捉）
             if (!earlyCapture && !IsCleared())
@@ -355,6 +359,9 @@ namespace DreamWeavers.Rooms
                 owned.Add(spiritToCapture);
                 playerData.OwnedSpirits = owned.ToArray();
                 
+                // 标记已捕捉，防止重复
+                spiritCaptured = true;
+                
                 Debug.Log($"[CombatRoom] 捕捉成功! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
                 
 #if UNITY_EDITOR
@@ -377,6 +384,13 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
+            // 检查是否已经捕捉过，避免重复捕捉
+            if (spiritCaptured)
+            {
+                Debug.Log("[CombatRoom] ExitRoom: 已经捕捉过精灵，跳过重复捕捉");
+                return;
+            }
+
             // 仅在房间清理完成（敌人被击败或实例销毁）时执行捕捉
             if (!IsCleared())
             {
@@ -396,14 +410,18 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            // 添加到 PlayerData.OwnedSpirits（数组）——允许重复捕捉
+            // 添加到 PlayerData.OwnedSpirits（数组）
             var owned = playerData.GetOwnedSpirits();
             owned.Add(spiritToAdd);
             playerData.OwnedSpirits = owned.ToArray();
+            
+            // 标记已捕捉，防止重复
+            spiritCaptured = true;
+            
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-            Debug.Log($"[CombatRoom] 捕捉精灵成功: {spiritToAdd.DisplayName} (允许重复)");
+            Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功: {spiritToAdd.DisplayName}");
         }
 
         // 击败敌人时从对象池随机掉落一个道具，并写入背包与玩家数据

@@ -33,6 +33,7 @@ public class RoomUIActions_cza : MonoBehaviour
     private bool subscribed;
     private Coroutine waitCo;
     private Coroutine enemyWatchCo; // 监听战斗房间敌人状态的协程
+    private Coroutine bossWatchCo; // 监听Boss房间Boss状态的协程
     // private bool overrideCompleteByEnemy; // 已废弃
     // private bool combatCompleteReady; // 已废弃
 
@@ -156,6 +157,22 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 启动时隐藏所有已注册的房间类型面板和选择面板，避免多余UI显示
         HideAllRegisteredPanels();
+        
+        // 额外确保战斗UI在启动时隐藏（Boss房和Combat房共用）
+        HideBattleUIOnStart();
+    }
+    
+    /// <summary>
+    /// 启动时隐藏战斗UI（确保游戏开始时战斗面板不显示）
+    /// </summary>
+    private void HideBattleUIOnStart()
+    {
+        var battleView = FindObjectOfType<UI_BattleView>(true);
+        if (battleView != null)
+        {
+            battleView.HideBattlePanel();
+            Debug.Log("[RoomUI] 启动时隐藏战斗UI面板");
+        }
     }
 
     private void OnEnable()
@@ -244,6 +261,12 @@ public class RoomUIActions_cza : MonoBehaviour
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
         }
+        // 停止Boss监听
+        if (bossWatchCo != null)
+        {
+            StopCoroutine(bossWatchCo);
+            bossWatchCo = null;
+        }
     }
 
     private void RefreshRoomInfo(RoomNode_cza node)
@@ -274,6 +297,8 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 进入房间后尝试监听战斗房间敌人状态
         RestartWatchEnemyIfCombatRoom();
+        // 进入房间后尝试监听Boss房间Boss状态
+        RestartWatchBossIfBossRoom();
         // 技能房：更新技能信息 UI
         if (node.Type == RoomType_cza.Skill)
         {
@@ -337,6 +362,12 @@ public class RoomUIActions_cza : MonoBehaviour
             {
                 StopCoroutine(enemyWatchCo);
                 enemyWatchCo = null;
+            }
+            // 进入选择阶段停止Boss监听
+            if (bossWatchCo != null)
+            {
+                StopCoroutine(bossWatchCo);
+                bossWatchCo = null;
             }
         }
         else
@@ -428,27 +459,68 @@ public class RoomUIActions_cza : MonoBehaviour
         if (!usePrefabOnlyForChoices)
             ShowPanel(choosePanelName, false);
         ShowChoosePrefab(false);
+        
+        // 隐藏战斗UI（战斗房间和Boss房间共用）
+        HideBattleUI();
+        
         // 完成后停止战斗监听
         if (enemyWatchCo != null)
         {
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
         }
+        // 完成后停止Boss监听
+        if (bossWatchCo != null)
+        {
+            StopCoroutine(bossWatchCo);
+            bossWatchCo = null;
+        }
     }
 
     // 新增：楼层初始化完成时，统一隐藏上一层的类型面板以避免皮肤残留
     private void OnFloorInitializedHidePanels(int floorIndex)
     {
+        Debug.Log($"[RoomUI] OnFloorInitializedHidePanels: floor={floorIndex}");
+        
         HideAllRegisteredPanels();
         currentRoomPanelName = null;
         // 楼层变化时选择面板也关闭，等待进入新房间后再由刷新逻辑打开
         if (!usePrefabOnlyForChoices)
             ShowPanel(choosePanelName, false);
+        
+        // 检查当前房间类型，如果是 Combat 或 Boss 房间，不隐藏战斗 UI
+        // 因为此时战斗 UI 刚被 InitializeBattle -> Bind 激活
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentRoom != null)
+        {
+            var roomType = sm.CurrentRoom.Type;
+            if (roomType == RoomType_cza.Combat || roomType == RoomType_cza.Boss)
+            {
+                Debug.Log($"[RoomUI] OnFloorInitializedHidePanels: 当前是{roomType}房间，保留战斗UI");
+            }
+            else
+            {
+                // 非战斗房间，隐藏战斗UI（防止跨楼层残留）
+                HideBattleUI();
+            }
+        }
+        else
+        {
+            // 无法确定房间类型时，也隐藏战斗UI
+            HideBattleUI();
+        }
+        
         // 同时停止战斗监听，重置交互覆盖状态
         if (enemyWatchCo != null)
         {
             StopCoroutine(enemyWatchCo);
             enemyWatchCo = null;
+        }
+        // 停止Boss监听
+        if (bossWatchCo != null)
+        {
+            StopCoroutine(bossWatchCo);
+            bossWatchCo = null;
         }
     }
 
@@ -483,6 +555,15 @@ public class RoomUIActions_cza : MonoBehaviour
 
         // 先隐藏所有已注册的房间类型面板和分支选择面板，确保只显示当前房间UI
         HideAllRegisteredPanels();
+        
+        // Boss房间和Combat房间使用相同的战斗UI（UI_BattleView），由各自的Room脚本控制
+        // 不通过RoomUI的typePanelMap显示面板
+        if (type == RoomType_cza.Boss || type == RoomType_cza.Combat)
+        {
+            Debug.Log($"[RoomUI] SwitchToRoomTypePanel: {type}房间使用战斗UI，跳过面板切换");
+            currentRoomPanelName = null;
+            return;
+        }
 
         if (typePanelMap.TryGetValue(type, out var panelName) && !string.IsNullOrEmpty(panelName)) //通过传入的房间类型找到对应面板
         {
@@ -667,11 +748,22 @@ public class RoomUIActions_cza : MonoBehaviour
             {
                 StopCoroutine(enemyWatchCo);
                 enemyWatchCo = null;
-            }
+            }   
             return;
         }
         
         var combatRoom = FindObjectOfType<CombatRoom_cza>();
+        if (combatRoom == null)
+        {
+            // 尝试查找未激活的
+            var allCombatRooms = Resources.FindObjectsOfTypeAll<CombatRoom_cza>();
+            if (allCombatRooms != null && allCombatRooms.Length > 0)
+            {
+                combatRoom = allCombatRooms[0];
+                Debug.Log($"[RoomUI] RestartWatchEnemyIfCombatRoom: 找到未激活的CombatRoom_cza: {combatRoom.gameObject.name}");
+            }
+        }
+        
         if (combatRoom == null)
         {
             Debug.LogWarning("[RoomUI] RestartWatchEnemyIfCombatRoom: 未找到CombatRoom_cza实例");
@@ -688,6 +780,81 @@ public class RoomUIActions_cza : MonoBehaviour
         }
         Debug.Log("[RoomUI] RestartWatchEnemyIfCombatRoom: 启动敌人状态监听协程");
         enemyWatchCo = StartCoroutine(WatchEnemyState(combatRoom));
+    }
+    
+    // Boss房间监听：若存在 BossRoom_cza，则监控其敌人模型的 HP/Mana
+    private void RestartWatchBossIfBossRoom()
+    {
+        // 只在当前房间是Boss房间时才监听
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm == null || sm.CurrentRoom == null || sm.CurrentRoom.Type != RoomType_cza.Boss)
+        {
+            Debug.Log($"[RoomUI] RestartWatchBossIfBossRoom: 当前不是Boss房间，不启动监听");
+            if (bossWatchCo != null)
+            {
+                StopCoroutine(bossWatchCo);
+                bossWatchCo = null;
+            }
+            return;
+        }
+        
+        var bossRoom = FindObjectOfType<BossRoom_cza>();
+        if (bossRoom == null)
+        {
+            // 尝试查找未激活的
+            var allBossRooms = Resources.FindObjectsOfTypeAll<BossRoom_cza>();
+            if (allBossRooms != null && allBossRooms.Length > 0)
+            {
+                bossRoom = allBossRooms[0];
+                Debug.Log($"[RoomUI] RestartWatchBossIfBossRoom: 找到未激活的BossRoom_cza: {bossRoom.gameObject.name}");
+            }
+        }
+        
+        if (bossRoom == null)
+        {
+            Debug.LogWarning("[RoomUI] RestartWatchBossIfBossRoom: 未找到BossRoom_cza实例");
+            if (bossWatchCo != null)
+            {
+                StopCoroutine(bossWatchCo);
+                bossWatchCo = null;
+            }
+            return;
+        }
+        if (bossWatchCo != null)
+        {
+            StopCoroutine(bossWatchCo);
+        }
+        Debug.Log("[RoomUI] RestartWatchBossIfBossRoom: 启动Boss状态监听协程");
+        bossWatchCo = StartCoroutine(WatchBossState(bossRoom));
+    }
+
+    private IEnumerator WatchBossState(BossRoom_cza room)
+    {
+        Debug.Log("[RoomUI] WatchBossState 协程启动");
+        // 等待Boss模型就绪
+        while (room != null && room.GetEnemyModel() == null)
+        {
+            yield return null;
+        }
+        var model = room != null ? room.GetEnemyModel() : null;
+        if (model == null)
+        {
+            Debug.LogWarning("[RoomUI] WatchBossState: Boss模型为空，退出监听");
+            yield break;
+        }
+        Debug.Log($"[RoomUI] WatchBossState: 开始监听Boss状态 HP={model.HP} Mana={model.Mana}");
+        // 轮询检查生命/魔力
+        while (room != null && model != null)
+        {
+            if (model.HP <= 0 || model.Mana <= 0)
+            {
+                Debug.Log($"[RoomUI] WatchBossState: Boss已被击败 (HP={model.HP}, Mana={model.Mana})，等待玩家点击继续按钮");
+                // 不再自动触发CompleteCurrentRoom，由UI_BattleView的继续按钮处理
+                yield break;
+            }
+            yield return null;
+        }
+        Debug.Log("[RoomUI] WatchBossState: 协程正常结束");
     }
 
     private IEnumerator WatchEnemyState(CombatRoom_cza room)
@@ -722,6 +889,118 @@ public class RoomUIActions_cza : MonoBehaviour
             yield return null;
         }
         Debug.Log("[RoomUI] WatchEnemyState: 协程正常结束");
+    }private IEnumerator WatchEnemyState1(BossRoom_cza room)
+    {
+        Debug.Log("[RoomUI] WatchEnemyState 协程启动");
+        // 等待敌人模型就绪
+        while (room != null && room.GetEnemyModel() == null)
+        {
+            yield return null;
+        }
+        var model = room != null ? room.GetEnemyModel() : null;
+        if (model == null)
+        {
+            Debug.LogWarning("[RoomUI] WatchEnemyState: 敌人模型为空，退出监听");
+            yield break;
+        }
+        Debug.Log($"[RoomUI] WatchEnemyState: 开始监听敌人状态 HP={model.HP} Mana={model.Mana}");
+        // 轮询检查生命/法力
+        while (room != null && model != null)
+        {
+            if (model.HP <= 0 || model.Mana <= 0)
+            {
+                Debug.Log($"[RoomUI] WatchEnemyState: 敌人 HP={model.HP} Mana={model.Mana} 触发房间完成");
+                // 通过CompleteCurrentRoom触发事件，让RefreshChoiceUI通过OnBranchChoicesUpdated事件自动更新UI
+                if (RoomStateMachine_cza.Instance != null)
+                {
+                    RoomStateMachine_cza.Instance.CompleteCurrentRoom();
+                    // 不在这里直接ShowPanel，由事件驱动的RefreshChoiceUI处理UI显示
+                }
+                yield break;
+            }
+            yield return null;
+        }
+        Debug.Log("[RoomUI] WatchEnemyState: 协程正常结束");
+    }
+
+    // // Boss房间监听：若存在 BossRoom_cza，则监控Boss的击败状态
+    // private void RestartWatchBossIfBossRoom()
+    // {
+    //     // 只在当前房间是Boss房间时才监听
+    //     var sm = RoomStateMachine_cza.Instance;
+    //     if (sm == null || sm.CurrentRoom == null || sm.CurrentRoom.Type != RoomType_cza.Boss)
+    //     {
+    //         Debug.Log($"[RoomUI] RestartWatchBossIfBossRoom: 当前不是Boss房间，不启动监听");
+    //         if (bossWatchCo != null)
+    //         {
+    //             StopCoroutine(bossWatchCo);
+    //             bossWatchCo = null;
+    //         }
+    //         return;
+    //     }
+        
+    //     var bossRoom = FindObjectOfType<BossRoom_cza>();
+    //     if (bossRoom == null)
+    //     {
+    //         Debug.LogWarning("[RoomUI] RestartWatchBossIfBossRoom: 未找到BossRoom_cza实例");
+    //         if (bossWatchCo != null)
+    //         {
+    //             StopCoroutine(bossWatchCo);
+    //             bossWatchCo = null;
+    //         }
+    //         return;
+    //     }
+    //     if (bossWatchCo != null)
+    //     {
+    //         StopCoroutine(bossWatchCo);
+    //     }
+    //     Debug.Log("[RoomUI] RestartWatchBossIfBossRoom: 启动Boss状态监听协程");
+    //     bossWatchCo = StartCoroutine(WatchBossState(bossRoom));
+    // }
+
+    // private IEnumerator WatchBossState(BossRoom_cza room)
+    // {
+    //     Debug.Log("[RoomUI] WatchBossState 协程启动");
+    //     // 等待Boss模型就绪
+    //     while (room != null && room.GetBossModel() == null)
+    //     {
+    //         yield return null;
+    //     }
+    //     var model = room != null ? room.GetBossModel() : null;
+    //     if (model == null)
+    //     {
+    //         Debug.LogWarning("[RoomUI] WatchBossState: Boss模型为空，退出监听");
+    //         yield break;
+    //     }
+    //     Debug.Log($"[RoomUI] WatchBossState: 开始监听Boss状态 HP={model.HP}");
+    //     // 轮询检查生命
+    //     while (room != null && model != null)
+    //     {
+    //         if (room.IsBossDefeated())
+    //         {
+    //             Debug.Log($"[RoomUI] WatchBossState: Boss已被击败，等待玩家点击继续按钮");
+    //             // 不再自动触发CompleteCurrentRoom，由UI_BattleView的继续按钮处理
+    //             // BattleController会在Boss死亡时显示EnemyDeathPanel，玩家点击继续后触发CompleteCurrentRoom
+    //             yield break;
+    //         }
+    //         yield return null;
+    //     }
+    //     Debug.Log("[RoomUI] WatchBossState: 协程正常结束");
+    // }
+
+    /// <summary>
+    /// 隐藏战斗UI（战斗房间和Boss房间共用的UI_BattleView）
+    /// </summary>
+    private void HideBattleUI()
+    {
+        var battleView = FindObjectOfType<UI_BattleView>();
+        if (battleView != null)
+        {
+            battleView.HideBattlePanel();
+            battleView.HideEnemyDeathPanel();
+            battleView.HideCapturePanel();
+            Debug.Log("[RoomUI] HideBattleUI: 已隐藏战斗UI");
+        }
     }
 
     #region 技能房 UI
