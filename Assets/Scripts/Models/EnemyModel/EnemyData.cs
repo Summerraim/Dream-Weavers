@@ -4,6 +4,9 @@ using UnityEngine;
 public class EnemyData : ScriptableObject
 {
     public string DisplayName;
+
+    public string Description;
+
     public Sprite Image;
     public int MaxHP = 500;
     public int MaxMana = 200;
