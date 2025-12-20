@@ -9678,6 +9678,7 @@ MonoBehaviour:
   panelsRoot: {fileID: 366057323}
   autoInitialize: 1
   debugMode: 1
+  enableRaycasting: 0
 --- !u!114 &1195827167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9904,6 +9905,7 @@ MonoBehaviour:
   panelsRoot: {fileID: 0}
   autoInitialize: 1
   debugMode: 1
+  enableRaycasting: 0
 --- !u!224 &1221679858 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4638610993879855976, guid: 181580a6f83b934458bb88b4bc9ce824,
@@ -10627,7 +10629,7 @@ MonoBehaviour:
   RoomID: 
   Type: 0
   enemyData: {fileID: 0}
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 818635734dcc7d347a561a3498e480cb, type: 2}
   enemyPool: {fileID: 11400000, guid: db6fd1abc6b18a149b2c46c2a1466caf, type: 2}
   useWeightedRandom: 0
   itemPool: {fileID: 11400000, guid: f61e1fa6c79feeb4e89a87bb59312eb3, type: 2}
@@ -11201,7 +11203,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1483367928
 Transform:
   m_ObjectHideFlags: 0
@@ -12777,7 +12779,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1657717813}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6dd71d7ddd128914bb0e30d2c9c5c87a, type: 3}
   m_Name: 
@@ -14065,7 +14067,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bebd2c9814b0ec142a8b32b9ea5ef751, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 818635734dcc7d347a561a3498e480cb, type: 2}
   enemyData: {fileID: 0}
   battleView: {fileID: 1896369821}
   playerSkillAnimator: {fileID: 863241326}

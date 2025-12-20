@@ -1426,8 +1426,8 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "蘑菇枪兵")
         {
-            rectTransform.sizeDelta = new Vector2(78, 102);
-            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x102");
+            rectTransform.sizeDelta = new Vector2(78, 103);
+            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x103");
         }
     }
 

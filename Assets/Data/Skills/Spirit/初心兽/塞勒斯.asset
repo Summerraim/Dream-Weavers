@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: "\u585E\u52D2\u65AF"
   m_EditorClassIdentifier: 
   DisplayName: "\u585E\u52D2\u65AF"
+  Description: 
   Image: {fileID: 13815757, guid: b7a844a897365a2419c9465a8ad29663, type: 3}
-  MaxHP: 180
+  MaxHP: 190
   MaxMana: 100
   Damage: 30
   Defense: 5

@@ -66,6 +66,7 @@ public class UIManagerService : MonoBehaviour
     [Header("设置")]
     [SerializeField] private bool autoInitialize = true;
     [SerializeField] private bool debugMode = false;
+    [SerializeField] private bool enableRaycasting = false; // 控制是否启用事件拦截
     
     #endregion
     
@@ -163,12 +164,14 @@ public class UIManagerService : MonoBehaviour
         rootCanvas = canvasObj.AddComponent<Canvas>();
         rootCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasObj.AddComponent<CanvasScaler>();
-        canvasObj.AddComponent<GraphicRaycaster>();
+        
+        // 默认不添加GraphicRaycaster，完全禁用事件拦截
+        // GraphicRaycaster将在需要时通过SetRaycastingEnabled方法动态添加
         
         // 设置Canvas为子对象
         canvasObj.transform.SetParent(transform);
         
-        if (debugMode) Debug.Log("创建根Canvas");
+        if (debugMode) Debug.Log("创建根Canvas，事件拦截: 默认禁用");
     }
     
     /// <summary>
@@ -189,9 +192,14 @@ public class UIManagerService : MonoBehaviour
             rectTransform.offsetMin = Vector2.zero;
             rectTransform.offsetMax = Vector2.zero;
             
+            // 添加CanvasGroup来控制事件拦截
+            CanvasGroup canvasGroup = layerObj.AddComponent<CanvasGroup>();
+            canvasGroup.blocksRaycasts = false; // 默认完全禁用事件拦截
+            canvasGroup.interactable = false;   // 默认禁用交互
+            
             uiLayers[i] = layerObj.transform;
             
-            if (debugMode) Debug.Log($"创建UI层级: Layer_{i}");
+            if (debugMode) Debug.Log($"创建UI层级: Layer_{i}, 事件拦截: 默认禁用");
         }
     }
     
@@ -445,15 +453,8 @@ public class UIManagerService : MonoBehaviour
         panelInfo.instance = Instantiate(panelInfo.panelPrefab, parent);
         panelInfo.instance.name = panelInfo.panelName;
         
-        // 设置RectTransform
-        RectTransform rectTransform = panelInfo.instance.GetComponent<RectTransform>();
-        if (rectTransform != null)
-        {
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.one;
-            rectTransform.offsetMin = Vector2.zero;
-            rectTransform.offsetMax = Vector2.zero;
-        }
+        // 不再自动设置全屏覆盖，保持预制体原有的尺寸和位置设置
+        // 如果需要全屏面板，应该在预制体中设置好RectTransform
         
         if (debugMode) Debug.Log($"实例化面板: {panelInfo.panelName}");
     }
@@ -719,6 +720,44 @@ public class UIManagerService : MonoBehaviour
     #endregion
     
     #region 公共方法
+    
+    /// <summary>
+    /// 设置UI事件拦截开关
+    /// </summary>
+    public void SetRaycastingEnabled(bool enabled)
+    {
+        enableRaycasting = enabled;
+        
+        // 更新根Canvas的GraphicRaycaster
+        if (rootCanvas != null)
+        {
+            GraphicRaycaster raycaster = rootCanvas.GetComponent<GraphicRaycaster>();
+            if (enabled && raycaster == null)
+            {
+                rootCanvas.gameObject.AddComponent<GraphicRaycaster>();
+            }
+            else if (!enabled && raycaster != null)
+            {
+                Destroy(raycaster);
+            }
+        }
+        
+        // 更新所有UI层的CanvasGroup设置
+        foreach (Transform layer in uiLayers)
+        {
+            if (layer != null)
+            {
+                CanvasGroup canvasGroup = layer.GetComponent<CanvasGroup>();
+                if (canvasGroup != null)
+                {
+                    canvasGroup.blocksRaycasts = enabled;
+                    canvasGroup.interactable = enabled;
+                }
+            }
+        }
+        
+        if (debugMode) Debug.Log($"UI事件拦截: {enabled}");
+    }
     
     /// <summary>
     /// 显示消息提示
