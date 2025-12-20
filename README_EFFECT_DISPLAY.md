@@ -7,28 +7,33 @@ Effect展示系统用于在战斗界面显示玩家和敌人身上的所有Buff/
 ## 文件说明
 
 ### 1. EffectSlot.cs
+
 **位置**: `Assets/Scripts/UI/EffectSlot.cs`
 
 **功能**: 单个Effect槽位组件，负责显示一个Buff/Debuff的信息
 
 **显示内容**:
+
 - 效果名称 (DisplayName)
 - 持续回合数 (RemainingTurns，-1显示为∞)
 - 效果描述 (Description)
 - 背景颜色区分效果类型
 
 **颜色系统**:
+
 - 🟢 **绿色** - 增益Buff (ArcherBuff, ScholarBuff等)
 - 🔴 **红色** - 减益Debuff (PoisonDebuff, BurnDebuff, WeakenBuff等)
 - 🟣 **紫色** - 控制型Debuff (FrozenDebuff, SleepDebuff, ConfusionDebuff)
 - 🔵 **蓝色** - 永久效果 (RemainingTurns = -1)
 
 ### 2. UI_EffectDisplay.cs
+
 **位置**: `Assets/Scripts/UI/UI_EffectDisplay.cs`
 
 **功能**: Effect展示面板管理器，负责管理所有Effect槽位
 
 **特性**:
+
 - 分别显示玩家和敌人的Effect
 - 对象池模式（预创建槽位，避免运行时频繁创建销毁）
 - 自动刷新Effect显示
@@ -238,6 +243,7 @@ Effects: [🟢 射手] [🔵 学者] [🔴 虚弱]
 ```
 
 **配置**:
+
 - PlayerEffectsContainer: Horizontal Layout Group
 - Spacing: 5
 - Child Alignment: Middle Left
@@ -257,6 +263,7 @@ Effects: [🟢 射手] [🔵 学者] [🔴 虚弱]
 ```
 
 **配置**:
+
 - PlayerEffectsContainer: Vertical Layout Group
 - Spacing: 3
 - Child Alignment: Upper Left
@@ -269,6 +276,7 @@ Effects: [🟢][🔵][🔴]
 ```
 
 **配置**:
+
 - PlayerEffectsContainer: Grid Layout Group
 - Cell Size: 60x60
 - Spacing: 5x5
@@ -279,6 +287,7 @@ Effects: [🟢][🔵][🔴]
 ### 对象池机制
 
 系统使用对象池模式，在初始化时预创建所有槽位对象：
+
 - 避免运行时频繁创建销毁GameObject
 - 减少GC压力
 - 提高性能
@@ -286,6 +295,7 @@ Effects: [🟢][🔵][🔴]
 ### 刷新策略
 
 建议的刷新时机（从高频到低频）：
+
 1. ✅ **必须刷新**: 回合结束、技能使用、Buff添加/移除
 2. ⚠️ **可选刷新**: 每秒轮询检查
 3. ❌ **避免刷新**: Update()中每帧刷新
@@ -380,11 +390,13 @@ private void UpdateDisplay()
 ### 问题1: Effect不显示
 
 **可能原因**:
+
 - UI_EffectDisplay未正确绑定BattleController和BattleModel
 - Container的Layout Group未正确配置
 - Panel被其他UI遮挡
 
 **解决方案**:
+
 1. 检查 `effectDisplay.Bind(this, model)` 是否被调用
 2. 确保Container有Layout Group组件
 3. 调整Canvas的Sorting Order
@@ -392,20 +404,24 @@ private void UpdateDisplay()
 ### 问题2: Effect颜色显示不正确
 
 **可能原因**:
+
 - Buff类型判断逻辑需要更新
 - 自定义颜色配置不正确
 
 **解决方案**:
+
 1. 检查 `GetEffectColor()` 方法中的类型判断
 2. 在Inspector中调整颜色配置
 
 ### 问题3: Effect数量过多导致UI溢出
 
 **可能原因**:
+
 - maxEffectsPerUnit设置过大
 - Container大小不足
 
 **解决方案**:
+
 1. 减少 `maxEffectsPerUnit` 的值
 2. 为Container添加 `Content Size Fitter` 组件
 3. 使用 `Scroll Rect` 实现滚动显示
@@ -427,6 +443,7 @@ private void UpdateDisplay()
 ## 总结
 
 Effect展示系统提供了一个完整的战斗效果可视化方案，关键特性：
+
 - ✅ 参考SpiritSlot/SpiritSwitcher架构，保持代码一致性
 - ✅ 对象池机制，优化性能
 - ✅ 颜色区分不同类型的Effect
