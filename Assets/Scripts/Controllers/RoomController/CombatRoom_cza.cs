@@ -351,28 +351,45 @@ namespace DreamWeavers.Rooms
             // TODO: 添加捕捉概率系统（目前100%成功）
             // 可以在这里添加随机数判定或其他捕捉机制
 
-            // 添加到 PlayerData.OwnedSpirits
-            if (playerData != null)
+            // 使用PlayerManager捕捉精灵（同时更新运行时Player和PlayerData）
+            bool success = false;
+            if (PlayerManager.Instance != null)
             {
-                var owned = playerData.GetOwnedSpirits();
-                int beforeCount = owned.Count;
-                owned.Add(spiritToCapture);
-                playerData.OwnedSpirits = owned.ToArray();
-                
-                // 标记已捕捉，防止重复
-                spiritCaptured = true;
-                
-                Debug.Log($"[CombatRoom] 捕捉成功! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
-                
+                success = PlayerManager.Instance.CaptureSpirit(spiritToCapture);
+                if (success)
+                {
+                    spiritCaptured = true;
+                    string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
+                    Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
+                    return (true, spiritToCapture);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] PlayerManager.Instance为null，尝试直接修改PlayerData");
+
+                // 降级方案：直接修改PlayerData（仅编辑器可见）
+                if (playerData != null)
+                {
+                    var owned = playerData.GetOwnedSpirits();
+                    int beforeCount = owned.Count;
+                    owned.Add(spiritToCapture);
+                    playerData.OwnedSpirits = owned.ToArray();
+
+                    spiritCaptured = true;
+
+                    Debug.Log($"[CombatRoom] 捕捉成功（仅PlayerData）! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
+
 #if UNITY_EDITOR
-                UnityEditor.EditorUtility.SetDirty(playerData);
+                    UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-                string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
-                Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
-                return (true, spiritToCapture);
+                    string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
+                    Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
+                    return (true, spiritToCapture);
+                }
             }
 
-            Debug.LogWarning("[CombatRoom] PlayerData为null，无法捕捉");
+            Debug.LogWarning("[CombatRoom] PlayerManager和PlayerData都无法使用，捕捉失败");
             return (false, null);
         }
         public override void ExitRoom()
@@ -410,18 +427,36 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            // 添加到 PlayerData.OwnedSpirits（数组）
-            var owned = playerData.GetOwnedSpirits();
-            owned.Add(spiritToAdd);
-            playerData.OwnedSpirits = owned.ToArray();
-            
-            // 标记已捕捉，防止重复
-            spiritCaptured = true;
-            
+            // 使用PlayerManager捕捉精灵（同时更新运行时Player和PlayerData）
+            bool success = false;
+            if (PlayerManager.Instance != null)
+            {
+                success = PlayerManager.Instance.CaptureSpirit(spiritToAdd);
+                if (success)
+                {
+                    spiritCaptured = true;
+                    Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功: {spiritToAdd.DisplayName}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] ExitRoom: PlayerManager.Instance为null，尝试直接修改PlayerData");
+
+                // 降级方案：直接修改PlayerData（仅编辑器可见）
+                if (playerData != null)
+                {
+                    var owned = playerData.GetOwnedSpirits();
+                    owned.Add(spiritToAdd);
+                    playerData.OwnedSpirits = owned.ToArray();
+
+                    spiritCaptured = true;
+
 #if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(playerData);
+                    UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-            Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功: {spiritToAdd.DisplayName}");
+                    Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功（仅PlayerData）: {spiritToAdd.DisplayName}");
+                }
+            }
         }
 
         // 击败敌人时从对象池随机掉落一个道具，并写入背包与玩家数据

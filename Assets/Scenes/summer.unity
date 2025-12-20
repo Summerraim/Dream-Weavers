@@ -4617,7 +4617,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spiritPanel: {fileID: 1288890094}
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 71c9b3c297b419a4dba092fcdb5e1d37, type: 2}
 --- !u!114 &1084009555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7235,6 +7235,7 @@ MonoBehaviour:
   playerSkillAnimator: {fileID: 863241326}
   enemySkillAnimator: {fileID: 1243084794}
   combatRoom: {fileID: 0}
+  bossRoom: {fileID: 0}
   autoInitOnStart: 1
 --- !u!1 &1897228316
 GameObject:

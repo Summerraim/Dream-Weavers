@@ -120,10 +120,22 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        spiritQueue = playerData.GetDeployedSpirits();
+        // 优先从PlayerManager获取最新的部署Spirit列表
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
+        {
+            spiritQueue = PlayerManager.Instance.GetDeployedSpirits();
+            Debug.Log($"BattleController: 从PlayerManager获取部署Spirit列表: {spiritQueue.Count} 个");
+        }
+        else
+        {
+            // 降级方案：从PlayerData获取
+            spiritQueue = playerData.GetDeployedSpirits();
+            Debug.Log($"BattleController: 从PlayerData获取部署Spirit列表: {(spiritQueue != null ? spiritQueue.Count : 0)} 个");
+        }
+
         if (spiritQueue == null || spiritQueue.Count == 0)
         {
-            Debug.LogError("BattleController: No spirits deployed in PlayerData!");
+            Debug.LogError("BattleController: No spirits deployed!");
             return;
         }
 

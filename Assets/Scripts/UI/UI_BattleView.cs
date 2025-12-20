@@ -259,6 +259,10 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherToggleButton != null)
             spiritSwitcherToggleButton.onClick.AddListener(ToggleSpiritSwitcherPanel);
 
+        // 初始化Spirit切换器面板（默认隐藏）
+        if (spiritSwitcherPanel != null)
+            spiritSwitcherPanel.SetActive(false);
+
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
@@ -787,10 +791,6 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        // 初始化时隐藏面板
-        if (spiritSwitcherPanel != null)
-            spiritSwitcherPanel.SetActive(false);
-
         // 清除现有槽位
         foreach (Transform child in spiritSlotsContainer)
         {
@@ -799,7 +799,26 @@ public class UI_BattleView : MonoBehaviour
 
         // 创建6个槽位
         spiritSlots = new SpiritSlot[6];
-        var deployedSpirits = controller.GetDeployedSpirits();
+
+        // 优先从PlayerManager获取最新的部署Spirit列表
+        List<SpiritData> deployedSpirits = null;
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
+        {
+            deployedSpirits = PlayerManager.Instance.GetDeployedSpirits();
+            Debug.Log($"[UI_BattleView] 从PlayerManager获取部署Spirit列表: {deployedSpirits.Count} 个");
+        }
+        else
+        {
+            // 降级方案：从BattleController获取
+            deployedSpirits = controller.GetDeployedSpirits();
+            Debug.Log($"[UI_BattleView] 从BattleController获取部署Spirit列表: {(deployedSpirits != null ? deployedSpirits.Count : 0)} 个");
+        }
+
+        if (deployedSpirits == null)
+        {
+            Debug.LogWarning("[UI_BattleView] 无法获取部署Spirit列表");
+            deployedSpirits = new List<SpiritData>();
+        }
 
         for (int i = 0; i < 6; i++)
         {
@@ -828,10 +847,12 @@ public class UI_BattleView : MonoBehaviour
             if (i < deployedSpirits.Count && deployedSpirits[i] != null)
             {
                 slot.Initialize(i, deployedSpirits[i], OnSpiritSlotClicked);
+                Debug.Log($"[UI_BattleView] Spirit槽位 {i} 初始化: {deployedSpirits[i].DisplayName}");
             }
             else
             {
                 slot.Initialize(i, null, OnSpiritSlotClicked);
+                Debug.Log($"[UI_BattleView] Spirit槽位 {i} 初始化: 空槽位");
             }
 
             spiritSlots[i] = slot;
@@ -943,7 +964,8 @@ public class UI_BattleView : MonoBehaviour
 
             if (isActive)
             {
-                RefreshSpiritSlots();
+                // 打开面板时重新初始化槽位（确保显示最新的Spirit列表）
+                InitializeSpiritSlots();
             }
         }
     }
@@ -956,7 +978,8 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherPanel != null)
         {
             spiritSwitcherPanel.SetActive(true);
-            RefreshSpiritSlots();
+            // 重新初始化槽位（确保显示最新的Spirit列表）
+            InitializeSpiritSlots();
         }
     }
 
