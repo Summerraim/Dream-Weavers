@@ -106,6 +106,7 @@ namespace DreamWeavers.Rooms
         public override void ExitRoom()
         {
             Debug.Log("[SkillRoom] ExitRoom");
+            getSkillButton.interactable = true;
             
             // 清理展示物
             if (displayInstance != null)

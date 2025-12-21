@@ -1406,6 +1406,11 @@ public class UI_BattleView : MonoBehaviour
         // 隐藏捕捉结果面板
         HideCapturePanel();
 
+        if (controller != null)
+        {
+            controller.CleanupCombatDropVisual();
+        }
+
         // 隐藏主战斗面板
         HideBattlePanel();
 
