@@ -541,6 +541,7 @@ MonoBehaviour:
   panelsRoot: {fileID: 0}
   autoInitialize: 1
   debugMode: 1
+  enableRaycasting: 0
 --- !u!223 &828891618 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 1282508356195158111, guid: edc4b0e860b849540a96483422d1fa66,
@@ -815,6 +816,7 @@ MonoBehaviour:
   panelsRoot: {fileID: 0}
   autoInitialize: 1
   debugMode: 1
+  enableRaycasting: 0
 --- !u!114 &1972824257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -955,6 +957,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: MainMenuPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 247237579391893030, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 285063131282273961, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}

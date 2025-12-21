@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,6 +41,9 @@ public class UI_SpiritPanel : MonoBehaviour
     // 选中状态
     private int selectedDeployedIndex = -1;
     private int selectedOwnedIndex = -1;
+
+    // 面板关闭标志（防止关闭时响应点击）
+    private bool isClosing = false;
 
     // PlayerData引用（用于初始配置）
     private PlayerData playerData;
@@ -94,13 +98,15 @@ public class UI_SpiritPanel : MonoBehaviour
             Debug.Log("[UI_SpiritPanel] Unsubscribed from old Player.OnDataChanged");
         }
 
+        // 直接使用传入的 player 和 playerData
         player = playerInstance;
-        
-        // 更新 PlayerData 引用（用于同步部署数据）
         if (data != null)
         {
             playerData = data;
+            Debug.Log($"[UI_SpiritPanel] 保存 PlayerData 引用: {data.name}");
         }
+
+        Debug.Log($"[UI_SpiritPanel] 使用传入的 Player 实例");
 
         if (player != null)
         {
@@ -343,6 +349,8 @@ public class UI_SpiritPanel : MonoBehaviour
         if (ownedSlots == null)
             return;
 
+        Debug.Log($"[UI_SpiritPanel] RefreshOwnedSlots: 开始刷新 {ownedSlots.Length} 个槽位");
+
         for (int i = 0; i < ownedSlots.Length; i++)
         {
             if (ownedSlots[i] != null)
@@ -350,11 +358,12 @@ public class UI_SpiritPanel : MonoBehaviour
                 // 检查槽位数据是否与当前精灵列表匹配
                 var slotSpirit = ownedSlots[i].GetSpiritData();
                 var expectedSpirit = i < ownedSpirits.Count ? ownedSpirits[i] : null;
-                
+
                 // 如果数据不匹配，重新初始化该槽位
                 if (slotSpirit != expectedSpirit)
                 {
                     bool isDeployed = player.IsDeployed(expectedSpirit);
+                    Debug.Log($"[UI_SpiritPanel] RefreshOwnedSlots: 槽位[{i}]数据不匹配，重新初始化（{slotSpirit?.DisplayName ?? "null"} -> {expectedSpirit?.DisplayName ?? "null"}），部署状态={isDeployed}");
                     ownedSlots[i].Initialize(i, expectedSpirit, OnOwnedSlotClicked);
                     ownedSlots[i].SetDeployed(isDeployed);
                 }
@@ -362,6 +371,13 @@ public class UI_SpiritPanel : MonoBehaviour
                 {
                     // 更新部署状态
                     bool isDeployed = player.IsDeployed(slotSpirit);
+                    bool slotCachedState = ownedSlots[i].IsDeployed();
+
+                    if (isDeployed != slotCachedState)
+                    {
+                        Debug.LogWarning($"[UI_SpiritPanel] RefreshOwnedSlots: 槽位[{i}]({slotSpirit?.DisplayName})状态不同步！实时={isDeployed}, 缓存={slotCachedState}，更新状态");
+                    }
+
                     ownedSlots[i].SetDeployed(isDeployed);
                 }
 
@@ -369,6 +385,8 @@ public class UI_SpiritPanel : MonoBehaviour
                 ownedSlots[i].UpdateDisplay();
             }
         }
+
+        Debug.Log($"[UI_SpiritPanel] RefreshOwnedSlots: 刷新完成");
     }
 
     /// <summary>
@@ -376,21 +394,47 @@ public class UI_SpiritPanel : MonoBehaviour
     /// </summary>
     private void OnDeployedSlotClicked(int slotIndex)
     {
+        // 防止面板关闭中或不可见时响应点击
+        if (isClosing || !IsVisible())
+        {
+            Debug.Log($"[UI_SpiritPanel] OnDeployedSlotClicked: 面板关闭中或不可见，忽略点击事件");
+            return;
+        }
+
+        // 使用协程延迟执行，避免与关闭操作冲突
+        StartCoroutine(HandleDeployedSlotClickCoroutine(slotIndex));
+    }
+
+    /// <summary>
+    /// 已出场槽位点击处理协程（延迟一帧执行，避免与关闭冲突）
+    /// </summary>
+    private IEnumerator HandleDeployedSlotClickCoroutine(int slotIndex)
+    {
+        // 等待一帧
+        yield return null;
+
+        // 再次检查面板状态
+        if (isClosing || !IsVisible())
+        {
+            Debug.Log($"[UI_SpiritPanel] HandleDeployedSlotClick: 延迟检查发现面板已关闭，取消操作");
+            yield break;
+        }
+
         if (player == null)
         {
             Debug.LogWarning("[UI_SpiritPanel] Player is null, cannot handle deployed slot click");
-            return;
+            yield break;
         }
 
         Debug.Log($"[UI_SpiritPanel] Deployed slot {slotIndex} clicked");
 
         // 获取该槽位的Spirit
         if (slotIndex < 0 || slotIndex >= deployedSlots.Length)
-            return;
+            yield break;
 
         var slot = deployedSlots[slotIndex];
         if (slot == null)
-            return;
+            yield break;
 
         var spiritData = slot.GetSpiritData();
 
@@ -400,7 +444,7 @@ public class UI_SpiritPanel : MonoBehaviour
             Debug.Log("[UI_SpiritPanel] Deployed slot is empty, clearing detail panel");
             if (detailPanel != null)
                 detailPanel.Clear();
-            return;
+            yield break;
         }
 
         // 显示Spirit详情
@@ -410,11 +454,24 @@ public class UI_SpiritPanel : MonoBehaviour
             Debug.Log($"[UI_SpiritPanel] Showing details for {spiritData.DisplayName}");
         }
 
-        // 撤回Spirit
+        // 撤回Spirit - 直接操作player并同步到PlayerData
+        Debug.Log($"[UI_SpiritPanel] OnDeployedSlotClicked: 准备撤回 {spiritData.DisplayName}，槽位索引={slotIndex}");
         bool success = player.RecallSpirit(spiritData);
+
         if (success)
         {
             Debug.Log($"[UI_SpiritPanel] Spirit {spiritData.DisplayName} recalled from deployment");
+
+            // 同步到PlayerData
+            if (playerData != null)
+            {
+                playerData.DeployedSpirits = player.GetDeployedSpirits().ToArray();
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+                Debug.Log($"[UI_SpiritPanel] 已同步到 PlayerData，部署数量: {playerData.DeployedSpirits.Length}");
+            }
+
             // 不需要手动刷新，Player.OnDataChanged 事件会触发自动刷新
         }
         else
@@ -428,25 +485,51 @@ public class UI_SpiritPanel : MonoBehaviour
     /// </summary>
     private void OnOwnedSlotClicked(int slotIndex)
     {
+        // 防止面板关闭中或不可见时响应点击
+        if (isClosing || !IsVisible())
+        {
+            Debug.Log($"[UI_SpiritPanel] OnOwnedSlotClicked: 面板关闭中或不可见，忽略点击事件");
+            return;
+        }
+
+        // 使用协程延迟执行，避免与关闭操作冲突
+        StartCoroutine(HandleOwnedSlotClickCoroutine(slotIndex));
+    }
+
+    /// <summary>
+    /// 拥有槽位点击处理协程（延迟一帧执行，避免与关闭冲突）
+    /// </summary>
+    private IEnumerator HandleOwnedSlotClickCoroutine(int slotIndex)
+    {
+        // 等待一帧
+        yield return null;
+
+        // 再次检查面板状态
+        if (isClosing || !IsVisible())
+        {
+            Debug.Log($"[UI_SpiritPanel] HandleOwnedSlotClick: 延迟检查发现面板已关闭，取消操作");
+            yield break;
+        }
+
         if (player == null)
         {
             Debug.LogWarning("[UI_SpiritPanel] Player is null, cannot handle owned slot click");
-            return;
+            yield break;
         }
 
         Debug.Log($"[UI_SpiritPanel] Owned slot {slotIndex} clicked");
 
         // 获取该槽位的Spirit
         if (slotIndex < 0 || slotIndex >= ownedSlots.Length)
-            return;
+            yield break;
 
         var slot = ownedSlots[slotIndex];
         if (slot == null)
-            return;
+            yield break;
 
         var spiritData = slot.GetSpiritData();
         if (spiritData == null)
-            return;
+            yield break;
 
         // 显示Spirit详情
         if (detailPanel != null)
@@ -455,18 +538,40 @@ public class UI_SpiritPanel : MonoBehaviour
             Debug.Log($"[UI_SpiritPanel] Showing details for {spiritData.DisplayName}");
         }
 
-        // 检查是否已出场
-        bool isDeployed = slot.IsDeployed();
+        // 【重要】实时从Player查询部署状态，而不是使用槽位缓存的状态
+        // 这样可以避免槽位状态更新延迟导致的误判
+        bool isDeployed = player != null && player.IsDeployed(spiritData);
+        bool slotCachedState = slot.IsDeployed();
 
+        Debug.Log($"[UI_SpiritPanel] OnOwnedSlotClicked: spirit={spiritData.DisplayName}, 槽位索引={slotIndex}, 实时状态={isDeployed}, 槽位缓存状态={slotCachedState}");
+
+        // 如果状态不一致，说明槽位缓存过期，先更新槽位状态
+        if (isDeployed != slotCachedState)
+        {
+            Debug.LogWarning($"[UI_SpiritPanel] 槽位状态不同步！实时={isDeployed}, 缓存={slotCachedState}，更新槽位状态");
+            slot.SetDeployed(isDeployed);
+        }
+
+        bool success = false;
         if (isDeployed)
         {
-            // 撤回Spirit
-            bool success = player.RecallSpirit(spiritData);
+            // 撤回Spirit - 直接操作player并同步到PlayerData
+            Debug.Log($"[UI_SpiritPanel] OnOwnedSlotClicked: 准备撤回 {spiritData.DisplayName}（从拥有槽位）");
+            success = player.RecallSpirit(spiritData);
+
             if (success)
             {
                 Debug.Log($"[UI_SpiritPanel] Spirit {spiritData.DisplayName} recalled from owned slot");
-                // 同步到 PlayerData
-                SyncDeployedSpiritsToPlayerData();
+
+                // 同步到PlayerData
+                if (playerData != null)
+                {
+                    playerData.DeployedSpirits = player.GetDeployedSpirits().ToArray();
+#if UNITY_EDITOR
+                    UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+                    Debug.Log($"[UI_SpiritPanel] 已同步到 PlayerData，部署数量: {playerData.DeployedSpirits.Length}");
+                }
             }
             else
             {
@@ -475,13 +580,23 @@ public class UI_SpiritPanel : MonoBehaviour
         }
         else
         {
-            // 部署Spirit
-            bool success = player.DeploySpirit(spiritData);
+            // 部署Spirit - 直接操作player并同步到PlayerData
+            Debug.Log($"[UI_SpiritPanel] OnOwnedSlotClicked: 准备部署 {spiritData.DisplayName}");
+            success = player.DeploySpirit(spiritData);
+
             if (success)
             {
                 Debug.Log($"[UI_SpiritPanel] Spirit {spiritData.DisplayName} deployed");
-                // 同步到 PlayerData
-                SyncDeployedSpiritsToPlayerData();
+
+                // 同步到PlayerData
+                if (playerData != null)
+                {
+                    playerData.DeployedSpirits = player.GetDeployedSpirits().ToArray();
+#if UNITY_EDITOR
+                    UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+                    Debug.Log($"[UI_SpiritPanel] 已同步到 PlayerData，部署数量: {playerData.DeployedSpirits.Length}");
+                }
             }
             else
             {
@@ -495,32 +610,15 @@ public class UI_SpiritPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// 将运行时 Player 的部署精灵列表同步到 PlayerData
-    /// </summary>
-    private void SyncDeployedSpiritsToPlayerData()
-    {
-        if (playerData == null || player == null)
-        {
-            Debug.LogWarning("[UI_SpiritPanel] SyncDeployedSpiritsToPlayerData: playerData 或 player 为 null");
-            return;
-        }
-
-        var deployedList = player.GetDeployedSpirits();
-        playerData.DeployedSpirits = deployedList.ToArray();
-        
-#if UNITY_EDITOR
-        UnityEditor.EditorUtility.SetDirty(playerData);
-#endif
-        
-        Debug.Log($"[UI_SpiritPanel] 已同步部署精灵到 PlayerData，数量: {deployedList.Count}");
-    }
-
-    /// <summary>
     /// 显示面板
     /// </summary>
     public void ShowPanel()
     {
         Debug.Log("[UI_SpiritPanel] ===== ShowPanel called =====");
+
+        // 重置关闭标志
+        isClosing = false;
+
         Debug.Log($"[UI_SpiritPanel] panelRoot is null: {panelRoot == null}");
         Debug.Log($"[UI_SpiritPanel] player is null: {player == null}");
         Debug.Log($"[UI_SpiritPanel] deployedSlots count: {(deployedSlots != null ? deployedSlots.Length : 0)}");
@@ -553,6 +651,14 @@ public class UI_SpiritPanel : MonoBehaviour
     /// </summary>
     public void HidePanel()
     {
+        Debug.Log("[UI_SpiritPanel] ===== HidePanel called =====");
+
+        // 设置关闭标志，防止关闭过程中响应点击
+        isClosing = true;
+
+        // 停止所有点击处理协程，确保不会有延迟操作
+        StopAllCoroutines();
+
         if (panelRoot != null)
         {
             panelRoot.SetActive(false);
@@ -568,6 +674,8 @@ public class UI_SpiritPanel : MonoBehaviour
         // 重置选中状态
         selectedDeployedIndex = -1;
         selectedOwnedIndex = -1;
+
+        Debug.Log("[UI_SpiritPanel] ===== HidePanel finished =====");
     }
 
     /// <summary>
