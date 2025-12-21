@@ -551,6 +551,33 @@ public class BattleController : MonoBehaviour
     }
 
     /// <summary>
+    /// 取消指定索引Spirit的死亡标记（当HP恢复到非0时调用）
+    /// </summary>
+    public void ReviveSpirit(int index)
+    {
+        if (spiritAliveStatus == null || !spiritAliveStatus.ContainsKey(index))
+        {
+            Debug.LogWarning($"BattleController: Cannot revive spirit at index {index} - invalid index or status not initialized");
+            return;
+        }
+
+        // 检查该Spirit的HP是否大于0
+        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(index))
+        {
+            var runtimeData = spiritRuntimeData[index];
+            if (runtimeData.CurrentHP > 0)
+            {
+                spiritAliveStatus[index] = true;
+                Debug.Log($"BattleController: Spirit {index} revived with HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}");
+            }
+            else
+            {
+                Debug.LogWarning($"BattleController: Cannot revive spirit {index} - HP is still 0");
+            }
+        }
+    }
+
+    /// <summary>
     /// 获取指定索引Spirit的运行时数据（HP/MP）
     /// </summary>
     public SpiritRuntimeData GetSpiritRuntimeData(int index)
@@ -1051,6 +1078,19 @@ public class BattleController : MonoBehaviour
                 // 所有Spirit都死亡，战斗失败
                 State = BattleState.Defeat;
                 Debug.Log("BattleController: All spirits defeated. Battle lost.");
+
+                // 显示战斗失败面板
+                if (battleView != null)
+                {
+                    battleView.ShowLosePanel();
+                }
+
+                // 设置游戏状态为GameOver（但不显示额外的GameOverPanel）
+                if (GameManagerService.Instance != null)
+                {
+                    GameManagerService.Instance.SetGameState(GameState.GameOver);
+                    Debug.Log("BattleController: Game state set to GameOver");
+                }
             }
         }
     }
@@ -1224,6 +1264,12 @@ public class BattleController : MonoBehaviour
                         CurrentMP = player.Mana,
                         MaxMP = player.MaxMana,
                     };
+
+                    // 检查当前精灵是否从死亡状态恢复
+                    if (player.HP > 0 && spiritAliveStatus != null && spiritAliveStatus.ContainsKey(currentSpiritIndex) && !spiritAliveStatus[currentSpiritIndex])
+                    {
+                        ReviveSpirit(currentSpiritIndex);
+                    }
                 }
             }
         }
@@ -1544,6 +1590,12 @@ public class BattleController : MonoBehaviour
         };
 
         Debug.Log($"BattleController: Saved Spirit {spiritIndex} runtime data after item use: HP={spirit.HP}/{spirit.MaxHP}, MP={spirit.Mana}/{spirit.MaxMana}");
+
+        // 如果该精灵的HP恢复到大于0，取消死亡标记
+        if (spirit.HP > 0 && spiritAliveStatus != null && spiritAliveStatus.ContainsKey(spiritIndex) && !spiritAliveStatus[spiritIndex])
+        {
+            ReviveSpirit(spiritIndex);
+        }
     }
 
     #endregion

@@ -112,6 +112,28 @@ public class RoomStateMachine_cza : MonoBehaviour
     }
 
     /// <summary>
+    /// 重置到初始状态（用于重新开始游戏）
+    /// </summary>
+    public void ResetToInitialState()
+    {
+        Debug.Log("[RoomState] 重置状态到初始状态");
+
+        // 清空所有状态
+        CurrentMap = null;
+        CurrentRoom = null;
+        visitedRooms.Clear();
+        visitedOrderDebug.Clear();
+        branchChoices.Clear();
+        awaitingChoice = false;
+        floorInitCounter = 0;
+
+        // 清空敌人池
+        EnemyPool.ClearDefeatedEnemies();
+
+        Debug.Log("[RoomState] 状态重置完成");
+    }
+
+    /// <summary>
     /// 重置战斗房间的敌人池
     /// </summary>
     private void ResetCombatRoomEnemyPool()
