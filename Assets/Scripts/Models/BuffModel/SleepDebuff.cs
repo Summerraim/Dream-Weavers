@@ -10,7 +10,8 @@ public class SleepDebuff : Buff
 
     private BattleModel battleModel;
 
-    public SleepDebuff(IBattleUnit owner, int duration, BattleModel model) : base(owner, duration)
+    public SleepDebuff(IBattleUnit owner, int duration, BattleModel model, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         battleModel = model;
     }
