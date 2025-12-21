@@ -65,6 +65,7 @@ namespace DreamWeavers.Rooms
             Debug.Log("[PropsRoom] EnterRoom");
             // 抽取道具
             PickItemFromPool();
+            getPropButton.interactable = true;
 
             // 可选：在房间中生成一个展示预制体
             SpawnPickupVisual();
@@ -83,7 +84,7 @@ namespace DreamWeavers.Rooms
 
         public override void ExitRoom()
         {
-            // 道具房无特定离开逻辑；如需在离开时再发放，可在此调用 GrantItemToPlayer()
+            
         }
 
         private void PickItemFromPool()
