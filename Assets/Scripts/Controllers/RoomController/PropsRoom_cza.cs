@@ -114,9 +114,30 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            var sp = spawnPoint != null ? spawnPoint : transform;
-            pickupInstance = Instantiate(pickupPrefab, sp.position, sp.rotation);
-            Debug.Log($"[PropsRoom] Spawned pickup visual -> {pickupInstance.name} at {(spawnPoint!=null?spawnPoint.name:transform.name)}");
+            if (pickupInstance != null)
+            {
+                DestroyPickupInstance();
+            }
+
+            Vector3 spawnPos;
+            Quaternion spawnRot;
+            Transform parent;
+
+            if (spawnPoint != null)
+            {
+                spawnPos = spawnPoint.position;
+                spawnRot = spawnPoint.rotation;
+                parent = spawnPoint;
+            }
+            else
+            {
+                spawnPos = ResolveRoomCenter();
+                spawnRot = transform.rotation;
+                parent = transform;
+            }
+
+            pickupInstance = Instantiate(pickupPrefab, spawnPos, spawnRot, parent);
+            Debug.Log($"[PropsRoom] Spawned pickup visual -> {pickupInstance.name} at {(spawnPoint!=null?spawnPoint.name:"RoomCenter")}");
 
                 // 若是纯展示预制体（无交互），尝试使用 ItemDisplay 刷新外观
                 var display = pickupInstance.GetComponent<ItemDisplay>();
@@ -127,6 +148,29 @@ namespace DreamWeavers.Rooms
                     Debug.Log("[PropsRoom] ItemDisplay refreshed");
                 }
             
+        }
+
+        private Vector3 ResolveRoomCenter()
+        {
+            var collider3D = GetComponentInChildren<Collider>();
+            if (collider3D != null)
+            {
+                return collider3D.bounds.center;
+            }
+
+            var collider2D = GetComponentInChildren<Collider2D>();
+            if (collider2D != null)
+            {
+                return collider2D.bounds.center;
+            }
+
+            var renderer = GetComponentInChildren<Renderer>();
+            if (renderer != null)
+            {
+                return renderer.bounds.center;
+            }
+
+            return transform.position;
         }
 
         /// <summary>
@@ -178,6 +222,8 @@ namespace DreamWeavers.Rooms
 
             granted = true;
             Debug.Log("[PropsRoom] GrantItemToPlayer complete");
+
+            DestroyPickupInstance();
         }
 
         /// <summary>
@@ -218,6 +264,16 @@ namespace DreamWeavers.Rooms
             {
                 Debug.LogWarning("[PropsRoom] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
             }
+        }
+
+        private void DestroyPickupInstance()
+        {
+            if (pickupInstance == null)
+                return;
+
+            Destroy(pickupInstance);
+            pickupInstance = null;
+            Debug.Log("[PropsRoom] Pickup instance destroyed after granting item");
         }
     }
 }

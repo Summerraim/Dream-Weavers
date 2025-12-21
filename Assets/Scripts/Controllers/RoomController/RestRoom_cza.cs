@@ -45,6 +45,10 @@ public class RestRoom_cza : RoomBase_cza
     public override void EnterRoom()
     {
         rested = false;
+        if (restButton != null)
+        {
+            restButton.interactable = true;
+        }
         Debug.Log("[RestRoom] EnterRoom");
     }
 
