@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 战斗 UI 视图，由 `BattleController` 管理。负责展示玩家与敌方的头像、血量/蓝量和两个交互按钮。
@@ -148,6 +149,15 @@ public class UI_BattleView : MonoBehaviour
     [Tooltip("战斗胜利后点击继续/离开房间的按钮")]
     private Button continueButton;
 
+    [Header("Battle Lose Panel")]
+    [SerializeField]
+    [Tooltip("战斗失败面板（所有精灵死亡时显示）")]
+    private GameObject losePanel;
+
+    [SerializeField]
+    [Tooltip("战斗失败后的重试按钮")]
+    private Button retryButton;
+
     [Header("Capture UI")]
     [SerializeField]
     private GameObject capturePanel;
@@ -171,6 +181,12 @@ public class UI_BattleView : MonoBehaviour
         if (battlePanel != null)
         {
             battlePanel.SetActive(false);
+        }
+
+        // 确保失败面板初始状态为隐藏
+        if (losePanel != null)
+        {
+            losePanel.SetActive(false);
         }
     }
 
@@ -267,9 +283,17 @@ public class UI_BattleView : MonoBehaviour
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
 
+        // 初始化失败面板（默认隐藏）
+        if (losePanel != null)
+            losePanel.SetActive(false);
+
         // 绑定继续按钮（战斗胜利后离开房间）
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueButtonClicked);
+
+        // 绑定重试按钮（战斗失败后重试）
+        if (retryButton != null)
+            retryButton.onClick.AddListener(OnRetryButtonClicked);
 
         // 初始化捕捉UI面板（默认隐藏）
         if (capturePanel != null)
@@ -307,6 +331,10 @@ public class UI_BattleView : MonoBehaviour
         // 移除继续按钮监听
         if (continueButton != null)
             continueButton.onClick.RemoveListener(OnContinueButtonClicked);
+
+        // 移除重试按钮监听
+        if (retryButton != null)
+            retryButton.onClick.RemoveListener(OnRetryButtonClicked);
 
         // 清空羁绊槽位
         ClearSynergySlots();
@@ -1342,21 +1370,45 @@ public class UI_BattleView : MonoBehaviour
     }
 
     /// <summary>
+    /// 显示战斗失败面板
+    /// </summary>
+    public void ShowLosePanel()
+    {
+        if (losePanel != null)
+        {
+            losePanel.SetActive(true);
+            Debug.Log("[UI_BattleView] 显示战斗失败面板");
+        }
+    }
+
+    /// <summary>
+    /// 隐藏战斗失败面板
+    /// </summary>
+    public void HideLosePanel()
+    {
+        if (losePanel != null)
+        {
+            losePanel.SetActive(false);
+            Debug.Log("[UI_BattleView] 隐藏战斗失败面板");
+        }
+    }
+
+    /// <summary>
     /// 继续按钮点击回调：战斗胜利后离开房间，触发路线选择
     /// </summary>
     private void OnContinueButtonClicked()
     {
         Debug.Log("[UI_BattleView] 继续按钮被点击，准备离开房间");
-        
+
         // 隐藏敌人死亡面板
         HideEnemyDeathPanel();
-        
+
         // 隐藏捕捉结果面板
         HideCapturePanel();
-        
+
         // 隐藏主战斗面板
         HideBattlePanel();
-        
+
         // 通知 RoomStateMachine 完成当前房间，触发路线选择
         if (RoomStateMachine_cza.Instance != null)
         {
@@ -1366,6 +1418,40 @@ public class UI_BattleView : MonoBehaviour
         else
         {
             Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+        }
+    }
+
+    /// <summary>
+    /// 重试按钮点击回调：战斗失败后重新开始游戏
+    /// </summary>
+    private void OnRetryButtonClicked()
+    {
+        Debug.Log("[UI_BattleView] 重试按钮被点击");
+
+        // 隐藏失败面板
+        HideLosePanel();
+
+        // 隐藏主战斗面板
+        HideBattlePanel();
+
+        // 重置时间缩放（以防在 GameOver 状态时被修改）
+        Time.timeScale = 1f;
+
+        // 方案1：回到主菜单（当前实现）
+        // SceneManager.LoadScene(0);
+
+        // 方案2：直接重新开始游戏（推荐）
+        // 通过 GameManagerService 启动新游戏，会自动重置所有状态
+        if (GameManagerService.Instance != null)
+        {
+            Debug.Log("[UI_BattleView] 通过 GameManagerService 启动新游戏");
+            GameManagerService.Instance.StartNewGame();
+        }
+        else
+        {
+            // 降级方案：如果没有 GameManagerService，直接加载场景 0
+            Debug.LogWarning("[UI_BattleView] GameManagerService 不存在，降级为加载场景 0");
+            SceneManager.LoadScene(0);
         }
     }
 

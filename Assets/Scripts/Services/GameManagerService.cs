@@ -346,9 +346,47 @@ public class GameManagerService : MonoBehaviour
     {
         isNewGame = true;
         currentLevel = 1;
-        
-        // 加载游戏场景
-        LoadScene(SceneType.Gameplay, 1);
+
+        Debug.Log("=== GameManager: 开始新游戏，重置所有游戏状态 ===");
+
+        // 1. 重置 PlayerManager 状态（玩家数据、精灵状态）
+        if (PlayerManager.Instance != null)
+        {
+            PlayerManager.Instance.ResetToInitialState();
+            Debug.Log("✓ GameManager: PlayerManager 状态已重置");
+        }
+        else
+        {
+            Debug.LogWarning("✗ GameManager: PlayerManager.Instance 为 null");
+        }
+
+        // 2. 重置 RoomStateMachine 状态（重要：必须在加载场景前重置！）
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            RoomStateMachine_cza.Instance.ResetToInitialState();
+            Debug.Log("✓ GameManager: RoomStateMachine 状态已重置 (CurrentMap 已清空)");
+        }
+        else
+        {
+            Debug.LogWarning("✗ GameManager: RoomStateMachine_cza.Instance 为 null，将在场景加载后自动初始化");
+        }
+
+        // 3. 重置 EnemyPool 已击败敌人记录
+        EnemyPool.ClearDefeatedEnemies();
+        Debug.Log("✓ GameManager: EnemyPool 已击败敌人记录已清空");
+
+        // 4. 重置 InventoryManager 状态（如果需要的话）
+        if (InventoryManager.Instance != null)
+        {
+            // 如果 InventoryManager 有重置方法，在这里调用
+            // InventoryManager.Instance.ResetToInitialState();
+            Debug.Log("✓ GameManager: InventoryManager 检测到但暂无重置方法");
+        }
+
+        Debug.Log("=== GameManager: 状态重置完成，即将加载场景 ===");
+
+        // 直接使用场景索引加载（index=1 是游戏场景）
+        SceneManager.LoadScene(1);
     }
     
     /// <summary>
@@ -382,9 +420,18 @@ public class GameManagerService : MonoBehaviour
     {
         // 等待一帧确保UI更新
         yield return null;
-        
+
         // 开始异步加载
         _currentAsyncOperation = SceneManager.LoadSceneAsync(sceneName);
+
+        // 检查场景是否加载成功
+        if (_currentAsyncOperation == null)
+        {
+            Debug.LogError($"GameManager: 无法加载场景 '{sceneName}'，请检查场景是否在 Build Settings 中！");
+            _isLoadingScene = false;
+            yield break;
+        }
+
         _currentAsyncOperation.allowSceneActivation = false;
         
         float progress = 0;

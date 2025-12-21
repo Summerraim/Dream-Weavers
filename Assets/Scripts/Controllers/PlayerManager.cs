@@ -245,4 +245,13 @@ public class PlayerManager : MonoBehaviour
 
         Debug.Log($"[PlayerManager] 已同步部署精灵到PlayerData，数量: {deployedList.Count}");
     }
+
+    /// <summary>
+    /// 重置玩家状态到初始状态（用于重新开始游戏）
+    /// </summary>
+    public void ResetToInitialState()
+    {
+        Debug.Log("[PlayerManager] 重置玩家状态到初始状态");
+        InitializePlayer();
+    }
 }
