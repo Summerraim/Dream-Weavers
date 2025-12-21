@@ -82,7 +82,17 @@ public class Enemy : IBattleUnit
         }
 
         int finalDamage = Mathf.CeilToInt(incoming * reduction);
-        HP = Mathf.Max(0, HP - Mathf.Max(0, finalDamage));
+
+        var battle = BattleModel.ActiveBattle;
+        int hpDamage = battle != null ? battle.ModifyDamageReceived(this, finalDamage) : finalDamage;
+        hpDamage = Mathf.Max(0, hpDamage);
+
+        if (hpDamage > 0)
+        {
+            HP = Mathf.Max(0, HP - hpDamage);
+        }
+
+        battle?.NotifyDamageReceived(this, hpDamage);
     }
 
     public void ReceiveHeal(int v)

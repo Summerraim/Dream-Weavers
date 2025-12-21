@@ -16,7 +16,29 @@ public class UI_BattleView : MonoBehaviour
 
     [Header("Background")]
     [SerializeField]
+    [Tooltip("战斗背景图片组件")]
     private Image backgroundImage;
+
+    [Header("Floor Backgrounds")]
+    [SerializeField]
+    [Tooltip("第1层的背景图片")]
+    private Sprite floor1Background;
+
+    [SerializeField]
+    [Tooltip("第2层的背景图片")]
+    private Sprite floor2Background;
+
+    [SerializeField]
+    [Tooltip("第3层的背景图片")]
+    private Sprite floor3Background;
+
+    [SerializeField]
+    [Tooltip("第4层的背景图片")]
+    private Sprite floor4Background;
+
+    [SerializeField]
+    [Tooltip("默认背景图片（当楼层超出范围或未设置时使用）")]
+    private Sprite defaultBackground;
 
     [Header("References")]
     [SerializeField]
@@ -187,6 +209,83 @@ public class UI_BattleView : MonoBehaviour
         if (losePanel != null)
         {
             losePanel.SetActive(false);
+        }
+
+        // 订阅楼层初始化事件，用于切换背景
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            RoomStateMachine_cza.Instance.OnFloorInitialized += OnFloorChanged;
+            Debug.Log("[UI_BattleView] 已订阅楼层初始化事件");
+        }
+        else
+        {
+            Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法订阅楼层事件");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // 取消订阅楼层初始化事件
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            RoomStateMachine_cza.Instance.OnFloorInitialized -= OnFloorChanged;
+            Debug.Log("[UI_BattleView] 已取消订阅楼层初始化事件");
+        }
+    }
+
+    /// <summary>
+    /// 当楼层发生变化时切换背景图片
+    /// </summary>
+    /// <param name="floor">新楼层编号（1-4）</param>
+    private void OnFloorChanged(int floor)
+    {
+        Debug.Log($"[UI_BattleView] 楼层变化: Floor {floor}");
+
+        if (backgroundImage == null)
+        {
+            Debug.LogWarning("[UI_BattleView] backgroundImage 未设置，无法切换背景");
+            return;
+        }
+
+        // 根据楼层选择对应的背景图片
+        Sprite newBackground = null;
+
+        switch (floor)
+        {
+            case 1:
+                newBackground = floor1Background;
+                break;
+            case 2:
+                newBackground = floor2Background;
+                break;
+            case 3:
+                newBackground = floor3Background;
+                break;
+            case 4:
+                newBackground = floor4Background;
+                break;
+            default:
+                newBackground = defaultBackground;
+                Debug.LogWarning($"[UI_BattleView] 楼层 {floor} 超出预设范围（1-4），使用默认背景");
+                break;
+        }
+
+        // 如果选择的背景为空，使用默认背景
+        if (newBackground == null)
+        {
+            newBackground = defaultBackground;
+            Debug.LogWarning($"[UI_BattleView] Floor {floor} 的背景图片未设置，使用默认背景");
+        }
+
+        // 应用新背景
+        if (newBackground != null)
+        {
+            backgroundImage.sprite = newBackground;
+            Debug.Log($"[UI_BattleView] 成功切换到 Floor {floor} 的背景");
+        }
+        else
+        {
+            Debug.LogError("[UI_BattleView] 无可用背景图片！请在 Inspector 中设置背景图片。");
         }
     }
 

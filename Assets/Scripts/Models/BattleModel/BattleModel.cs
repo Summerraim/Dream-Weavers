@@ -7,6 +7,11 @@ using UnityEngine;
 public class BattleModel
 {
     /// <summary>
+    /// 当前活跃战斗（临时：用于在单位受伤时查询Buff，如护盾）。
+    /// </summary>
+    public static BattleModel ActiveBattle { get; private set; }
+
+    /// <summary>
     /// 当前回合数
     /// </summary>
     public int CurrentTurn { get; private set; }
@@ -63,6 +68,7 @@ public class BattleModel
     {
         Debug.Log($"BattleModel.InitializeBattle: Starting - Enemy={(enemy != null ? $"{enemy.DisplayName} HP={enemy.HP}/{enemy.MaxHP}" : "null")}");
         
+        ActiveBattle = this;
         PlayerUnit = player;
         enemyUnits.Clear();
         if (enemy != null)
@@ -238,6 +244,7 @@ public class BattleModel
     /// </summary>
     public void ResetSkillCooldownsAndUsage()
     {
+        ActiveBattle = this;
         skillCooldowns.Clear();
         skillUsageCount.Clear();
         spiritStates.Clear(); // 清空保存的Spirit状态，开始新战斗
@@ -328,6 +335,70 @@ public class BattleModel
         skillUsageCount.Clear();
         activeBuffs.Clear();
         spiritStates.Clear();
+        if (ReferenceEquals(ActiveBattle, this))
+        {
+            ActiveBattle = null;
+        }
+    }
+
+    /// <summary>
+    /// 让单位受到伤害前，应用其身上的Buff对“受到伤害”的修正（包含护盾/能量护甲等吸收）。
+    /// </summary>
+    public int ModifyDamageReceived(IBattleUnit target, int baseDamage, IBattleUnit attacker = null)
+    {
+        if (target == null)
+            return 0;
+
+        int damage = Mathf.Max(0, baseDamage);
+        if (damage == 0)
+            return 0;
+
+        var buffs = GetBuffsForUnit(target);
+
+        // 先应用非吸收类修正（易伤/减伤/无敌等），避免护盾先被消耗
+        for (int i = 0; i < buffs.Count && damage > 0; i++)
+        {
+            var buff = buffs[i];
+            if (buff is ShieldBuff || buff is ManaShieldBuff)
+                continue;
+
+            damage = Mathf.Max(0, buff.ModifyDamageReceived(damage));
+        }
+
+        // 再应用能量护甲（转魔法）
+        for (int i = 0; i < buffs.Count && damage > 0; i++)
+        {
+            if (buffs[i] is ManaShieldBuff)
+            {
+                damage = Mathf.Max(0, buffs[i].ModifyDamageReceived(damage));
+            }
+        }
+
+        // 最后应用护盾（吸收伤害）
+        for (int i = 0; i < buffs.Count && damage > 0; i++)
+        {
+            if (buffs[i] is ShieldBuff)
+            {
+                damage = Mathf.Max(0, buffs[i].ModifyDamageReceived(damage));
+            }
+        }
+
+        return damage;
+    }
+
+    /// <summary>
+    /// 单位受到伤害后，通知其身上的Buff（如睡眠受击醒来、反伤等）。
+    /// </summary>
+    public void NotifyDamageReceived(IBattleUnit target, int actualDamage, IBattleUnit attacker = null)
+    {
+        if (target == null)
+            return;
+
+        var buffs = GetBuffsForUnit(target);
+        for (int i = 0; i < buffs.Count; i++)
+        {
+            buffs[i].OnDamageReceived(actualDamage, attacker);
+        }
     }
 
     /// <summary>

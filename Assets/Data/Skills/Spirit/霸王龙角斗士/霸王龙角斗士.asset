@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: "\u9738\u738B\u9F99\u89D2\u6597\u58EB"
   m_EditorClassIdentifier: 
   DisplayName: "\u9738\u738B\u9F99\u89D2\u6597\u58EB"
-  Description: 
+  Description: "\u7F57\u9A6C\u6597\u517D\u573A\u7684\u6050\u9F99\u6218\u795E"
   Image: {fileID: -222349269, guid: 41b7bfe6f2b6a844a87d6e7d4ececc38, type: 3}
   MaxHP: 220
-  MaxMana: 80
-  Damage: 28
+  MaxMana: 85
+  Damage: 30
   Defense: 13
   Skills:
   - {fileID: 11400000, guid: 829e6717fe048624bb61efc7682627ed, type: 2}
