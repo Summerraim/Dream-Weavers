@@ -53,6 +53,8 @@ public class UI_BattleView : MonoBehaviour
 
     [SerializeField]
     private Button skillButton3;
+    private const float SkillNameFontSize = 12f;
+    private const float SkillOtherFontSize = 10f;
 
     [Header("Unit Images")]
     [SerializeField]
@@ -289,6 +291,18 @@ public class UI_BattleView : MonoBehaviour
         }
     }
 
+
+    private void ApplyCurrentFloorBackground()
+    {
+        int floor = 1;
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentMap != null)
+        {
+            floor = sm.CurrentMap.FloorIndex;
+        }
+
+        OnFloorChanged(floor);
+    }
     /// <summary>
     /// 显示战斗面板
     /// </summary>
@@ -358,6 +372,8 @@ public class UI_BattleView : MonoBehaviour
             Debug.LogError("[UI_BattleView] battlePanel is NULL! Cannot show battle UI. Please assign battlePanel in Inspector.");
         }
 
+        // Ensure background matches current floor even if this view missed OnFloorInitialized.
+        ApplyCurrentFloorBackground();
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
 
@@ -760,7 +776,30 @@ public class UI_BattleView : MonoBehaviour
         var textComponent = button.GetComponentInChildren<TMPro.TMP_Text>();
         if (textComponent != null)
         {
-            textComponent.text = text;
+            textComponent.enableAutoSizing = false;
+            textComponent.richText = true;
+            textComponent.fontSize = SkillOtherFontSize;
+
+            if (string.IsNullOrEmpty(text) || text.Contains("<size=") || text.Contains("</size>"))
+            {
+                textComponent.text = text;
+                return;
+            }
+
+            var parts = text.Split('\n');
+            if (parts.Length <= 1)
+            {
+                textComponent.text = $"<size={SkillNameFontSize}>{text}</size>";
+                return;
+            }
+
+            string rest = parts[1];
+            for (int i = 2; i < parts.Length; i++)
+            {
+                rest += "\n" + parts[i];
+            }
+
+            textComponent.text = $"<size={SkillNameFontSize}>{parts[0]}</size>\n<size={SkillOtherFontSize}>{rest}</size>";
             return;
         }
 

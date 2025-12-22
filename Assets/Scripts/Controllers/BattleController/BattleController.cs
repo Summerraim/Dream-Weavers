@@ -209,17 +209,7 @@ public class BattleController : MonoBehaviour
         if (spiritRuntimeData.ContainsKey(currentSpiritIndex))
         {
             var runtimeData = spiritRuntimeData[currentSpiritIndex];
-            int hpLoss = player.MaxHP - runtimeData.CurrentHP;
-            if (hpLoss > 0)
-            {
-                player.ReceiveDamage(hpLoss);
-            }
-
-            int manaLoss = player.MaxMana - runtimeData.CurrentMP;
-            if (manaLoss > 0)
-            {
-                player.ConsumeMana(manaLoss);
-            }
+            player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
 
             Debug.Log(
                 $"BattleController: Spirit {currentSpiritIndex + 1}/{spiritQueue.Count} entering battle: {player.DisplayName} (HP: {player.HP}/{player.MaxHP}, MP: {player.Mana}/{player.MaxMana})"
@@ -886,8 +876,8 @@ public class BattleController : MonoBehaviour
 
         Debug.Log("BattleController: EndPlayerTurn called.");
 
-        // 玩家回合结束，处理Buff效果
-        model?.OnTurnEnd();
+        // 不在这里调用 OnTurnEnd()，而是在敌人回合结束时调用
+        // 这样确保 debuff 在敌人行动后才减少持续时间
 
         // 增加回合计数（模型负责）
         model?.IncrementTurn();
@@ -904,6 +894,22 @@ public class BattleController : MonoBehaviour
         if (enemyAI == null || enemy == null || player == null)
         {
             State = BattleState.PlayerTurn;
+            yield break;
+        }
+
+        // 检查敌人是否被控制（冰冻、睡眠等）
+        if (model != null && model.IsUnitControlled(enemy))
+        {
+            string controlEffect = model.GetControlEffectName(enemy);
+            Debug.Log($"BattleController: {enemy.DisplayName} 被 {controlEffect} 控制，无法行动！");
+
+            // 敌人回合结束，处理Buff效果并减少持续时间
+            model?.OnTurnEnd();
+
+            // 敌人被控制，跳过行动，直接返回玩家回合
+            State = BattleState.PlayerTurn;
+            if (battleView != null)
+                battleView.Refresh();
             yield break;
         }
 
@@ -924,6 +930,9 @@ public class BattleController : MonoBehaviour
         yield return StartCoroutine(
             ExecuteSkillWithAnimation(skill, enemySkillIndex, enemy, player, false)
         );
+
+        // 敌人回合结束，处理Buff效果并减少持续时间
+        model?.OnTurnEnd();
 
         // 敌人回合结束
         if (State == BattleState.EnemyTurn)
@@ -1206,18 +1215,8 @@ public class BattleController : MonoBehaviour
         if (spiritRuntimeData.ContainsKey(targetIndex))
         {
             var runtimeData = spiritRuntimeData[targetIndex];
-            // 设置HP和MP为之前保存的值
-            int hpLoss = player.MaxHP - runtimeData.CurrentHP;
-            if (hpLoss > 0)
-            {
-                player.ReceiveDamage(hpLoss);
-            }
-
-            int manaLoss = player.MaxMana - runtimeData.CurrentMP;
-            if (manaLoss > 0)
-            {
-                player.ConsumeMana(manaLoss);
-            }
+            // 直接恢复之前记录的HP/MP（不走伤害减伤逻辑）
+            player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
         }
 
         Debug.Log(
@@ -1551,17 +1550,7 @@ public class BattleController : MonoBehaviour
             if (spiritRuntimeData.ContainsKey(spiritIndex))
             {
                 var runtimeData = spiritRuntimeData[spiritIndex];
-                int hpLoss = tempSpirit.MaxHP - runtimeData.CurrentHP;
-                if (hpLoss > 0)
-                {
-                    tempSpirit.ReceiveDamage(hpLoss);
-                }
-
-                int manaLoss = tempSpirit.MaxMana - runtimeData.CurrentMP;
-                if (manaLoss > 0)
-                {
-                    tempSpirit.ConsumeMana(manaLoss);
-                }
+                tempSpirit.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
             }
 
             Debug.Log($"BattleController: Created temp Spirit for index {spiritIndex}: HP={tempSpirit.HP}/{tempSpirit.MaxHP}, MP={tempSpirit.Mana}/{tempSpirit.MaxMana}");

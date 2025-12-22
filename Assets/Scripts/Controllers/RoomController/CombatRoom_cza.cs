@@ -132,6 +132,17 @@ namespace DreamWeavers.Rooms
         {
             return enemyPool;
         }
+        public void SetEnemyPool(EnemyPool newPool)
+        {
+            if (newPool == null)
+            {
+                Debug.LogWarning("[CombatRoom] SetEnemyPool: newPool is null; ignoring.");
+                return;
+            }
+
+            enemyPool = newPool;
+            Debug.Log("[CombatRoom] EnemyPool switched -> " + (string.IsNullOrEmpty(enemyPool.DisplayName) ? enemyPool.name : enemyPool.DisplayName));
+        }
 
         /// <summary>
         /// 从对象池随机选择敌人和对应精灵

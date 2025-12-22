@@ -30,6 +30,8 @@ public class UI_SpiritDetailPanel : MonoBehaviour
     [SerializeField]
     private TMP_Text statsText; // 属性文本 (HP, MP, ATK, DEF)
 
+    [SerializeField]
+    private TMP_Text synergyNamesText; // Synergy names (space-separated)
     [Header("图标大小设置")]
     [SerializeField]
     private Vector2 defaultIconSize = new Vector2(100, 100); // 默认图标大小
@@ -92,7 +94,7 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         // 显示Spirit名称
         if (spiritNameText != null)
         {
-            spiritNameText.text = spirit.DisplayName;
+            spiritNameText.text = GetDisplayName(spirit);
         }
 
         // 显示属性
@@ -106,9 +108,13 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         }
 
         // 显示技能列表
+        if (synergyNamesText != null)
+        {
+            synergyNamesText.text = BuildSynergyNames(spirit);
+        }
         DisplaySkills(spirit);
 
-        Debug.Log($"[UI_SpiritDetailPanel] 显示Spirit详情: {spirit.DisplayName}");
+        Debug.Log($"[UI_SpiritDetailPanel] 显示Spirit详情: {GetDisplayName(spirit)}");
     }
 
     /// <summary>
@@ -224,6 +230,8 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         if (statsText != null)
             statsText.text = "";
 
+        if (synergyNamesText != null)
+            synergyNamesText.text = "";
         // 清空技能列表
         if (skillListContainer != null)
         {
@@ -266,6 +274,34 @@ public class UI_SpiritDetailPanel : MonoBehaviour
     /// <summary>
     /// 调整Spirit图标大小
     /// </summary>
+    private static string GetDisplayName(SpiritData spirit)
+    {
+        if (spirit == null)
+            return string.Empty;
+
+        return string.IsNullOrWhiteSpace(spirit.DisplayName) ? spirit.name : spirit.DisplayName;
+    }
+
+    private static string BuildSynergyNames(SpiritData spirit)
+    {
+        if (spirit == null || spirit.Synergies == null || spirit.Synergies.Length == 0)
+            return string.Empty;
+
+        var names = new List<string>();
+        for (int i = 0; i < spirit.Synergies.Length; i++)
+        {
+            var synergy = spirit.Synergies[i];
+            if (synergy == null)
+                continue;
+
+            var name = string.IsNullOrWhiteSpace(synergy.DisplayName) ? synergy.name : synergy.DisplayName;
+            if (!string.IsNullOrWhiteSpace(name))
+                names.Add(name);
+        }
+
+        return names.Count == 0 ? string.Empty : string.Join(" ", names);
+    }
+
     private void AdjustIconSize(SpiritData spirit)
     {
         if (spiritIcon == null || spirit == null)
@@ -273,12 +309,16 @@ public class UI_SpiritDetailPanel : MonoBehaviour
 
         Vector2 targetSize;
 
+        string displayName = GetDisplayName(spirit);
+
+        Debug.Log($"[UI_SpiritDetailPanel] AdjustIconSize called for: {displayName}, useCustomSizeMapping: {useCustomSizeMapping}, mappings count: {iconSizeMappings.Count}");
+
         // 优先级1: 查找自定义映射表
-        if (useCustomSizeMapping && TryGetMappedSize(spirit.DisplayName, out Vector2 mappedSize))
+        if (useCustomSizeMapping && TryGetMappedSize(displayName, out Vector2 mappedSize))
         {
             targetSize = mappedSize;
             Debug.Log(
-                $"[UI_SpiritDetailPanel] Using mapped size {targetSize} for {spirit.DisplayName}"
+                $"[UI_SpiritDetailPanel] Using mapped size {targetSize} for {displayName}"
             );
         }
         // 优先级3: 使用默认大小
@@ -286,11 +326,13 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         {
             targetSize = defaultIconSize;
             Debug.Log(
-                $"[UI_SpiritDetailPanel] Using default size {targetSize} for {spirit.DisplayName}"
+                $"[UI_SpiritDetailPanel] Using default size {targetSize} for {displayName}"
             );
         }
 
+        Debug.Log($"[UI_SpiritDetailPanel] Before SetIconSize - current sizeDelta: {spiritIcon.rectTransform.sizeDelta}, target: {targetSize}");
         SetIconSize(targetSize);
+        Debug.Log($"[UI_SpiritDetailPanel] After SetIconSize - new sizeDelta: {spiritIcon.rectTransform.sizeDelta}");
     }
 
     /// <summary>
@@ -298,16 +340,42 @@ public class UI_SpiritDetailPanel : MonoBehaviour
     /// </summary>
     private bool TryGetMappedSize(string spiritName, out Vector2 size)
     {
+        spiritName = string.IsNullOrWhiteSpace(spiritName) ? string.Empty : spiritName.Trim();
+        if (string.IsNullOrEmpty(spiritName))
+        {
+            size = Vector2.zero;
+            Debug.LogWarning("[UI_SpiritDetailPanel] TryGetMappedSize: spiritName is empty");
+            return false;
+        }
+
+        Debug.Log($"[UI_SpiritDetailPanel] TryGetMappedSize: Looking for '{spiritName}'");
+
         if (iconSizeMappings != null && iconSizeMappings.Count > 0)
         {
-            foreach (var mapping in iconSizeMappings)
+            for (int i = 0; i < iconSizeMappings.Count; i++)
             {
-                if (mapping.spiritName == spiritName)
+                var mapping = iconSizeMappings[i];
+                if (mapping == null)
+                {
+                    Debug.LogWarning($"[UI_SpiritDetailPanel] Mapping[{i}] is null");
+                    continue;
+                }
+
+                var key = string.IsNullOrWhiteSpace(mapping.spiritName) ? string.Empty : mapping.spiritName.Trim();
+                Debug.Log($"[UI_SpiritDetailPanel] Comparing '{spiritName}' with mapping[{i}]: '{key}'");
+
+                if (string.Equals(key, spiritName, StringComparison.OrdinalIgnoreCase))
                 {
                     size = mapping.iconSize;
+                    Debug.Log($"[UI_SpiritDetailPanel] Found match! Size: {size}");
                     return true;
                 }
             }
+            Debug.LogWarning($"[UI_SpiritDetailPanel] No mapping found for '{spiritName}'");
+        }
+        else
+        {
+            Debug.LogWarning("[UI_SpiritDetailPanel] iconSizeMappings is null or empty");
         }
 
         size = Vector2.zero;
@@ -322,13 +390,48 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         if (spiritIcon == null)
             return;
 
-        var rectTransform = spiritIcon.GetComponent<RectTransform>();
-        if (rectTransform != null)
+        var rectTransform = spiritIcon.rectTransform;
+        if (rectTransform == null)
+            return;
+
+        Debug.Log($"[UI_SpiritDetailPanel] SetIconSize: Setting size to {size}");
+        Debug.Log($"[UI_SpiritDetailPanel] Current anchors: min={rectTransform.anchorMin}, max={rectTransform.anchorMax}");
+
+        rectTransform.sizeDelta = size;
+
+        // If inside a LayoutGroup, LayoutElement is more reliable than sizeDelta alone.
+        var layout = spiritIcon.GetComponent<LayoutElement>();
+        if (layout != null)
         {
-            rectTransform.sizeDelta = size;
+            Debug.Log($"[UI_SpiritDetailPanel] LayoutElement found, setting preferred/min sizes");
+            layout.preferredWidth = size.x;
+            layout.preferredHeight = size.y;
+            layout.minWidth = size.x;
+            layout.minHeight = size.y;
+            layout.flexibleWidth = 0f;
+            layout.flexibleHeight = 0f;
+        }
+        else
+        {
+            Debug.Log($"[UI_SpiritDetailPanel] No LayoutElement component");
+        }
+
+        // Check for layout groups on parent
+        if (rectTransform.parent != null)
+        {
+            var parentLayoutGroup = rectTransform.parent.GetComponent<UnityEngine.UI.LayoutGroup>();
+            if (parentLayoutGroup != null)
+            {
+                Debug.LogWarning($"[UI_SpiritDetailPanel] Parent has LayoutGroup: {parentLayoutGroup.GetType().Name} - this may override size settings!");
+            }
+        }
+
+        LayoutRebuilder.MarkLayoutForRebuild(rectTransform);
+        if (rectTransform.parent is RectTransform parentRect)
+        {
+            LayoutRebuilder.MarkLayoutForRebuild(parentRect);
         }
     }
-
     /// <summary>
     /// 公开方法：手动设置图标大小
     /// 可以从外部调用以自定义图标大小
