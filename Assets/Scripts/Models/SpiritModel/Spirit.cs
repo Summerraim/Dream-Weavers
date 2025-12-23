@@ -32,9 +32,8 @@ public class Spirit : IBattleUnit
     public int BaseDefense => baseDefense;
     public IReadOnlyList<SynergyModel> Synergies => synergyModels;
 
-    public Spirit(SpiritData data) : this(data, null)
-    {
-    }
+    public Spirit(SpiritData data)
+        : this(data, null) { }
 
     /// <summary>
     /// 创建Spirit实例，可选地使用预定义的技能列表
@@ -80,7 +79,9 @@ public class Spirit : IBattleUnit
         if (predefinedSkills != null && predefinedSkills.Count > 0)
         {
             battleSkills.AddRange(predefinedSkills);
-            UnityEngine.Debug.Log($"Spirit {DisplayName}: Restored {battleSkills.Count} battle skills from saved state");
+            UnityEngine.Debug.Log(
+                $"Spirit {DisplayName}: Restored {battleSkills.Count} battle skills from saved state"
+            );
             return;
         }
 
@@ -147,7 +148,9 @@ public class Spirit : IBattleUnit
             );
         }
 
-        UnityEngine.Debug.Log($"Spirit {DisplayName}: Initialized with {battleSkills.Count} battle skills");
+        UnityEngine.Debug.Log(
+            $"Spirit {DisplayName}: Initialized with {battleSkills.Count} battle skills"
+        );
     }
 
     public IReadOnlyList<ISkill> GetSkills()
@@ -172,7 +175,17 @@ public class Spirit : IBattleUnit
         }
 
         int finalDamage = Mathf.CeilToInt(incoming * reduction);
-        HP = Mathf.Max(0, HP - Mathf.Max(0, finalDamage));
+
+        var battle = BattleModel.ActiveBattle;
+        int hpDamage = battle != null ? battle.ModifyDamageReceived(this, finalDamage) : finalDamage;
+        hpDamage = Mathf.Max(0, hpDamage);
+
+        if (hpDamage > 0)
+        {
+            HP = Mathf.Max(0, HP - hpDamage);
+        }
+
+        battle?.NotifyDamageReceived(this, hpDamage);
     }
 
     public void ReceiveHeal(int v)
@@ -184,10 +197,17 @@ public class Spirit : IBattleUnit
     {
         Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
+
     public void ReceiveMana(int amount)
     {
         Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
     }
+    public void SetRuntimeHPMP(int currentHP, int currentMP)
+    {
+        HP = Mathf.Clamp(currentHP, 0, MaxHP);
+        Mana = Mathf.Clamp(currentMP, 0, MaxMana);
+    }
+
 
     public void SetMaxHpBonusPercent(float percent)
     {
@@ -205,8 +225,9 @@ public class Spirit : IBattleUnit
 
     public void EnhanceDamage(int amount)
     {
-        Damage = baseDamage + Mathf.Max(0, amount)*0.1f;
+        Damage = baseDamage + Mathf.Max(0, amount) * 0.1f;
     }
+
     public void EnhanceDefense(int amount)
     {
         Defense = baseDefense + Mathf.Max(0, amount);

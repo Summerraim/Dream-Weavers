@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
  
 
@@ -33,28 +34,24 @@ namespace DreamWeavers.Rooms
         private EnemyData selectedEnemy; // 当前选中的敌人数据（来自对象池或手动配置）
         private bool itemDropped; // 是否已触发掉落，避免重复
         private bool roomCleared; // 外部标记房间已清理（由 BattleController 调用）
+        private bool spiritCaptured; // 是否已捕捉精灵，避免重复捕捉
+        private GameObject dropPickupInstance; // 战斗掉落展示实例
+        private ItemData pendingDropItem;
+        private int pendingDropQuantity;
+        private bool pendingDropGranted;
+        private bool subscribedRoomCompleted;
+        private bool subscribedBranchChoices;
+        private Coroutine waitRoomStateCo;
 
-        // private void OnEnable()
-        // {
-        //     Debug.Log("[CombatRoom] OnEnable: 激活战斗房间");
-            
-        //     // 自动查找 BattleController 和 BattleView（如果未在 Inspector 中配置）
-        //     if (battleController == null)
-        //     {
-        //         battleController = FindObjectOfType<BattleController>(true);
-        //     }
-        //     if (battleView == null)
-        //     {
-        //         battleView = FindObjectOfType<UI_BattleView>(true);
-        //     }
-            
-        //     // 注意：不在 OnEnable 中激活战斗，因为 Panel 显隐会频繁触发 OnEnable/OnDisable
-        //     // 战斗的激活/停止由 EnterRoom/ExitRoom 控制
-        //     Debug.Log("[CombatRoom] OnEnable: 战斗房间组件启用（等待 EnterRoom 开始战斗）");
-        // }
+        private void OnEnable()
+        {
+            SubscribeRoomCompletedEvent();
+        }
 
         private void OnDisable()
         {
+            UnsubscribeRoomCompletedEvent();
+            DestroyDropPickupInstance();
             // Panel 被隐藏时会触发 OnDisable，不做任何处理
             // 实际清理由 ExitRoom 或战斗结束逻辑处理
         }
@@ -85,9 +82,14 @@ namespace DreamWeavers.Rooms
             spawned = false;
             itemDropped = false;
             roomCleared = false;
+            spiritCaptured = false;
             enemyModel = null;
             selectedEnemy = null;
             selectedSpirit = null;
+            DestroyDropPickupInstance();
+            pendingDropItem = null;
+            pendingDropQuantity = 0;
+            pendingDropGranted = false;
         }
 
         /// <summary>
@@ -131,6 +133,17 @@ namespace DreamWeavers.Rooms
         public EnemyPool GetEnemyPool()
         {
             return enemyPool;
+        }
+        public void SetEnemyPool(EnemyPool newPool)
+        {
+            if (newPool == null)
+            {
+                Debug.LogWarning("[CombatRoom] SetEnemyPool: newPool is null; ignoring.");
+                return;
+            }
+
+            enemyPool = newPool;
+            Debug.Log("[CombatRoom] EnemyPool switched -> " + (string.IsNullOrEmpty(enemyPool.DisplayName) ? enemyPool.name : enemyPool.DisplayName));
         }
 
         /// <summary>
@@ -257,13 +270,8 @@ namespace DreamWeavers.Rooms
                 Debug.Log("[CombatRoom] 激活 BattleController");
             }
 
-            // 显示战斗UI（OnEnable 应该已经显示了，这里做双重保险）
-            if (battleView != null)
-            {
-                battleView.ShowBattlePanel();
-            }
-
             // 传入数据并开始战斗（同时传入自身引用，用于战斗胜利后移除敌人）
+            // 注意：不要在这里调用 ShowBattlePanel()，因为 BeginBattleWith -> InitializeBattle -> battleView.Bind() 会自动激活并绑定UI
             Debug.Log($"[CombatRoom] 开始战斗: Player={playerData.name}, Enemy={selectedEnemy.name}");
             bc.BeginBattleWith(playerData, selectedEnemy, this);
         }
@@ -303,6 +311,12 @@ namespace DreamWeavers.Rooms
         {
             roomCleared = true;
             Debug.Log("[CombatRoom] 房间已被外部标记为清理完成");
+
+            if (!itemDropped)
+            {
+                TryDropRandomItem();
+                itemDropped = true;
+            }
         }
 
         // 提供敌人模型访问，便于其他系统修改其 HP/Mana
@@ -319,7 +333,14 @@ namespace DreamWeavers.Rooms
         /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
         public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
         {
-            Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
+            Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, spiritCaptured={spiritCaptured}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
+            
+            // 检查是否已经捕捉过，避免重复捕捉
+            if (spiritCaptured)
+            {
+                Debug.Log("[CombatRoom] 已经捕捉过精灵，跳过重复捕捉");
+                return (false, null);
+            }
             
             // 检查房间是否已清理（或是否为提前捕捉）
             if (!earlyCapture && !IsCleared())
@@ -347,33 +368,62 @@ namespace DreamWeavers.Rooms
             // TODO: 添加捕捉概率系统（目前100%成功）
             // 可以在这里添加随机数判定或其他捕捉机制
 
-            // 添加到 PlayerData.OwnedSpirits
-            if (playerData != null)
+            // 使用PlayerManager捕捉精灵（同时更新运行时Player和PlayerData）
+            bool success = false;
+            if (PlayerManager.Instance != null)
             {
-                var owned = playerData.GetOwnedSpirits();
-                int beforeCount = owned.Count;
-                owned.Add(spiritToCapture);
-                playerData.OwnedSpirits = owned.ToArray();
-                
-                Debug.Log($"[CombatRoom] 捕捉成功! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
-                
+                success = PlayerManager.Instance.CaptureSpirit(spiritToCapture);
+                if (success)
+                {
+                    spiritCaptured = true;
+                    string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
+                    Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
+                    return (true, spiritToCapture);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] PlayerManager.Instance为null，尝试直接修改PlayerData");
+
+                // 降级方案：直接修改PlayerData（仅编辑器可见）
+                if (playerData != null)
+                {
+                    var owned = playerData.GetOwnedSpirits();
+                    int beforeCount = owned.Count;
+                    owned.Add(spiritToCapture);
+                    playerData.OwnedSpirits = owned.ToArray();
+
+                    spiritCaptured = true;
+
+                    Debug.Log($"[CombatRoom] 捕捉成功（仅PlayerData）! 精灵={spiritToCapture.DisplayName}, 拥有精灵数: {beforeCount} -> {playerData.OwnedSpirits.Length}");
+
 #if UNITY_EDITOR
-                UnityEditor.EditorUtility.SetDirty(playerData);
+                    UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-                string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
-                Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
-                return (true, spiritToCapture);
+                    string captureType = earlyCapture ? "提前捕捉成功（诱捕）" : "捕捉成功";
+                    Debug.Log($"[CombatRoom] {captureType}: {spiritToCapture.DisplayName}");
+                    return (true, spiritToCapture);
+                }
             }
 
-            Debug.LogWarning("[CombatRoom] PlayerData为null，无法捕捉");
+            Debug.LogWarning("[CombatRoom] PlayerManager和PlayerData都无法使用，捕捉失败");
             return (false, null);
         }
         public override void ExitRoom()
         {
+            GrantPendingDrop();
+            DestroyDropPickupInstance();
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
             if (playerData == null)
             {
                 Debug.LogWarning("[CombatRoom] PlayerData 未配置，无法捕捉精灵");
+                return;
+            }
+
+            // 检查是否已经捕捉过，避免重复捕捉
+            if (spiritCaptured)
+            {
+                Debug.Log("[CombatRoom] ExitRoom: 已经捕捉过精灵，跳过重复捕捉");
                 return;
             }
 
@@ -396,14 +446,36 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            // 添加到 PlayerData.OwnedSpirits（数组）——允许重复捕捉
-            var owned = playerData.GetOwnedSpirits();
-            owned.Add(spiritToAdd);
-            playerData.OwnedSpirits = owned.ToArray();
+            // 使用PlayerManager捕捉精灵（同时更新运行时Player和PlayerData）
+            bool success = false;
+            if (PlayerManager.Instance != null)
+            {
+                success = PlayerManager.Instance.CaptureSpirit(spiritToAdd);
+                if (success)
+                {
+                    spiritCaptured = true;
+                    Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功: {spiritToAdd.DisplayName}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CombatRoom] ExitRoom: PlayerManager.Instance为null，尝试直接修改PlayerData");
+
+                // 降级方案：直接修改PlayerData（仅编辑器可见）
+                if (playerData != null)
+                {
+                    var owned = playerData.GetOwnedSpirits();
+                    owned.Add(spiritToAdd);
+                    playerData.OwnedSpirits = owned.ToArray();
+
+                    spiritCaptured = true;
+
 #if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(playerData);
+                    UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-            Debug.Log($"[CombatRoom] 捕捉精灵成功: {spiritToAdd.DisplayName} (允许重复)");
+                    Debug.Log($"[CombatRoom] ExitRoom 捕捉精灵成功（仅PlayerData）: {spiritToAdd.DisplayName}");
+                }
+            }
         }
 
         // 击败敌人时从对象池随机掉落一个道具，并写入背包与玩家数据
@@ -422,14 +494,147 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            // 1) 运行时背包：更新 UI
+            pendingDropItem = item;
+            pendingDropQuantity = Mathf.Max(1, dropQuantity);
+            pendingDropGranted = false;
+            Debug.Log($"[CombatRoom] 掉落生成待领取: {item.DisplayName} x{pendingDropQuantity}");
+
+            RecordDropToPlayerData(item, pendingDropQuantity);
+            pendingDropGranted = TryAddDropToInventoryImmediately(item, pendingDropQuantity);
+
+            SpawnDropPickupVisual();
+        }
+
+        private void RecordDropToPlayerData(ItemData item, int quantity)
+        {
+            if (playerData == null)
+            {
+                Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落无法写入玩家已有道具");
+                return;
+            }
+
+            var list = playerData.GetInitialItems();
+            list.Add(new ItemStackConfig { Item = item, Count = Mathf.Max(1, quantity) });
+            playerData.InitialItems = list.ToArray();
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+            Debug.Log($"[CombatRoom] 掉落已写入玩家数据: {item.DisplayName} x{Mathf.Max(1, quantity)}");
+        }
+
+        private bool TryAddDropToInventoryImmediately(ItemData item, int quantity)
+        {
+            var inv = InventoryManager.Instance;
+            if (inv == null)
+            {
+                Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，掉落暂未加入背包");
+                return false;
+            }
+
+            bool ok = inv.AddItem(item, quantity);
+            if (!ok)
+            {
+                Debug.LogWarning("[CombatRoom] 掉落加入背包失败（可能背包已满），将在离开房间时重试");
+            }
+            else
+            {
+                Debug.Log($"[CombatRoom] 掉落已立即加入背包: {item.DisplayName} x{quantity}");
+            }
+            return ok;
+        }
+
+        private void SpawnDropPickupVisual()
+        {
+            if (pickupPrefab == null || pendingDropItem == null)
+            {
+                Debug.Log("[CombatRoom] SpawnDropPickupVisual skipped: pickupPrefab或掉落数据未设置");
+                return;
+            }
+
+            DestroyDropPickupInstance();
+
+            Vector3 spawnPos;
+            Quaternion spawnRot;
+            Transform parent;
+
+            if (spawnPoint != null)
+            {
+                spawnPos = spawnPoint.position;
+                spawnRot = spawnPoint.rotation;
+                parent = spawnPoint;
+            }
+            else
+            {
+                spawnPos = ResolveRoomCenter();
+                spawnRot = transform.rotation;
+                parent = transform;
+            }
+
+            dropPickupInstance = Instantiate(pickupPrefab, spawnPos, spawnRot, parent);
+            Debug.Log($"[CombatRoom] Spawned drop pickup visual -> {dropPickupInstance.name} at {(spawnPoint != null ? spawnPoint.name : "RoomCenter")}");
+
+            var display = dropPickupInstance.GetComponent<ItemDisplay>();
+            if (display != null)
+            {
+                display.item = pendingDropItem;
+                display.Refresh();
+                Debug.Log("[CombatRoom] ItemDisplay refreshed for drop pickup");
+            }
+        }
+
+        private Vector3 ResolveRoomCenter()
+        {
+            var collider3D = GetComponentInChildren<Collider>();
+            if (collider3D != null)
+            {
+                return collider3D.bounds.center;
+            }
+
+            var collider2D = GetComponentInChildren<Collider2D>();
+            if (collider2D != null)
+            {
+                return collider2D.bounds.center;
+            }
+
+            var renderer = GetComponentInChildren<Renderer>();
+            if (renderer != null)
+            {
+                return renderer.bounds.center;
+            }
+
+            return transform.position;
+        }
+
+        private void GrantPendingDrop()
+        {
+            if (pendingDropItem == null)
+            {
+                DestroyDropPickupInstance();
+                return;
+            }
+
+            if (pendingDropGranted)
+            {
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
+                DestroyDropPickupInstance();
+                return;
+            }
+
+            int grantCount = Mathf.Max(1, pendingDropQuantity);
+
             var inv = InventoryManager.Instance;
             if (inv != null)
             {
-                bool ok = inv.AddItem(item, Mathf.Max(1, dropQuantity));
+                bool ok = inv.AddItem(pendingDropItem, grantCount);
                 if (!ok)
                 {
-                    Debug.LogWarning("[CombatRoom] 掉落添加到背包失败，可能背包已满或参数非法");
+                    Debug.LogWarning("[CombatRoom] 掉落加入背包失败，可能背包已满或参数非法");
+                }
+                else
+                {
+                    Debug.Log($"[CombatRoom] 掉落已加入背包: {pendingDropItem.DisplayName} x{grantCount}");
+                    pendingDropGranted = true;
                 }
             }
             else
@@ -437,34 +642,95 @@ namespace DreamWeavers.Rooms
                 Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，背包未更新");
             }
 
-            // 2) 玩家数据：写入 InitialItems 以持久化当前拥有
-            if (playerData != null)
+            if (pendingDropGranted)
             {
-                var list = playerData.GetInitialItems();
-                list.Add(new ItemStackConfig { Item = item, Count = Mathf.Max(1, dropQuantity) });
-                playerData.InitialItems = list.ToArray();
-#if UNITY_EDITOR
-                UnityEditor.EditorUtility.SetDirty(playerData);
-#endif
-                Debug.Log($"[CombatRoom] 掉落道具：{item.DisplayName} x{dropQuantity} 已写入玩家数据与背包");
-            }
-            else
-            {
-                Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落未写入玩家数据资产");
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
             }
 
-            // 3) 可选：在房间中生成一个展示预制体
-            if (pickupPrefab != null)
+            DestroyDropPickupInstance();
+        }
+
+        private void HandleRoomCompleted(RoomNode_cza node)
+        {
+            if (node == null || node.Type != RoomType_cza.Combat)
+                return;
+
+            GrantPendingDrop();
+            DestroyDropPickupInstance();
+        }
+
+        private void HandleBranchChoicesUpdated(IReadOnlyList<int> _)
+        {
+            DestroyDropPickupInstance();
+        }
+
+        private void SubscribeRoomCompletedEvent()
+        {
+            var sm = RoomStateMachine_cza.Instance;
+            if (sm != null)
             {
-                var sp = spawnPoint != null ? spawnPoint : transform;
-                var pickup = Instantiate(pickupPrefab, sp.position, sp.rotation);
-                var display = pickup.GetComponent<ItemDisplay>();
-                if (display != null)
+                if (!subscribedRoomCompleted)
                 {
-                    display.item = item;
-                    display.Refresh();
+                    sm.OnRoomCompleted += HandleRoomCompleted;
+                    subscribedRoomCompleted = true;
+                }
+                if (!subscribedBranchChoices)
+                {
+                    sm.OnBranchChoicesUpdated += HandleBranchChoicesUpdated;
+                    subscribedBranchChoices = true;
                 }
             }
+            else if (waitRoomStateCo == null)
+            {
+                waitRoomStateCo = StartCoroutine(WaitForRoomStateMachine());
+            }
+        }
+
+        private void UnsubscribeRoomCompletedEvent()
+        {
+            if (waitRoomStateCo != null)
+            {
+                StopCoroutine(waitRoomStateCo);
+                waitRoomStateCo = null;
+            }
+
+            var sm = RoomStateMachine_cza.Instance;
+            if (sm != null)
+            {
+                if (subscribedRoomCompleted)
+                {
+                    sm.OnRoomCompleted -= HandleRoomCompleted;
+                    subscribedRoomCompleted = false;
+                }
+                if (subscribedBranchChoices)
+                {
+                    sm.OnBranchChoicesUpdated -= HandleBranchChoicesUpdated;
+                    subscribedBranchChoices = false;
+                }
+            }
+        }
+
+        private IEnumerator WaitForRoomStateMachine()
+        {
+            yield return new WaitUntil(() => RoomStateMachine_cza.Instance != null);
+            waitRoomStateCo = null;
+            SubscribeRoomCompletedEvent();
+        }
+
+        private void DestroyDropPickupInstance()
+        {
+            if (dropPickupInstance == null)
+                return;
+
+            Destroy(dropPickupInstance);
+            dropPickupInstance = null;
+            Debug.Log("[CombatRoom] Drop pickup instance destroyed");
+        }
+
+        public void CleanupDropVisual()
+        {
+            DestroyDropPickupInstance();
         }
     }
 

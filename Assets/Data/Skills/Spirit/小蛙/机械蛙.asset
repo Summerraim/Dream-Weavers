@@ -13,11 +13,12 @@ MonoBehaviour:
   m_Name: "\u673A\u68B0\u86D9"
   m_EditorClassIdentifier: 
   DisplayName: "\u673A\u68B0\u86D9"
+  Description: "\u5C0F\u86D9\u786C\u6838\u5347\u7EA7\u7248\uFF0C\u7535\u5F97\u4F60\u76F4\u54C6\u55E6"
   Image: {fileID: 1948976597, guid: 66a29573979e47d4da1907bda135596e, type: 3}
-  MaxHP: 180
-  MaxMana: 180
-  Damage: 18
-  Defense: 8
+  MaxHP: 200
+  MaxMana: 150
+  Damage: 26
+  Defense: 10
   Skills:
   - {fileID: 11400000, guid: 65de8e930eb151f41a7a20d70a6c85fe, type: 2}
   - {fileID: 11400000, guid: 99796d751029b3b46897c9cbf6d18ea0, type: 2}

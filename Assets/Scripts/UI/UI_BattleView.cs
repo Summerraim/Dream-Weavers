@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 战斗 UI 视图，由 `BattleController` 管理。负责展示玩家与敌方的头像、血量/蓝量和两个交互按钮。
@@ -15,7 +16,29 @@ public class UI_BattleView : MonoBehaviour
 
     [Header("Background")]
     [SerializeField]
+    [Tooltip("战斗背景图片组件")]
     private Image backgroundImage;
+
+    [Header("Floor Backgrounds")]
+    [SerializeField]
+    [Tooltip("第1层的背景图片")]
+    private Sprite floor1Background;
+
+    [SerializeField]
+    [Tooltip("第2层的背景图片")]
+    private Sprite floor2Background;
+
+    [SerializeField]
+    [Tooltip("第3层的背景图片")]
+    private Sprite floor3Background;
+
+    [SerializeField]
+    [Tooltip("第4层的背景图片")]
+    private Sprite floor4Background;
+
+    [SerializeField]
+    [Tooltip("默认背景图片（当楼层超出范围或未设置时使用）")]
+    private Sprite defaultBackground;
 
     [Header("References")]
     [SerializeField]
@@ -30,6 +53,8 @@ public class UI_BattleView : MonoBehaviour
 
     [SerializeField]
     private Button skillButton3;
+    private const float SkillNameFontSize = 12f;
+    private const float SkillOtherFontSize = 10f;
 
     [Header("Unit Images")]
     [SerializeField]
@@ -148,6 +173,15 @@ public class UI_BattleView : MonoBehaviour
     [Tooltip("战斗胜利后点击继续/离开房间的按钮")]
     private Button continueButton;
 
+    [Header("Battle Lose Panel")]
+    [SerializeField]
+    [Tooltip("战斗失败面板（所有精灵死亡时显示）")]
+    private GameObject losePanel;
+
+    [SerializeField]
+    [Tooltip("战斗失败后的重试按钮")]
+    private Button retryButton;
+
     [Header("Capture UI")]
     [SerializeField]
     private GameObject capturePanel;
@@ -172,8 +206,103 @@ public class UI_BattleView : MonoBehaviour
         {
             battlePanel.SetActive(false);
         }
+
+        // 确保失败面板初始状态为隐藏
+        if (losePanel != null)
+        {
+            losePanel.SetActive(false);
+        }
+
+        // 订阅楼层初始化事件，用于切换背景
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            RoomStateMachine_cza.Instance.OnFloorInitialized += OnFloorChanged;
+            Debug.Log("[UI_BattleView] 已订阅楼层初始化事件");
+        }
+        else
+        {
+            Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法订阅楼层事件");
+        }
     }
 
+    private void OnDestroy()
+    {
+        // 取消订阅楼层初始化事件
+        if (RoomStateMachine_cza.Instance != null)
+        {
+            RoomStateMachine_cza.Instance.OnFloorInitialized -= OnFloorChanged;
+            Debug.Log("[UI_BattleView] 已取消订阅楼层初始化事件");
+        }
+    }
+
+    /// <summary>
+    /// 当楼层发生变化时切换背景图片
+    /// </summary>
+    /// <param name="floor">新楼层编号（1-4）</param>
+    private void OnFloorChanged(int floor)
+    {
+        Debug.Log($"[UI_BattleView] 楼层变化: Floor {floor}");
+
+        if (backgroundImage == null)
+        {
+            Debug.LogWarning("[UI_BattleView] backgroundImage 未设置，无法切换背景");
+            return;
+        }
+
+        // 根据楼层选择对应的背景图片
+        Sprite newBackground = null;
+
+        switch (floor)
+        {
+            case 1:
+                newBackground = floor1Background;
+                break;
+            case 2:
+                newBackground = floor2Background;
+                break;
+            case 3:
+                newBackground = floor3Background;
+                break;
+            case 4:
+                newBackground = floor4Background;
+                break;
+            default:
+                newBackground = defaultBackground;
+                Debug.LogWarning($"[UI_BattleView] 楼层 {floor} 超出预设范围（1-4），使用默认背景");
+                break;
+        }
+
+        // 如果选择的背景为空，使用默认背景
+        if (newBackground == null)
+        {
+            newBackground = defaultBackground;
+            Debug.LogWarning($"[UI_BattleView] Floor {floor} 的背景图片未设置，使用默认背景");
+        }
+
+        // 应用新背景
+        if (newBackground != null)
+        {
+            backgroundImage.sprite = newBackground;
+            Debug.Log($"[UI_BattleView] 成功切换到 Floor {floor} 的背景");
+        }
+        else
+        {
+            Debug.LogError("[UI_BattleView] 无可用背景图片！请在 Inspector 中设置背景图片。");
+        }
+    }
+
+
+    private void ApplyCurrentFloorBackground()
+    {
+        int floor = 1;
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentMap != null)
+        {
+            floor = sm.CurrentMap.FloorIndex;
+        }
+
+        OnFloorChanged(floor);
+    }
     /// <summary>
     /// 显示战斗面板
     /// </summary>
@@ -200,6 +329,9 @@ public class UI_BattleView : MonoBehaviour
 
     public void Bind(BattleController ctrl, BattleModel m)
     {
+        Debug.Log($"[UI_BattleView] Bind called - ctrl={(ctrl != null ? "valid" : "null")}, model={(m != null ? "valid" : "null")}, battlePanel={(battlePanel != null ? battlePanel.name : "NULL")}");
+        Debug.Log($"[UI_BattleView] UI_BattleView GameObject: {gameObject.name}, activeSelf={gameObject.activeSelf}, activeInHierarchy={gameObject.activeInHierarchy}");
+        
         Unbind();
 
         controller = ctrl;
@@ -208,10 +340,40 @@ public class UI_BattleView : MonoBehaviour
         // 激活战斗主面板
         if (battlePanel != null)
         {
+            // 先检查并激活父级链
+            Transform current = battlePanel.transform.parent;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    Debug.Log($"[UI_BattleView] Activating parent: {current.gameObject.name}");
+                    current.gameObject.SetActive(true);
+                }
+                current = current.parent;
+            }
+            
             battlePanel.SetActive(true);
-            Debug.Log("[UI_BattleView] Battle panel activated");
+            Debug.Log($"[UI_BattleView] Battle panel activated: {battlePanel.name}, activeSelf={battlePanel.activeSelf}, activeInHierarchy={battlePanel.activeInHierarchy}");
+            
+            // 如果仍然不可见，输出父级链状态
+            if (!battlePanel.activeInHierarchy)
+            {
+                Debug.LogError($"[UI_BattleView] battlePanel still not visible! Checking parent chain:");
+                Transform parent = battlePanel.transform.parent;
+                while (parent != null)
+                {
+                    Debug.LogError($"  -> {parent.name}: activeSelf={parent.gameObject.activeSelf}, activeInHierarchy={parent.gameObject.activeInHierarchy}");
+                    parent = parent.parent;
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError("[UI_BattleView] battlePanel is NULL! Cannot show battle UI. Please assign battlePanel in Inspector.");
         }
 
+        // Ensure background matches current floor even if this view missed OnFloorInitialized.
+        ApplyCurrentFloorBackground();
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
 
@@ -228,13 +390,25 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherToggleButton != null)
             spiritSwitcherToggleButton.onClick.AddListener(ToggleSpiritSwitcherPanel);
 
+        // 初始化Spirit切换器面板（默认隐藏）
+        if (spiritSwitcherPanel != null)
+            spiritSwitcherPanel.SetActive(false);
+
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
 
+        // 初始化失败面板（默认隐藏）
+        if (losePanel != null)
+            losePanel.SetActive(false);
+
         // 绑定继续按钮（战斗胜利后离开房间）
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueButtonClicked);
+
+        // 绑定重试按钮（战斗失败后重试）
+        if (retryButton != null)
+            retryButton.onClick.AddListener(OnRetryButtonClicked);
 
         // 初始化捕捉UI面板（默认隐藏）
         if (capturePanel != null)
@@ -272,6 +446,10 @@ public class UI_BattleView : MonoBehaviour
         // 移除继续按钮监听
         if (continueButton != null)
             continueButton.onClick.RemoveListener(OnContinueButtonClicked);
+
+        // 移除重试按钮监听
+        if (retryButton != null)
+            retryButton.onClick.RemoveListener(OnRetryButtonClicked);
 
         // 清空羁绊槽位
         ClearSynergySlots();
@@ -598,7 +776,30 @@ public class UI_BattleView : MonoBehaviour
         var textComponent = button.GetComponentInChildren<TMPro.TMP_Text>();
         if (textComponent != null)
         {
-            textComponent.text = text;
+            textComponent.enableAutoSizing = false;
+            textComponent.richText = true;
+            textComponent.fontSize = SkillOtherFontSize;
+
+            if (string.IsNullOrEmpty(text) || text.Contains("<size=") || text.Contains("</size>"))
+            {
+                textComponent.text = text;
+                return;
+            }
+
+            var parts = text.Split('\n');
+            if (parts.Length <= 1)
+            {
+                textComponent.text = $"<size={SkillNameFontSize}>{text}</size>";
+                return;
+            }
+
+            string rest = parts[1];
+            for (int i = 2; i < parts.Length; i++)
+            {
+                rest += "\n" + parts[i];
+            }
+
+            textComponent.text = $"<size={SkillNameFontSize}>{parts[0]}</size>\n<size={SkillOtherFontSize}>{rest}</size>";
             return;
         }
 
@@ -756,10 +957,6 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        // 初始化时隐藏面板
-        if (spiritSwitcherPanel != null)
-            spiritSwitcherPanel.SetActive(false);
-
         // 清除现有槽位
         foreach (Transform child in spiritSlotsContainer)
         {
@@ -768,7 +965,26 @@ public class UI_BattleView : MonoBehaviour
 
         // 创建6个槽位
         spiritSlots = new SpiritSlot[6];
-        var deployedSpirits = controller.GetDeployedSpirits();
+
+        // 优先从PlayerManager获取最新的部署Spirit列表
+        List<SpiritData> deployedSpirits = null;
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
+        {
+            deployedSpirits = PlayerManager.Instance.GetDeployedSpirits();
+            Debug.Log($"[UI_BattleView] 从PlayerManager获取部署Spirit列表: {deployedSpirits.Count} 个");
+        }
+        else
+        {
+            // 降级方案：从BattleController获取
+            deployedSpirits = controller.GetDeployedSpirits();
+            Debug.Log($"[UI_BattleView] 从BattleController获取部署Spirit列表: {(deployedSpirits != null ? deployedSpirits.Count : 0)} 个");
+        }
+
+        if (deployedSpirits == null)
+        {
+            Debug.LogWarning("[UI_BattleView] 无法获取部署Spirit列表");
+            deployedSpirits = new List<SpiritData>();
+        }
 
         for (int i = 0; i < 6; i++)
         {
@@ -797,10 +1013,12 @@ public class UI_BattleView : MonoBehaviour
             if (i < deployedSpirits.Count && deployedSpirits[i] != null)
             {
                 slot.Initialize(i, deployedSpirits[i], OnSpiritSlotClicked);
+                Debug.Log($"[UI_BattleView] Spirit槽位 {i} 初始化: {deployedSpirits[i].DisplayName}");
             }
             else
             {
                 slot.Initialize(i, null, OnSpiritSlotClicked);
+                Debug.Log($"[UI_BattleView] Spirit槽位 {i} 初始化: 空槽位");
             }
 
             spiritSlots[i] = slot;
@@ -912,7 +1130,8 @@ public class UI_BattleView : MonoBehaviour
 
             if (isActive)
             {
-                RefreshSpiritSlots();
+                // 打开面板时重新初始化槽位（确保显示最新的Spirit列表）
+                InitializeSpiritSlots();
             }
         }
     }
@@ -925,7 +1144,8 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherPanel != null)
         {
             spiritSwitcherPanel.SetActive(true);
-            RefreshSpiritSlots();
+            // 重新初始化槽位（确保显示最新的Spirit列表）
+            InitializeSpiritSlots();
         }
     }
 
@@ -1288,18 +1508,50 @@ public class UI_BattleView : MonoBehaviour
     }
 
     /// <summary>
+    /// 显示战斗失败面板
+    /// </summary>
+    public void ShowLosePanel()
+    {
+        if (losePanel != null)
+        {
+            losePanel.SetActive(true);
+            Debug.Log("[UI_BattleView] 显示战斗失败面板");
+        }
+    }
+
+    /// <summary>
+    /// 隐藏战斗失败面板
+    /// </summary>
+    public void HideLosePanel()
+    {
+        if (losePanel != null)
+        {
+            losePanel.SetActive(false);
+            Debug.Log("[UI_BattleView] 隐藏战斗失败面板");
+        }
+    }
+
+    /// <summary>
     /// 继续按钮点击回调：战斗胜利后离开房间，触发路线选择
     /// </summary>
     private void OnContinueButtonClicked()
     {
         Debug.Log("[UI_BattleView] 继续按钮被点击，准备离开房间");
-        
+
         // 隐藏敌人死亡面板
         HideEnemyDeathPanel();
-        
+
         // 隐藏捕捉结果面板
         HideCapturePanel();
-        
+
+        if (controller != null)
+        {
+            controller.CleanupCombatDropVisual();
+        }
+
+        // 隐藏主战斗面板
+        HideBattlePanel();
+
         // 通知 RoomStateMachine 完成当前房间，触发路线选择
         if (RoomStateMachine_cza.Instance != null)
         {
@@ -1309,6 +1561,40 @@ public class UI_BattleView : MonoBehaviour
         else
         {
             Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+        }
+    }
+
+    /// <summary>
+    /// 重试按钮点击回调：战斗失败后重新开始游戏
+    /// </summary>
+    private void OnRetryButtonClicked()
+    {
+        Debug.Log("[UI_BattleView] 重试按钮被点击");
+
+        // 隐藏失败面板
+        HideLosePanel();
+
+        // 隐藏主战斗面板
+        HideBattlePanel();
+
+        // 重置时间缩放（以防在 GameOver 状态时被修改）
+        Time.timeScale = 1f;
+
+        // 方案1：回到主菜单（当前实现）
+        // SceneManager.LoadScene(0);
+
+        // 方案2：直接重新开始游戏（推荐）
+        // 通过 GameManagerService 启动新游戏，会自动重置所有状态
+        if (GameManagerService.Instance != null)
+        {
+            Debug.Log("[UI_BattleView] 通过 GameManagerService 启动新游戏");
+            GameManagerService.Instance.StartNewGame();
+        }
+        else
+        {
+            // 降级方案：如果没有 GameManagerService，直接加载场景 0
+            Debug.LogWarning("[UI_BattleView] GameManagerService 不存在，降级为加载场景 0");
+            SceneManager.LoadScene(0);
         }
     }
 
@@ -1392,8 +1678,8 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "蘑菇枪兵")
         {
-            rectTransform.sizeDelta = new Vector2(78, 102);
-            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x102");
+            rectTransform.sizeDelta = new Vector2(78, 103);
+            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x103");
         }
     }
 

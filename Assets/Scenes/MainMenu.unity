@@ -958,6 +958,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MainMenuPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 247237579391893030, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 285063131282273961, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
       propertyPath: m_fontColor.b

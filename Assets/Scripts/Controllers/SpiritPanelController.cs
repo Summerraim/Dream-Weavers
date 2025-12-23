@@ -121,12 +121,76 @@ public class SpiritPanelController : MonoBehaviour
     {
         Debug.Log("[SpiritPanelController] ===== ShowPanel called =====");
         Debug.Log($"[SpiritPanelController] spiritPanel is null: {spiritPanel == null}");
+        Debug.Log($"[SpiritPanelController] playerData is null: {playerData == null}");
 
-        // 在显示面板前，从 PlayerData 同步最新数据（确保捕捉的精灵能显示）
-        if (player != null && playerData != null)
+        if (playerData != null)
         {
-            Debug.Log("[SpiritPanelController] 同步 PlayerData 到 Player 实例...");
-            player.SyncFromPlayerData(playerData);
+            Debug.Log($"[SpiritPanelController] PlayerData 实例ID: {playerData.GetInstanceID()}, 名称: {playerData.name}");
+        }
+
+        // 优先使用 PlayerManager 的全局 Player 实例（保持数据一致性）
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
+        {
+            player = PlayerManager.Instance.CurrentPlayer;
+            Debug.Log($"[SpiritPanelController] 使用 PlayerManager.CurrentPlayer，拥有精灵: {player.GetAllSpirits().Count}, 部署精灵: {player.GetDeployedSpirits().Count}");
+
+            // 绑定到面板，传递 playerData 用于同步
+            if (spiritPanel != null)
+            {
+                spiritPanel.BindPlayer(player, playerData);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[SpiritPanelController] PlayerManager.Instance 或 CurrentPlayer 为 null，尝试从 PlayerData 创建临时 Player");
+
+            // 降级方案：从 PlayerData 创建临时 Player 实例
+            if (playerData != null)
+            {
+                // 打印 PlayerData 中的所有精灵
+                Debug.Log($"[SpiritPanelController] === PlayerData.OwnedSpirits ({(playerData.OwnedSpirits != null ? playerData.OwnedSpirits.Length : 0)}) ===");
+                if (playerData.OwnedSpirits != null)
+                {
+                    for (int i = 0; i < playerData.OwnedSpirits.Length; i++)
+                    {
+                        var spirit = playerData.OwnedSpirits[i];
+                        Debug.Log($"[SpiritPanelController]   [{i}] {(spirit != null ? spirit.DisplayName : "null")}");
+                    }
+                }
+
+                Debug.Log($"[SpiritPanelController] === PlayerData.DeployedSpirits ({(playerData.DeployedSpirits != null ? playerData.DeployedSpirits.Length : 0)}) ===");
+                if (playerData.DeployedSpirits != null)
+                {
+                    for (int i = 0; i < playerData.DeployedSpirits.Length; i++)
+                    {
+                        var spirit = playerData.DeployedSpirits[i];
+                        Debug.Log($"[SpiritPanelController]   [{i}] {(spirit != null ? spirit.DisplayName : "null")}");
+                    }
+                }
+
+                // 只在第一次或player为null时创建
+                if (player == null)
+                {
+                    player = playerData.CreatePlayer();
+                    Debug.Log($"[SpiritPanelController] 创建临时 Player 实例，拥有精灵: {player.GetAllSpirits().Count}, 部署精灵: {player.GetDeployedSpirits().Count}");
+                }
+                else
+                {
+                    // 如果已有Player实例，从PlayerData同步新数据（不覆盖）
+                    player.SyncFromPlayerData(playerData);
+                    Debug.Log($"[SpiritPanelController] 同步 PlayerData 到现有 Player 实例，拥有精灵: {player.GetAllSpirits().Count}, 部署精灵: {player.GetDeployedSpirits().Count}");
+                }
+
+                // 绑定到面板（同时传递 playerData 引用）
+                if (spiritPanel != null)
+                {
+                    spiritPanel.BindPlayer(player, playerData);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SpiritPanelController] PlayerData 为 null，无法刷新精灵数据！");
+            }
         }
 
         if (spiritPanel != null)
@@ -160,7 +224,16 @@ public class SpiritPanelController : MonoBehaviour
     {
         if (spiritPanel != null)
         {
-            spiritPanel.TogglePanel();
+            // 检查面板当前状态，如果要显示则调用 ShowPanel() 以刷新数据
+            bool willShow = !spiritPanel.IsVisible();
+            if (willShow)
+            {
+                ShowPanel(); // 调用 ShowPanel 以重新加载 PlayerData 数据
+            }
+            else
+            {
+                HidePanel();
+            }
         }
     }
 
