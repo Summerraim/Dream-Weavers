@@ -1698,7 +1698,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &599069980
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1805,7 +1805,7 @@ MonoBehaviour:
   dialogContainer: {fileID: 449488044}
   background: {fileID: 1742819187}
   dialogPanel: {fileID: 1685572851}
-  dialogBackground: {fileID: 1742819187}
+  dialogBackground: {fileID: 1685572853}
   dialogText: {fileID: 1394695333}
   speakerNameText: {fileID: 709179912}
   leftCharacterPortrait: {fileID: 1600013635}
@@ -2696,6 +2696,7 @@ MonoBehaviour:
   inventoryPanel: {fileID: 1936570792}
   slotsContainer: {fileID: 0}
   slotPrefab: {fileID: 0}
+  inventoryBackground: {fileID: 0}
   startClosed: 1
   showNewestFirst: 1
   independentToggle: 1
@@ -2852,6 +2853,11 @@ MonoBehaviour:
   menuBGM: {fileID: 0}
   gameplayBGM: {fileID: 0}
   battleBGM: {fileID: 0}
+  level1BGM: {fileID: 0}
+  level2BGM: {fileID: 0}
+  level3BGM: {fileID: 0}
+  level4BGM: {fileID: 0}
+  enableSceneMusicAutoSwitch: 1
   buttonClickSFX: {fileID: 0}
   buttonHoverSFX: {fileID: 0}
   notificationSFX: {fileID: 0}
@@ -5030,6 +5036,7 @@ MonoBehaviour:
   panelsRoot: {fileID: 894100699}
   autoInitialize: 1
   debugMode: 0
+  enableRaycasting: 0
 --- !u!4 &1726961980
 Transform:
   m_ObjectHideFlags: 0

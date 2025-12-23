@@ -111,6 +111,8 @@ public class RoomManager : MonoBehaviour
     /// </summary>
     public void EnterNewFloor(int floor)
     {
+        Debug.Log($"RoomManager.EnterNewFloor 被调用，楼层: {floor}");
+        
         if (floor < 1 || floor > 4)
         {
             Debug.LogError($"无效的楼层: {floor}");
@@ -125,9 +127,10 @@ public class RoomManager : MonoBehaviour
         GenerateFloorMap(currentFloor);
         
         // 触发关卡进入对话
+        Debug.Log("RoomManager: 准备触发关卡进入对话");
         TriggerFloorEnterDialogue();
         
-        Debug.Log($"进入新关卡: 楼层 {currentFloor}");
+        Debug.Log($"RoomManager: 进入新关卡完成: 楼层 {currentFloor}");
     }
     
     /// <summary>
@@ -135,20 +138,60 @@ public class RoomManager : MonoBehaviour
     /// </summary>
     private void TriggerFloorEnterDialogue()
     {
-        if (!enableFloorDialogue || hasTriggeredFloorDialogue) return;
+        Debug.Log($"RoomManager.TriggerFloorEnterDialogue 被调用，enableFloorDialogue: {enableFloorDialogue}, hasTriggeredFloorDialogue: {hasTriggeredFloorDialogue}");
+        
+        if (!enableFloorDialogue || hasTriggeredFloorDialogue) 
+        {
+            Debug.Log("RoomManager: 跳过对话触发（已禁用或已触发）");
+            return;
+        }
         
         string dialogueId = $"Floor_{currentFloor}_Enter";
-        DialogueData dialogueData = DialogueDataManager.Instance.GetDialogueData(dialogueId);
+        Debug.Log($"RoomManager: 加载对话数据: {dialogueId}");
+        DialogueData dialogueData = LoadDialogueData(dialogueId);
         
         if (dialogueData != null)
         {
-            DialogController.Instance.StartDialogue(dialogueData);
-            hasTriggeredFloorDialogue = true;
-            Debug.Log($"触发关卡进入对话: {dialogueId}");
+            Debug.Log("RoomManager: 对话数据加载成功，查找DialogController...");
+            DialogController dialogController = FindObjectOfType<DialogController>();
+            if (dialogController != null)
+            {
+                Debug.Log($"RoomManager: 找到DialogController: {dialogController.gameObject.name}，开始对话");
+                
+                // 订阅对话结束事件
+                dialogController.OnDialogueEnd += OnFloorDialogueEnd;
+                
+                dialogController.StartDialogue(dialogueData);
+                hasTriggeredFloorDialogue = true;
+                Debug.Log($"RoomManager: 触发关卡进入对话完成: {dialogueId}");
+            }
+            else
+            {
+                Debug.LogError("RoomManager: DialogController实例未找到！");
+                Debug.LogError("请确保场景中有DialogController组件");
+            }
         }
         else
         {
-            Debug.LogWarning($"未找到关卡进入对话数据: {dialogueId}");
+            Debug.LogWarning($"RoomManager: 未找到关卡进入对话数据: {dialogueId}");
+        }
+    }
+    
+    /// <summary>
+    /// 关卡进入对话结束回调
+    /// </summary>
+    private void OnFloorDialogueEnd()
+    {
+        Debug.Log("RoomManager: 关卡进入对话结束，可以继续游戏流程");
+        
+        // 这里可以添加对话结束后的逻辑
+        // 例如：显示房间选择界面、开始战斗等
+        
+        // 取消订阅事件
+        DialogController dialogController = FindObjectOfType<DialogController>();
+        if (dialogController != null)
+        {
+            dialogController.OnDialogueEnd -= OnFloorDialogueEnd;
         }
     }
     
@@ -185,17 +228,53 @@ public class RoomManager : MonoBehaviour
         if (!enableRoomDialogue) return;
         
         string dialogueId = GetRoomDialogueId(roomType);
-        DialogueData dialogueData = DialogueDataManager.Instance.GetDialogueData(dialogueId);
+        DialogueData dialogueData = LoadDialogueData(dialogueId);
         
         if (dialogueData != null)
         {
-            DialogController.Instance.StartDialogue(dialogueData);
-            Debug.Log($"触发房间进入对话: {dialogueId}");
+            DialogController dialogController = FindObjectOfType<DialogController>();
+            if (dialogController != null)
+            {
+                dialogController.StartDialogue(dialogueData);
+                Debug.Log($"触发房间进入对话: {dialogueId}");
+            }
+            else
+            {
+                Debug.LogError("DialogController实例未找到！");
+            }
         }
         else
         {
             Debug.LogWarning($"未找到房间进入对话数据: {dialogueId}");
         }
+    }
+    
+    /// <summary>
+    /// 加载对话数据
+    /// </summary>
+    private DialogueData LoadDialogueData(string dialogueId)
+    {
+        // 尝试从Resources加载对话数据
+        DialogueData dialogueData = Resources.Load<DialogueData>($"Dialogues/{dialogueId}");
+        
+        if (dialogueData == null)
+        {
+            // 如果找不到对话数据，创建一个临时的对话数据
+            dialogueData = ScriptableObject.CreateInstance<DialogueData>();
+            dialogueData.dialogueId = dialogueId;
+            dialogueData.dialogueEntries = new DialogueEntry[]
+            {
+                new DialogueEntry
+                {
+                    speakerName = "系统",
+                    dialogueText = $"这是{dialogueId}的临时对话内容。请创建对应的对话数据文件。",
+                    portraitPosition = UI_DialogView.PortraitPosition.None
+                }
+            };
+            Debug.LogWarning($"使用临时对话数据: {dialogueId}");
+        }
+        
+        return dialogueData;
     }
     
     /// <summary>
