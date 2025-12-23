@@ -40,6 +40,7 @@ namespace DreamWeavers.Rooms
         private int pendingDropQuantity;
         private bool pendingDropGranted;
         private bool subscribedRoomCompleted;
+        private bool subscribedBranchChoices;
         private Coroutine waitRoomStateCo;
 
         private void OnEnable()
@@ -50,6 +51,7 @@ namespace DreamWeavers.Rooms
         private void OnDisable()
         {
             UnsubscribeRoomCompletedEvent();
+            DestroyDropPickupInstance();
             // Panel 被隐藏时会触发 OnDisable，不做任何处理
             // 实际清理由 ExitRoom 或战斗结束逻辑处理
         }
@@ -409,6 +411,7 @@ namespace DreamWeavers.Rooms
         }
         public override void ExitRoom()
         {
+            GrantPendingDrop();
             DestroyDropPickupInstance();
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
             if (playerData == null)
@@ -496,25 +499,124 @@ namespace DreamWeavers.Rooms
             pendingDropGranted = false;
             Debug.Log($"[CombatRoom] 掉落生成待领取: {item.DisplayName} x{pendingDropQuantity}");
 
-            // 3) 可选：在房间中生成一个展示预制体
-            if (pickupPrefab != null)
+            RecordDropToPlayerData(item, pendingDropQuantity);
+            pendingDropGranted = TryAddDropToInventoryImmediately(item, pendingDropQuantity);
+
+            SpawnDropPickupVisual();
+        }
+
+        private void RecordDropToPlayerData(ItemData item, int quantity)
+        {
+            if (playerData == null)
             {
-                var sp = spawnPoint != null ? spawnPoint : transform;
-                DestroyDropPickupInstance();
-                dropPickupInstance = Instantiate(pickupPrefab, sp.position, sp.rotation, sp);
-                var display = dropPickupInstance.GetComponent<ItemDisplay>();
-                if (display != null)
-                {
-                    display.item = item;
-                    display.Refresh();
-                }
+                Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落无法写入玩家已有道具");
+                return;
             }
+
+            var list = playerData.GetInitialItems();
+            list.Add(new ItemStackConfig { Item = item, Count = Mathf.Max(1, quantity) });
+            playerData.InitialItems = list.ToArray();
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+            Debug.Log($"[CombatRoom] 掉落已写入玩家数据: {item.DisplayName} x{Mathf.Max(1, quantity)}");
+        }
+
+        private bool TryAddDropToInventoryImmediately(ItemData item, int quantity)
+        {
+            var inv = InventoryManager.Instance;
+            if (inv == null)
+            {
+                Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，掉落暂未加入背包");
+                return false;
+            }
+
+            bool ok = inv.AddItem(item, quantity);
+            if (!ok)
+            {
+                Debug.LogWarning("[CombatRoom] 掉落加入背包失败（可能背包已满），将在离开房间时重试");
+            }
+            else
+            {
+                Debug.Log($"[CombatRoom] 掉落已立即加入背包: {item.DisplayName} x{quantity}");
+            }
+            return ok;
+        }
+
+        private void SpawnDropPickupVisual()
+        {
+            if (pickupPrefab == null || pendingDropItem == null)
+            {
+                Debug.Log("[CombatRoom] SpawnDropPickupVisual skipped: pickupPrefab或掉落数据未设置");
+                return;
+            }
+
+            DestroyDropPickupInstance();
+
+            Vector3 spawnPos;
+            Quaternion spawnRot;
+            Transform parent;
+
+            if (spawnPoint != null)
+            {
+                spawnPos = spawnPoint.position;
+                spawnRot = spawnPoint.rotation;
+                parent = spawnPoint;
+            }
+            else
+            {
+                spawnPos = ResolveRoomCenter();
+                spawnRot = transform.rotation;
+                parent = transform;
+            }
+
+            dropPickupInstance = Instantiate(pickupPrefab, spawnPos, spawnRot, parent);
+            Debug.Log($"[CombatRoom] Spawned drop pickup visual -> {dropPickupInstance.name} at {(spawnPoint != null ? spawnPoint.name : "RoomCenter")}");
+
+            var display = dropPickupInstance.GetComponent<ItemDisplay>();
+            if (display != null)
+            {
+                display.item = pendingDropItem;
+                display.Refresh();
+                Debug.Log("[CombatRoom] ItemDisplay refreshed for drop pickup");
+            }
+        }
+
+        private Vector3 ResolveRoomCenter()
+        {
+            var collider3D = GetComponentInChildren<Collider>();
+            if (collider3D != null)
+            {
+                return collider3D.bounds.center;
+            }
+
+            var collider2D = GetComponentInChildren<Collider2D>();
+            if (collider2D != null)
+            {
+                return collider2D.bounds.center;
+            }
+
+            var renderer = GetComponentInChildren<Renderer>();
+            if (renderer != null)
+            {
+                return renderer.bounds.center;
+            }
+
+            return transform.position;
         }
 
         private void GrantPendingDrop()
         {
-            if (pendingDropItem == null || pendingDropGranted)
+            if (pendingDropItem == null)
             {
+                DestroyDropPickupInstance();
+                return;
+            }
+
+            if (pendingDropGranted)
+            {
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
                 DestroyDropPickupInstance();
                 return;
             }
@@ -532,6 +634,7 @@ namespace DreamWeavers.Rooms
                 else
                 {
                     Debug.Log($"[CombatRoom] 掉落已加入背包: {pendingDropItem.DisplayName} x{grantCount}");
+                    pendingDropGranted = true;
                 }
             }
             else
@@ -539,24 +642,12 @@ namespace DreamWeavers.Rooms
                 Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，背包未更新");
             }
 
-            if (playerData != null)
+            if (pendingDropGranted)
             {
-                var list = playerData.GetInitialItems();
-                list.Add(new ItemStackConfig { Item = pendingDropItem, Count = grantCount });
-                playerData.InitialItems = list.ToArray();
-#if UNITY_EDITOR
-                UnityEditor.EditorUtility.SetDirty(playerData);
-#endif
-                Debug.Log($"[CombatRoom] 掉落已写入玩家数据: {pendingDropItem.DisplayName} x{grantCount}");
-            }
-            else
-            {
-                Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落未写入玩家数据资产");
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
             }
 
-            pendingDropGranted = true;
-            pendingDropItem = null;
-            pendingDropQuantity = 0;
             DestroyDropPickupInstance();
         }
 
@@ -566,6 +657,12 @@ namespace DreamWeavers.Rooms
                 return;
 
             GrantPendingDrop();
+            DestroyDropPickupInstance();
+        }
+
+        private void HandleBranchChoicesUpdated(IReadOnlyList<int> _)
+        {
+            DestroyDropPickupInstance();
         }
 
         private void SubscribeRoomCompletedEvent()
@@ -577,6 +674,11 @@ namespace DreamWeavers.Rooms
                 {
                     sm.OnRoomCompleted += HandleRoomCompleted;
                     subscribedRoomCompleted = true;
+                }
+                if (!subscribedBranchChoices)
+                {
+                    sm.OnBranchChoicesUpdated += HandleBranchChoicesUpdated;
+                    subscribedBranchChoices = true;
                 }
             }
             else if (waitRoomStateCo == null)
@@ -594,10 +696,18 @@ namespace DreamWeavers.Rooms
             }
 
             var sm = RoomStateMachine_cza.Instance;
-            if (sm != null && subscribedRoomCompleted)
+            if (sm != null)
             {
-                sm.OnRoomCompleted -= HandleRoomCompleted;
-                subscribedRoomCompleted = false;
+                if (subscribedRoomCompleted)
+                {
+                    sm.OnRoomCompleted -= HandleRoomCompleted;
+                    subscribedRoomCompleted = false;
+                }
+                if (subscribedBranchChoices)
+                {
+                    sm.OnBranchChoicesUpdated -= HandleBranchChoicesUpdated;
+                    subscribedBranchChoices = false;
+                }
             }
         }
 
@@ -616,6 +726,11 @@ namespace DreamWeavers.Rooms
             Destroy(dropPickupInstance);
             dropPickupInstance = null;
             Debug.Log("[CombatRoom] Drop pickup instance destroyed");
+        }
+
+        public void CleanupDropVisual()
+        {
+            DestroyDropPickupInstance();
         }
     }
 
