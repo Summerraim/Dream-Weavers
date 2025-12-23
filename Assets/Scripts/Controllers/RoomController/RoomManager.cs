@@ -290,8 +290,8 @@ public class RoomManager : MonoBehaviour
                 return "Room_Rest_Enter";
             case RoomType_cza.Props:
                 return "Room_Props_Enter";
-            case RoomType_cza.Events:
-                return "Room_Events_Enter";
+            case RoomType_cza.Skill:
+                return "Room_Skill_Enter";
             case RoomType_cza.Boss:
                 return "Room_Boss_Enter";
             default:

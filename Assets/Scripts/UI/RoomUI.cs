@@ -957,7 +957,7 @@ public class RoomUIActions_cza : MonoBehaviour
             if (model.HP <= 0 || model.Mana <= 0)
             {
                 Debug.Log($"[RoomUI] WatchEnemyState: 敌人 HP={model.HP} Mana={model.Mana} 触发房间完成");
-                // 通过CompleteCurrentRoom触发事件，让RefreshChoiceUI通过OnBranchChoicesUpdated事件自动更新UI
+                // 通过Room触发事件，让RefreshChoiceUI通过OnBranchChoicesUpdated事件自动更新UI
                 if (RoomStateMachine_cza.Instance != null)
                 {
                     RoomStateMachine_cza.Instance.CompleteCurrentRoom();
