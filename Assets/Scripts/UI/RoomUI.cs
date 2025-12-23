@@ -311,7 +311,84 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private string FormatList(System.Collections.Generic.List<int> list)
     {
-        return string.Join(", ", list);
+        if (list == null || list.Count == 0)
+            return string.Empty;
+        var formatted = new List<string>(list.Count);
+        foreach (var id in list)
+        {
+            formatted.Add(FormatRoomLabel(id));
+        }
+        return formatted.Count > 0 ? string.Join(", ", formatted) : string.Empty;
+    }
+
+    private string FormatRouteSummary(System.Collections.Generic.IReadOnlyList<int> choices)
+    {
+        if (choices == null || choices.Count == 0)
+            return string.Empty;
+
+        var formatted = new List<string>(choices.Count);
+        for (int i = 0; i < choices.Count; i++)
+        {
+            formatted.Add(FormatRouteLabel(i, choices[i]));
+        }
+        return string.Join(", ", formatted);
+    }
+
+    private string FormatRoomLabel(int roomId)
+    {
+        if (TryGetRoomNode(roomId, out var node))
+        {
+            return $"{roomId} ({node.Type})";
+        }
+        return roomId.ToString();
+    }
+
+    private string FormatRouteLabel(int index, int roomId)
+    {
+        string typeName = TryGetRoomNode(roomId, out var node) && node != null
+            ? node.Type.ToString()
+            : "未知";
+        return $"路线{index + 1}:{typeName}";
+    }
+
+    private bool TryGetRoomNode(int roomId, out RoomNode_cza node)
+    {
+        node = null;
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm?.CurrentMap?.Rooms != null
+            && sm.CurrentMap.Rooms.TryGetValue(roomId, out var found)
+            && found != null)
+        {
+            node = found;
+            return true;
+        }
+        return false;
+    }
+
+    private void UpdateChoiceButtonLabels(System.Collections.Generic.IReadOnlyList<int> choices)
+    {
+        UpdateChoiceButtonLabel(btnNext1, choices, 0);
+        UpdateChoiceButtonLabel(btnNext2, choices, 1);
+        UpdateChoiceButtonLabel(btnNext3, choices, 2);
+    }
+
+    private void UpdateChoiceButtonLabel(Button button, System.Collections.Generic.IReadOnlyList<int> choices, int index)
+    {
+        if (button == null)
+            return;
+        var label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label == null)
+            return;
+
+        if (choices != null && index < choices.Count)
+        {
+            int roomId = choices[index];
+            label.text = FormatRouteLabel(index, roomId);
+        }
+        else
+        {
+            label.text = $"路线{index + 1}: --";
+        }
     }
 
     private void RefreshChoiceUI(System.Collections.Generic.IReadOnlyList<int> choices)
@@ -333,9 +410,11 @@ public class RoomUIActions_cza : MonoBehaviour
         if (nextRoomsText)
         {
             if (selecting)
-                nextRoomsText.text = count > 0 ? $"可选: {string.Join(", ", choices)}" : "可选: 无";
+                nextRoomsText.text = count > 0 ? $"可选: {FormatRouteSummary(choices)}" : "可选: 无";
             // 非选择阶段保留 RefreshRoomInfo 的静态提示
         }
+
+        UpdateChoiceButtonLabels(choices);
 
         // 选择阶段显示选择面板；非选择阶段隐藏选择面板
         if (selecting)

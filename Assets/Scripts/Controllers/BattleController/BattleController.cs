@@ -515,6 +515,17 @@ public class BattleController : MonoBehaviour
     public Enemy Enemy => enemy;
 
     /// <summary>
+    /// 清理战斗房间中的掉落展示（进入路线选择前调用）
+    /// </summary>
+    public void CleanupCombatDropVisual()
+    {
+        if (combatRoom != null)
+        {
+            combatRoom.CleanupDropVisual();
+        }
+    }
+
+    /// <summary>
     /// 获取部署的Spirit列表
     /// </summary>
     public System.Collections.Generic.List<SpiritData> GetDeployedSpirits()
