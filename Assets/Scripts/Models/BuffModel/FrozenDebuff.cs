@@ -7,6 +7,7 @@ public class FrozenDebuff : Buff
 {
     public override string DisplayName => "冰冻";
     public override string Description => "被冰冻，无法行动";
+    public override bool IsStackable => true; // 允许叠加持续时间
 
     public FrozenDebuff(IBattleUnit owner, int duration, Effect sourceEffect = null)
         : base(owner, duration, sourceEffect)

@@ -402,13 +402,36 @@ public class BattleModel
     }
 
     /// <summary>
-    /// 添加Buff到战斗中
+    /// 添加Buff到战斗中（支持叠加）
     /// </summary>
     public void AddBuff(Buff buff)
     {
         if (buff == null)
             return;
 
+        // 如果是可叠加的Buff，检查是否已存在同类型的Buff
+        if (buff.IsStackable && buff.Owner != null)
+        {
+            // 查找同一单位身上是否已有同类型的Buff
+            var existingBuff = activeBuffs.Find(b =>
+                b != null &&
+                b.Owner == buff.Owner &&
+                b.GetType() == buff.GetType() &&
+                b.IsStackable
+            );
+
+            if (existingBuff != null)
+            {
+                // 叠加持续时间
+                existingBuff.AddDuration(buff.RemainingTurns);
+                Debug.Log(
+                    $"[BattleModel] Buff {buff.DisplayName} 已存在，叠加持续时间 {buff.RemainingTurns} 回合 (总计: {existingBuff.RemainingTurns} 回合)"
+                );
+                return; // 不添加新的Buff，直接返回
+            }
+        }
+
+        // 添加新的Buff
         activeBuffs.Add(buff);
         buff.OnApplied();
         Debug.Log(

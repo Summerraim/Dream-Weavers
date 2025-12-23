@@ -7,6 +7,7 @@ public class SleepDebuff : Buff
 {
     public override string DisplayName => "睡眠";
     public override string Description => "陷入沉睡，无法行动，受到攻击会醒来";
+    public override bool IsStackable => true; // 允许叠加持续时间
 
     private BattleModel battleModel;
 
