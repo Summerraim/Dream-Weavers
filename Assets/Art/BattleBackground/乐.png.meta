@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9aafebd77ccd2a44f97d3034993fb79e
+guid: 922d5edd15b1a934a8c5ffe2a655f01a
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -43,7 +43,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -95,18 +95,40 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: "\u4E50_0"
+      rect:
+        serializedVersion: 2
+        x: 885
+        y: 217
+        width: 1278
+        height: 1831
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2232d79cdfa454419b57573d3122f52
+      internalID: -1972486595
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 19a552b24c9b4cb408ae592681b014a3
     internalID: 0
     vertices: []
     indices: 
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      "\u4E50_0": -1972486595
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

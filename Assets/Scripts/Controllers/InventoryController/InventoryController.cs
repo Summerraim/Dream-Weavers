@@ -287,6 +287,7 @@ public class InventoryManager : MonoBehaviour
         // 使用后更新数量
         if (item.quantity <= 0)
         {
+            Debug.Log($"[Inventory] Item {item.data.DisplayName} quantity <= 0, removing from inventory");
             string itemId = item.data.ItemId;
             items.Remove(item);
             if (itemDictionary.TryGetValue(itemId, out var dictItem) && dictItem == item)
@@ -303,10 +304,13 @@ public class InventoryManager : MonoBehaviour
                 }
             }
             OnItemRemoved?.Invoke(item);
+            Debug.Log($"[Inventory] Item removed, invoking OnInventoryChanged (subscribers={OnInventoryChanged?.GetInvocationList().Length ?? 0})");
             OnInventoryChanged?.Invoke();
+            Debug.Log($"[Inventory] OnInventoryChanged invoked after item removal");
         }
         else
         {
+            Debug.Log($"[Inventory] Item {item.data.DisplayName} quantity > 0 ({item.quantity}), calling NotifyItemChanged");
             NotifyItemChanged(item);
         }
     }
@@ -366,7 +370,9 @@ public class InventoryManager : MonoBehaviour
 
     private void NotifyItemChanged(InventoryItem item)
     {
+        Debug.Log($"[Inventory] NotifyItemChanged: item={item?.DisplayName}, invoking OnInventoryChanged (subscribers={OnInventoryChanged?.GetInvocationList().Length ?? 0})");
         OnInventoryChanged?.Invoke();
+        Debug.Log($"[Inventory] OnInventoryChanged invoked");
     }
 
     #endregion

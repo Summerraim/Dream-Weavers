@@ -32,6 +32,11 @@ public abstract class Buff
     public int RemainingTurns { get; private set; }
 
     /// <summary>
+    /// 是否可以叠加持续时间（用于控制效果）
+    /// </summary>
+    public virtual bool IsStackable => false;
+
+    /// <summary>
     /// Buff的拥有者
     /// </summary>
     public IBattleUnit Owner { get; private set; }
@@ -87,6 +92,18 @@ public abstract class Buff
         if (RemainingTurns > 0)
         {
             RemainingTurns--;
+        }
+    }
+
+    /// <summary>
+    /// 增加持续时间（用于叠加效果）
+    /// </summary>
+    public void AddDuration(int additionalTurns)
+    {
+        if (RemainingTurns > 0 && additionalTurns > 0)
+        {
+            RemainingTurns += additionalTurns;
+            Debug.Log($"[Buff] {DisplayName} 持续时间增加 {additionalTurns} 回合，当前剩余: {RemainingTurns} 回合");
         }
     }
 

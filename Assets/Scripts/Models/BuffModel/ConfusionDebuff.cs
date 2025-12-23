@@ -7,6 +7,7 @@ public class ConfusionDebuff : Buff
 {
     public override string DisplayName => "混乱";
     public override string Description => "陷入混乱，可能攻击自己";
+    public override bool IsStackable => true; // 允许叠加持续时间
 
     private float confusionChance;
 
