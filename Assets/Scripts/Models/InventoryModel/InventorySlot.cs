@@ -19,6 +19,8 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public bool isEquipmentSlot = false; // 是否是装备槽
 
     private InventoryItem currentItem; // 当前物品
+    private Image containerImage; // 槽位容器背景，用于高亮
+    private Color originalContainerColor = new Color(255,255,255,178); // 记录容器初始颜色
 
     // 事件
     public System.Action<InventorySlot> OnSlotClicked;
@@ -28,6 +30,19 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     public System.Action<InventorySlot> OnSlotHoverEnter;
     public System.Action<InventorySlot> OnSlotHoverExit;
     
+    private void Awake()
+    {
+        if (containerImage == null)
+        {
+            containerImage = GetComponent<Image>();
+        }
+
+        if (containerImage != null)
+        {
+            originalContainerColor = containerImage.color;
+        }
+    }
+
     /// <summary>
     /// 更新槽位显示
     /// </summary>
@@ -101,6 +116,11 @@ public class InventorySlot : MonoBehaviour, IPointerClickHandler, IBeginDragHand
     {
         if (selectedIndicator != null)
             selectedIndicator.SetActive(selected);
+
+        if (containerImage != null)
+        {
+            containerImage.color = selected ? Color.white : originalContainerColor;
+        }
     }
 
     /// <summary>
