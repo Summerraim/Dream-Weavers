@@ -606,27 +606,6 @@ namespace DreamWeavers.Rooms
             return transform.position;
         }
 
-        private bool TryAddDropToInventoryImmediately(ItemData item, int quantity)
-        {
-            var inv = InventoryManager.Instance;
-            if (inv == null)
-            {
-                Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，掉落暂未加入背包");
-                return false;
-            }
-
-            bool ok = inv.AddItem(item, quantity);
-            if (!ok)
-            {
-                Debug.LogWarning("[CombatRoom] 掉落加入背包失败（可能背包已满），将在离开房间时重试");
-            }
-            else
-            {
-                Debug.Log($"[CombatRoom] 掉落已立即加入背包: {item.DisplayName} x{quantity}");
-            }
-            return ok;
-        }
-
         private void GrantPendingDrop()
         {
             if (pendingDropItem == null)
