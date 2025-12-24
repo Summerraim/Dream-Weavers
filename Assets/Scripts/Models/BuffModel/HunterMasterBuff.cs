@@ -9,6 +9,9 @@ public class HunterMasterBuff : Buff
     public override string Description =>
         $"可在敌方生命值或法力值 ≤ {captureThreshold * 100}% 时捕捉成功";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float captureThreshold;
     private BattleModel battleModel;
     private Synergy hunterMasterSynergy;

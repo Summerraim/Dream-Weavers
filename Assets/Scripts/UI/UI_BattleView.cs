@@ -1440,11 +1440,15 @@ public class UI_BattleView : MonoBehaviour
             for (int i = 0; i < buffs.Count && effectIndex < slotList.Count; i++)
             {
                 var buff = buffs[i];
-                if (buff != null && !buff.IsExpired)
+                if (buff != null && !buff.IsExpired && buff.ShowInUI)
                 {
                     Debug.Log($"[UI_BattleView] 设置Effect槽位{effectIndex}: {buff.DisplayName}");
                     slotList[effectIndex].SetEffect(buff);
                     effectIndex++;
+                }
+                else if (buff != null && !buff.IsExpired && !buff.ShowInUI)
+                {
+                    Debug.Log($"[UI_BattleView] 跳过隐藏的Buff: {buff.DisplayName}");
                 }
             }
         }

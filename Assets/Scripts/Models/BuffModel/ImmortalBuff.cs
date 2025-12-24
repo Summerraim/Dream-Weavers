@@ -8,6 +8,9 @@ public class ImmortalBuff : Buff
     public override string DisplayName => "不朽造物";
     public override string Description => "免疫即死效果，首次濒死时获得2回合无敌（每场战斗一次）";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private BattleModel battleModel;
     private bool hasTriggeredInvincibility;
 

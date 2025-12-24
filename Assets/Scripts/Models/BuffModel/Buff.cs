@@ -27,6 +27,11 @@ public abstract class Buff
     private Sprite customIcon;
 
     /// <summary>
+    /// 是否在UI中显示此Buff（默认为true）
+    /// </summary>
+    public virtual bool ShowInUI => true;
+
+    /// <summary>
     /// 剩余持续回合数（-1表示永久）
     /// </summary>
     public int RemainingTurns { get; private set; }

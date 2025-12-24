@@ -10,6 +10,9 @@ public class SacrificeBuff : Buff
     public override string DisplayName => "祭品";
     public override string Description => "阵亡后为队友提供随机增益：生命偷取/最大生命值/攻击力";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private BattleModel battleModel;
     private List<SpiritData> allSpirits; // 所有上场的Spirit
 

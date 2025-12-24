@@ -502,6 +502,24 @@ public class BattleModel
     }
 
     /// <summary>
+    /// 通知某个单位造成了伤害，触发其所有Buff的OnDamageDealt
+    /// </summary>
+    public void NotifyDamageDealt(IBattleUnit dealer, int actualDamage, IBattleUnit target)
+    {
+        if (dealer == null || actualDamage <= 0)
+            return;
+
+        var dealerBuffs = GetBuffsForUnit(dealer);
+        foreach (var buff in dealerBuffs)
+        {
+            if (buff != null && !buff.IsExpired)
+            {
+                buff.OnDamageDealt(actualDamage, target);
+            }
+        }
+    }
+
+    /// <summary>
     /// 移除已过期的Buff
     /// </summary>
     private void RemoveExpiredBuffs()

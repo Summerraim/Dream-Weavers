@@ -8,6 +8,9 @@ public class ManaBurnBuff : Buff
     public override string DisplayName => "燃法者";
     public override string Description => $"造成伤害时额外扣除对方该次伤害{burnPercent * 100}%的最大法力值";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float burnPercent; // 扣除百分比（0.1 = 10%, 0.2 = 20%）
 
     public ManaBurnBuff(IBattleUnit owner, float burnPercent)

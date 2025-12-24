@@ -19,6 +19,9 @@ public class ForestChildBuff : Buff
         }
     }
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float hpBonus;
     private float manaBonus;
     private float lifeStealPercent;
