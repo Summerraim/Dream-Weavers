@@ -11,6 +11,9 @@ public class VoidExileBuff : Buff
     public override string Description =>
         $"攻击和技能无视敌人{ignoreDefensePercent * 100}%的防御力";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float ignoreDefensePercent;
 
     public float IgnoreDefensePercent => ignoreDefensePercent;

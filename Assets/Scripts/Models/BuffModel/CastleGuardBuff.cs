@@ -9,6 +9,9 @@ public class CastleGuardBuff : Buff
     public override string Description =>
         $"战斗开始时提供{shieldPercent * 100}%攻击力的护盾";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float shieldPercent;
     private BattleModel battleModel;
     private bool hasApplied;

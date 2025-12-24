@@ -9,6 +9,9 @@ public class GlacialEpochBuff : Buff
     public override string Description =>
         $"防御力+{defenseBonus * 100}%，攻击时有{freezeChance * 100}%几率冻结敌人1回合";
 
+    // 不在UI中显示此Buff
+    public override bool ShowInUI => false;
+
     private float defenseBonus;
     private float freezeChance;
     private int bonusDefense;

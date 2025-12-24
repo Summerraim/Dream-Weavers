@@ -9,6 +9,9 @@ public class ExecutionerBuff : Buff
     public override string Description =>
         $"敌方生命值低于{executeThreshold * 100}%时造成额外攻击力伤害";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float executeThreshold; // 触发阈值（0.1 = 10%, 0.2 = 20%）
     private BattleModel battleModel;
 

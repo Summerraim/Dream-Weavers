@@ -9,6 +9,9 @@ public class HealerBuff : Buff
     public override string DisplayName => "疗愈者";
     public override string Description => $"释放技能时随机治疗队友{healPercent * 100}%最大生命值";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float healPercent; // 治疗百分比
     private List<SpiritData> allSpirits; // 所有上场的Spirit
 

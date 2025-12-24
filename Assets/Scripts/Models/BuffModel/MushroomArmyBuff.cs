@@ -10,6 +10,9 @@ public class MushroomArmyBuff : Buff
     public override string Description =>
         $"每个蘑菇单位存活时，所有蘑菇单位攻击力+{bonusPerUnit * 100}%，防御力+{bonusPerUnit * 100}%";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float bonusPerUnit;
     private BattleModel battleModel;
     private Synergy mushroomSynergy;

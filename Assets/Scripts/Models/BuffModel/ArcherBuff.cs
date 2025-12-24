@@ -8,6 +8,9 @@ public class ArcherBuff : Buff
     public override string DisplayName => "射手";
     public override string Description => $"攻击力+{attackBonus * 100}%";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float attackBonus;
     private int bonusDamage;
 

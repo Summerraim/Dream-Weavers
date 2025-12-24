@@ -36,6 +36,13 @@ public class LifeSteal : Effect
         target.ReceiveDamage(totalDamage);
         int dealt = Mathf.Max(0, targetHpBefore - target.HP);
 
+        // 通知BattleModel伤害已造成（触发OnDamageDealt，如Vampiric buff）
+        if (caster != null && dealt > 0 && BattleModel.ActiveBattle != null)
+        {
+            BattleModel.ActiveBattle.NotifyDamageDealt(caster, dealt, target);
+        }
+
+        // LifeSteal技能自带的吸血效果
         if (caster != null && stealPercent > 0f && dealt > 0)
         {
             int heal = Mathf.CeilToInt(dealt * stealPercent);
