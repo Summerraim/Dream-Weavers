@@ -52,6 +52,8 @@ namespace DreamWeavers.Rooms
         private bool granted;
         private Text legacyGetSkillButtonLabel;
         private Text legacyAcquiredSkillNameText;
+        // 备份原始技能列表，运行结束时还原
+        private readonly Dictionary<SpiritData, ScriptableObject[]> originalSkillsBackup = new Dictionary<SpiritData, ScriptableObject[]>();
 
         private void Awake()
         {
@@ -138,6 +140,11 @@ namespace DreamWeavers.Rooms
                 Destroy(displayInstance);
                 displayInstance = null;
             }
+        }
+
+        private void OnDestroy()
+        {
+            RestoreOriginalSkills();
         }
 
         /// <summary>
@@ -368,7 +375,10 @@ namespace DreamWeavers.Rooms
 
             if (matchedSpirit != null)
             {
-                // 将技能添加到匹配的精灵的 Skills 数组
+                // 首次修改前备份原始技能，方便退出时还原
+                BackupSkillsIfNeeded(matchedSpirit);
+
+                // 将技能添加到匹配的精灵的 Skills 数组（直接作用于原始 ScriptableObject）
                 bool success = AddSkillToSpiritData(matchedSpirit, selectedSkillData);
                 if (success)
                 {
@@ -378,7 +388,7 @@ namespace DreamWeavers.Rooms
                     string spiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName)
                         ? matchedSpirit.name
                         : matchedSpirit.DisplayName;
-                    Debug.Log($"[SkillRoom] 成功将技能 [{skillName}] 添加给精灵 [{spiritName}]");
+                    Debug.Log($"[SkillRoom] 成功将技能 [{skillName}] 添加给精灵 [{spiritName}] | 当前技能列表={FormatSkills(matchedSpirit.Skills)}");
                     UpdateAcquiredSkillNameText(skillName);
                     
                     // 禁用获取按钮
@@ -412,6 +422,7 @@ namespace DreamWeavers.Rooms
             {
                 // 获取当前技能列表
                 var currentSkills = spiritData.Skills;
+                Debug.Log($"[SkillRoom] AddSkillToSpiritData: Spirit={spiritData.name} Before={FormatSkills(currentSkills)} Adding={skillData.name}");
 
                 // 检查技能是否已存在
                 if (currentSkills != null)
@@ -449,7 +460,7 @@ namespace DreamWeavers.Rooms
                     ? spiritData.name
                     : spiritData.DisplayName;
                 Debug.Log(
-                    $"[SkillRoom] 已将技能添加到精灵 [{spiritName}] 的技能列表，当前技能数量: {newLength}"
+                    $"[SkillRoom] 已将技能添加到精灵 [{spiritName}] 的技能列表，当前技能数量: {newLength} | Now={FormatSkills(spiritData.Skills)}"
                 );
 
                 return true;
@@ -587,7 +598,8 @@ namespace DreamWeavers.Rooms
 
         private void UpdateAcquiredSkillNameText(string text)
         {
-            string finalText = string.IsNullOrWhiteSpace(text) ? defaultAcquiredSkillNameText : text;
+            string namePart = string.IsNullOrWhiteSpace(text) ? defaultAcquiredSkillNameText : text;
+            string finalText = string.IsNullOrWhiteSpace(namePart) ? string.Empty : $"获得技能：{namePart}！";
             if (acquiredSkillNameText != null)
             {
                 acquiredSkillNameText.text = finalText;
@@ -596,6 +608,51 @@ namespace DreamWeavers.Rooms
             {
                 legacyAcquiredSkillNameText.text = finalText;
             }
+        }
+
+        // 首次修改前备份原始技能列表
+        private void BackupSkillsIfNeeded(SpiritData spirit)
+        {
+            if (spirit == null)
+                return;
+            if (originalSkillsBackup.ContainsKey(spirit))
+                return;
+
+            var backup = spirit.Skills != null ? (ScriptableObject[])spirit.Skills.Clone() : null;
+            originalSkillsBackup[spirit] = backup;
+            Debug.Log($"[SkillRoom] 备份技能列表: Spirit={spirit.name} 原始技能={FormatSkills(backup)}");
+        }
+
+        // 退出/销毁时恢复原始技能列表
+        private void RestoreOriginalSkills()
+        {
+            if (originalSkillsBackup.Count == 0)
+                return;
+
+            foreach (var kv in originalSkillsBackup)
+            {
+                var spirit = kv.Key;
+                var backup = kv.Value;
+                spirit.Skills = backup;
+                Debug.Log($"[SkillRoom] 恢复技能列表: Spirit={spirit.name} -> {FormatSkills(backup)}");
+            }
+
+            originalSkillsBackup.Clear();
+            Debug.Log("[SkillRoom] 已恢复 SpiritData 的技能列表到运行前状态");
+        }
+
+        private string FormatSkills(ScriptableObject[] skills)
+        {
+            if (skills == null || skills.Length == 0)
+                return "(empty)";
+
+            var names = new List<string>(skills.Length);
+            for (int i = 0; i < skills.Length; i++)
+            {
+                var s = skills[i];
+                names.Add(s != null ? s.name : "null");
+            }
+            return string.Join(",", names);
         }
 
         private void ApplyButtonLabelFromSkill()
