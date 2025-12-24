@@ -18,6 +18,8 @@ public class RoomStateMachine_cza : MonoBehaviour
     public event Action OnReady;
     // 新增：楼层初始化完成事件（用于UI在跨楼层时做清理/隐藏）
     public event Action<int> OnFloorInitialized;
+    // 新增：楼层已生成但尚未进入首个房间（用于外部提前准备，例如切换CombatRoom的EnemyPool）
+    public event Action<int> OnFloorPreparing;
 
     // 新增：是否处于“等待玩家选择分支”的状态
     private bool awaitingChoice;
@@ -102,6 +104,8 @@ public class RoomStateMachine_cza : MonoBehaviour
             Debug.LogWarning($"[RoomState] 起始房 1 不存在，改用房间 {startId} 作为起点");
         }
         Debug.Log($"[RoomState] 计划进入起始房 startId={startId}");
+        // 通知：楼层已生成，尚未进入首个房间（用于外部提前准备，例如切换CombatRoom的EnemyPool）
+        try { OnFloorPreparing?.Invoke(floor); } catch (Exception ex) { Debug.LogError("[RoomState] OnFloorPreparing 异常: " + ex); }
         EnterRoom(startId); // 进入起始房（记录为 visited）
         Debug.Log($"[RoomState] 初始化楼层 {floor} 完成，CurrentRoom={(CurrentRoom!=null ? CurrentRoom.Id.ToString() : "null")}");
         // 通知：楼层初始化完成（用于UI隐藏上一层残留）
@@ -232,6 +236,7 @@ public class RoomStateMachine_cza : MonoBehaviour
     // 当前房间完成（战斗胜利/事件结束等）
     public void CompleteCurrentRoom()
     {
+        Debug.Log($"[RoomState] CompleteCurrentRoom 调用: roomId={CurrentRoom.Id} Type={CurrentRoom.Type}");
         // 防重复：若已在选择阶段，忽略再次完成触发，避免重复生成不同候选
         if (awaitingChoice)
         {
@@ -458,9 +463,33 @@ public class RoomStateMachine_cza : MonoBehaviour
                 }
                 break;
             }
-            case RoomType_cza.Events:
-                // TODO: 事件房逻辑接入
+            case RoomType_cza.Skill:
+            {
+                var skill = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.SkillRoom_cza>();
+                if (skill == null)
+                {
+                    var all = Resources.FindObjectsOfTypeAll<DreamWeavers.Rooms.SkillRoom_cza>();
+                    Debug.Log($"[RoomState] 查找 SkillRoom_cza 组件，找到数量={(all != null ? all.Length : 0)}");
+                    if (all != null && all.Length > 0)
+                    {
+                        skill = all[0];
+                    }
+                }
+
+                if (skill != null)
+                {
+                    Debug.Log("[RoomState] Enter SkillRoom -> calling EnterRoom()");
+                    skill.EnterRoom();
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomState] SkillRoom_cza not found (active or inactive)");
+                }
                 break;
+            }
+            // case RoomType_cza.Events:
+                // TODO: 事件房逻辑接入
+                // break;
             case RoomType_cza.Boss:
             {
                 var boss = UnityEngine.Object.FindObjectOfType<DreamWeavers.Rooms.BossRoom_cza>();

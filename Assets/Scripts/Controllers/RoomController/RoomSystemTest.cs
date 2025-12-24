@@ -8,15 +8,16 @@ public class RoomSystemTest : MonoBehaviour
 {
     [Header("测试设置")]
     [SerializeField] private bool enableTesting = true;
-    [SerializeField] private KeyCode testKey = KeyCode.T;
+    [SerializeField] private KeyCode testKey = KeyCode.L;
     
     private void Update()
     {
         if (!enableTesting) return;
         
-        // 按T键测试房间系统
+        // 按L键测试房间系统
         if (Input.GetKeyDown(testKey))
         {
+            Debug.Log($"RoomSystemTest: L键被按下，开始测试房间系统");
             TestRoomSystem();
         }
     }
@@ -29,12 +30,18 @@ public class RoomSystemTest : MonoBehaviour
         Debug.Log("=== 房间系统测试开始 ===");
         
         // 获取房间管理器实例
+        Debug.Log("RoomSystemTest: 尝试获取RoomManager实例...");
         RoomManager roomManager = RoomManager.Instance;
         
         if (roomManager == null)
         {
             Debug.LogError("RoomManager实例未找到！");
+            Debug.LogError("请确保场景中有RoomManager组件，或者RoomManager的单例模式正确实现");
             return;
+        }
+        else
+        {
+            Debug.Log($"RoomSystemTest: 成功获取RoomManager实例: {roomManager.gameObject.name}");
         }
         
         // 测试进入第1层
@@ -65,12 +72,20 @@ public class RoomSystemTest : MonoBehaviour
         }
         
         string dialogueId = $"Floor_{floor}_Enter";
-        DialogueData dialogueData = DialogueDataManager.Instance.GetDialogueData(dialogueId);
+        DialogueData dialogueData = LoadDialogueData(dialogueId);
         
         if (dialogueData != null)
         {
-            DialogController.Instance.StartDialogue(dialogueData);
-            Debug.Log($"触发关卡进入对话: {dialogueId}");
+            DialogController dialogController = FindObjectOfType<DialogController>();
+            if (dialogController != null)
+            {
+                dialogController.StartDialogue(dialogueData);
+                Debug.Log($"触发关卡进入对话: {dialogueId}");
+            }
+            else
+            {
+                Debug.LogError("DialogController实例未找到！");
+            }
         }
         else
         {
@@ -84,17 +99,53 @@ public class RoomSystemTest : MonoBehaviour
     public void QuickTestRoomDialogue(RoomType_cza roomType)
     {
         string dialogueId = GetRoomDialogueId(roomType);
-        DialogueData dialogueData = DialogueDataManager.Instance.GetDialogueData(dialogueId);
+        DialogueData dialogueData = LoadDialogueData(dialogueId);
         
         if (dialogueData != null)
         {
-            DialogController.Instance.StartDialogue(dialogueData);
-            Debug.Log($"触发房间进入对话: {dialogueId}");
+            DialogController dialogController = FindObjectOfType<DialogController>();
+            if (dialogController != null)
+            {
+                dialogController.StartDialogue(dialogueData);
+                Debug.Log($"触发房间进入对话: {dialogueId}");
+            }
+            else
+            {
+                Debug.LogError("DialogController实例未找到！");
+            }
         }
         else
         {
             Debug.LogWarning($"未找到房间进入对话数据: {dialogueId}");
         }
+    }
+    
+    /// <summary>
+    /// 加载对话数据
+    /// </summary>
+    private DialogueData LoadDialogueData(string dialogueId)
+    {
+        // 尝试从Resources加载对话数据
+        DialogueData dialogueData = Resources.Load<DialogueData>($"Dialogues/{dialogueId}");
+        
+        if (dialogueData == null)
+        {
+            // 如果找不到对话数据，创建一个临时的对话数据
+            dialogueData = ScriptableObject.CreateInstance<DialogueData>();
+            dialogueData.dialogueId = dialogueId;
+            dialogueData.dialogueEntries = new DialogueEntry[]
+            {
+                new DialogueEntry
+                {
+                    speakerName = "系统",
+                    dialogueText = $"这是{dialogueId}的临时对话内容。请创建对应的对话数据文件。",
+                    portraitPosition = UI_DialogView.PortraitPosition.None
+                }
+            };
+            Debug.LogWarning($"使用临时对话数据: {dialogueId}");
+        }
+        
+        return dialogueData;
     }
     
     /// <summary>
@@ -110,8 +161,8 @@ public class RoomSystemTest : MonoBehaviour
                 return "Room_Rest_Enter";
             case RoomType_cza.Props:
                 return "Room_Props_Enter";
-            case RoomType_cza.Events:
-                return "Room_Events_Enter";
+            case RoomType_cza.Skill:
+                return "Room_Skill_Enter";
             case RoomType_cza.Boss:
                 return "Room_Boss_Enter";
             default:

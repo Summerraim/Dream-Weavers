@@ -63,10 +63,11 @@ namespace DreamWeavers.Rooms
         public override void EnterRoom()
         {
             Debug.Log("[PropsRoom] EnterRoom");
+            granted = false;
+            selectedItem = null;
             // 抽取道具
             PickItemFromPool();
             getPropButton.interactable = true;
-
             // 可选：在房间中生成一个展示预制体
             SpawnPickupVisual();
 
@@ -84,7 +85,12 @@ namespace DreamWeavers.Rooms
 
         public override void ExitRoom()
         {
-            
+            // 离开房间时如果仍存在展示实例则清理，避免下个房间残留
+            if (pickupInstance != null)
+            {
+                DestroyPickupInstance();
+                Debug.Log("[PropsRoom] ExitRoom: destroyed pickup instance");
+            }
         }
 
         private void PickItemFromPool()
@@ -117,7 +123,7 @@ namespace DreamWeavers.Rooms
 
             if (pickupInstance != null)
             {
-                DestroyPickupInstance();
+                // DestroyPickupInstance();
             }
 
             Vector3 spawnPos;

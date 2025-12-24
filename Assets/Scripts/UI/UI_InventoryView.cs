@@ -23,10 +23,6 @@ public class UI_InventoryView : MonoBehaviour
     [Tooltip("独立切换背包面板，不通过 UIManagerService（避免影响房间UI）")]
     public bool independentToggle = true;
 
-    [Header("槽位布局")]
-    [Tooltip("每个槽位之间的空隙（x=水平, y=垂直）")]
-    public Vector2 slotSpacing = new Vector2(8f, 8f);
-
     [Header("物品信息面板")]
     public GameObject itemInfoPanel; // 物品信息面板
     public TextMeshProUGUI itemNameText; // 物品名称
@@ -160,15 +156,8 @@ public class UI_InventoryView : MonoBehaviour
             Debug.LogError("[InventoryUI] 初始化失败：slotPrefab 未绑定。请在 Inspector 绑定槽位预制体（挂有 InventorySlot 组件）。");
             return;
         }
-        // 布局：设置为横向排列，每行最多 2 个（需要槽位容器上挂有 GridLayoutGroup）
-        var grid = slotsContainer.GetComponent<GridLayoutGroup>();
-        if (grid != null)
-        {
-            grid.startAxis = GridLayoutGroup.Axis.Horizontal; // 横向优先
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; // 固定列
-            grid.constraintCount = 2; // 每行 2 列
-            grid.spacing = slotSpacing; // 槽位间距
-        }
+        // 布局配置由 Inspector 中的 GridLayoutGroup 组件控制，此处不再强制修改
+        // 如需调整布局（如每行槽位数、间距等），请直接在 Unity Inspector 中设置 GridLayoutGroup 组件
         // 先收集容器下已有的 InventorySlot（例如场景中的模板/静态槽位）
         slots.Clear();
         for (int c = 0; c < slotsContainer.childCount; c++)
@@ -199,11 +188,15 @@ public class UI_InventoryView : MonoBehaviour
     /// </summary>
     private void SubscribeToEvents()
     {
+        Debug.Log($"[InventoryUI] ========== SubscribeToEvents 开始 ========== Time={Time.time}");
+
         // 订阅背包变化事件（带空引用保护与日志）
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.OnInventoryChanged += UpdateInventoryUI;
-            Debug.Log("[InventoryUI] SubscribeToEvents: 成功订阅 InventoryManager.OnInventoryChanged");
+            int subscriberCount = InventoryManager.Instance.OnInventoryChanged?.GetInvocationList().Length ?? 0;
+            Debug.Log($"[InventoryUI] SubscribeToEvents: 成功订阅 InventoryManager.OnInventoryChanged");
+            Debug.Log($"[InventoryUI] InventoryManager.Instance={InventoryManager.Instance.GetInstanceID()}, 当前订阅者数量={subscriberCount}");
         }
         else
         {
@@ -215,12 +208,18 @@ public class UI_InventoryView : MonoBehaviour
             useButton.onClick.AddListener(OnUseButtonClicked);
         if (dropButton != null)
             dropButton.onClick.AddListener(OnDropButtonClicked);
+
+        Debug.Log($"[InventoryUI] ========== SubscribeToEvents 完成 ==========");
     }
 
     /// <summary>
     /// 更新背包UI
-    private void UpdateInventoryUI()
+    /// </summary>
+    public void UpdateInventoryUI()
     {
+        Debug.Log($"[InventoryUI] ========== UpdateInventoryUI() 被调用 ========== Time={Time.time}, Frame={Time.frameCount}");
+        Debug.Log($"[InventoryUI] inventoryPanel active={inventoryPanel?.activeSelf}, this.gameObject active={gameObject.activeSelf}, this.enabled={enabled}");
+
         if (InventoryManager.Instance == null)
         {
             Debug.LogError("[InventoryUI] 刷新失败：InventoryManager.Instance 为 null");
@@ -439,6 +438,8 @@ public class UI_InventoryView : MonoBehaviour
     /// </summary>
     public void ToggleInventory()
     {
+        Debug.Log($"[InventoryUI] ToggleInventory called: independentToggle={independentToggle}, inventoryPanel={(inventoryPanel != null ? inventoryPanel.name : "null")}");
+
         // 当启用独立切换时，仅本地显示/隐藏背包面板，避免影响房间UI
         if (independentToggle)
         {
@@ -604,7 +605,7 @@ public class UI_InventoryView : MonoBehaviour
 
         // 设置按钮状态
         useButton.interactable = item.data.CanUse(null, null);
-        dropButton.interactable = true;
+       
     }
 
     /// <summary>
@@ -631,6 +632,9 @@ public class UI_InventoryView : MonoBehaviour
                     InventoryManager.Instance.UseItem(item);
                 }
 
+                // 注意：不在这里刷新UI，道具会在实际使用并产生效果后，
+                // 通过InventoryManager.OnInventoryChanged事件自动刷新UI
+
                 // 隐藏信息面板
                 if (itemInfoPanel != null)
                     itemInfoPanel.SetActive(false);
@@ -650,6 +654,9 @@ public class UI_InventoryView : MonoBehaviour
             {
                 // 弹出确认窗口（简化版直接丢弃）
                 InventoryManager.Instance.RemoveItem(item.data.ItemId, 1);
+
+                // 立即刷新UI，确保丢弃后的变化立即显示
+                UpdateInventoryUI();
 
                 // 隐藏信息面板
                 if (itemInfoPanel != null)
@@ -722,6 +729,7 @@ public class UI_InventoryView : MonoBehaviour
         // 快捷键：I键打开/关闭背包
         if (Input.GetKeyDown(KeyCode.I))
         {
+            Debug.Log("[InventoryUI] I键被按下，调用 ToggleInventory()");
             ToggleInventory();
         }
 

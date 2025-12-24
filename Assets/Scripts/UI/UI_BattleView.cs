@@ -16,29 +16,53 @@ public class UI_BattleView : MonoBehaviour
 
     [Header("Background")]
     [SerializeField]
-    [Tooltip("战斗背景图片组件")]
+    [Tooltip("战斗背景图片组件（后层）")]
     private Image backgroundImage;
+
+    [SerializeField]
+    [Tooltip("战斗前景图片组件（前层，可选）")]
+    private Image foregroundImage;
 
     [Header("Floor Backgrounds")]
     [SerializeField]
-    [Tooltip("第1层的背景图片")]
+    [Tooltip("第1层的背景图片（后层）")]
     private Sprite floor1Background;
 
     [SerializeField]
-    [Tooltip("第2层的背景图片")]
+    [Tooltip("第1层的前景图片（前层，可选）")]
+    private Sprite floor1Foreground;
+
+    [SerializeField]
+    [Tooltip("第2层的背景图片（后层）")]
     private Sprite floor2Background;
 
     [SerializeField]
-    [Tooltip("第3层的背景图片")]
+    [Tooltip("第2层的前景图片（前层，可选）")]
+    private Sprite floor2Foreground;
+
+    [SerializeField]
+    [Tooltip("第3层的背景图片（后层）")]
     private Sprite floor3Background;
 
     [SerializeField]
-    [Tooltip("第4层的背景图片")]
+    [Tooltip("第3层的前景图片（前层，可选）")]
+    private Sprite floor3Foreground;
+
+    [SerializeField]
+    [Tooltip("第4层的背景图片（后层）")]
     private Sprite floor4Background;
 
     [SerializeField]
-    [Tooltip("默认背景图片（当楼层超出范围或未设置时使用）")]
+    [Tooltip("第4层的前景图片（前层，可选）")]
+    private Sprite floor4Foreground;
+
+    [SerializeField]
+    [Tooltip("默认背景图片（后层，当楼层超出范围或未设置时使用）")]
     private Sprite defaultBackground;
+
+    [SerializeField]
+    [Tooltip("默认前景图片（前层，可选）")]
+    private Sprite defaultForeground;
 
     [Header("References")]
     [SerializeField]
@@ -53,6 +77,8 @@ public class UI_BattleView : MonoBehaviour
 
     [SerializeField]
     private Button skillButton3;
+    private const float SkillNameFontSize = 12f;
+    private const float SkillOtherFontSize = 10f;
 
     [Header("Unit Images")]
     [SerializeField]
@@ -234,7 +260,7 @@ public class UI_BattleView : MonoBehaviour
     }
 
     /// <summary>
-    /// 当楼层发生变化时切换背景图片
+    /// 当楼层发生变化时切换背景图片和前景图片
     /// </summary>
     /// <param name="floor">新楼层编号（1-4）</param>
     private void OnFloorChanged(int floor)
@@ -247,25 +273,31 @@ public class UI_BattleView : MonoBehaviour
             return;
         }
 
-        // 根据楼层选择对应的背景图片
+        // 根据楼层选择对应的背景图片和前景图片
         Sprite newBackground = null;
+        Sprite newForeground = null;
 
         switch (floor)
         {
             case 1:
                 newBackground = floor1Background;
+                newForeground = floor1Foreground;
                 break;
             case 2:
                 newBackground = floor2Background;
+                newForeground = floor2Foreground;
                 break;
             case 3:
                 newBackground = floor3Background;
+                newForeground = floor3Foreground;
                 break;
             case 4:
                 newBackground = floor4Background;
+                newForeground = floor4Foreground;
                 break;
             default:
                 newBackground = defaultBackground;
+                newForeground = defaultForeground;
                 Debug.LogWarning($"[UI_BattleView] 楼层 {floor} 超出预设范围（1-4），使用默认背景");
                 break;
         }
@@ -277,7 +309,7 @@ public class UI_BattleView : MonoBehaviour
             Debug.LogWarning($"[UI_BattleView] Floor {floor} 的背景图片未设置，使用默认背景");
         }
 
-        // 应用新背景
+        // 应用新背景（后层）
         if (newBackground != null)
         {
             backgroundImage.sprite = newBackground;
@@ -287,8 +319,77 @@ public class UI_BattleView : MonoBehaviour
         {
             Debug.LogError("[UI_BattleView] 无可用背景图片！请在 Inspector 中设置背景图片。");
         }
+
+        // 应用新前景（前层，如果有的话）
+        if (foregroundImage != null)
+        {
+            if (newForeground == null)
+            {
+                newForeground = defaultForeground;
+            }
+
+            if (newForeground != null)
+            {
+                foregroundImage.sprite = newForeground;
+                foregroundImage.enabled = true;
+
+                // 根据楼层设置前景图片的大小和位置
+                RectTransform foregroundRect = foregroundImage.GetComponent<RectTransform>();
+                if (foregroundRect != null)
+                {
+                    switch (floor)
+                    {
+                        case 1:
+                            foregroundRect.sizeDelta = new Vector2(110f, 100f);
+                            foregroundRect.anchoredPosition = new Vector2(5f, 80f);
+                            Debug.Log("[UI_BattleView] Floor 1 前景设置: 110x100, pos(5,80)");
+                            break;
+                        case 2:
+                            foregroundRect.sizeDelta = new Vector2(88f, 100f);
+                            foregroundRect.anchoredPosition = new Vector2(0f, 74f);
+                            Debug.Log("[UI_BattleView] Floor 2 前景设置: 88x100, pos(0,74)");
+                            break;
+                        case 3:
+                            foregroundRect.sizeDelta = new Vector2(87f, 110f);
+                            foregroundRect.anchoredPosition = new Vector2(0f, 90f);
+                            Debug.Log("[UI_BattleView] Floor 3 前景设置: 87x110, pos(0,90)");
+                            break;
+                        case 4:
+                            foregroundRect.sizeDelta = new Vector2(88f, 104f);
+                            foregroundRect.anchoredPosition = new Vector2(0f, 78f);
+                            Debug.Log("[UI_BattleView] Floor 4 前景设置: 88x104, pos(0,78)");
+                            break;
+                        default:
+                            // 默认大小和位置
+                            foregroundRect.sizeDelta = new Vector2(100f, 100f);
+                            foregroundRect.anchoredPosition = Vector2.zero;
+                            break;
+                    }
+                }
+
+                Debug.Log($"[UI_BattleView] 成功切换到 Floor {floor} 的前景");
+            }
+            else
+            {
+                // 如果没有前景图片，禁用前景Image
+                foregroundImage.enabled = false;
+                Debug.Log($"[UI_BattleView] Floor {floor} 没有前景图片，禁用前景层");
+            }
+        }
     }
 
+
+    private void ApplyCurrentFloorBackground()
+    {
+        int floor = 1;
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentMap != null)
+        {
+            floor = sm.CurrentMap.FloorIndex;
+        }
+
+        OnFloorChanged(floor);
+    }
     /// <summary>
     /// 显示战斗面板
     /// </summary>
@@ -358,6 +459,8 @@ public class UI_BattleView : MonoBehaviour
             Debug.LogError("[UI_BattleView] battlePanel is NULL! Cannot show battle UI. Please assign battlePanel in Inspector.");
         }
 
+        // Ensure background matches current floor even if this view missed OnFloorInitialized.
+        ApplyCurrentFloorBackground();
         if (endTurnButton != null)
             endTurnButton.onClick.AddListener(OnEndTurnClicked);
 
@@ -760,7 +863,30 @@ public class UI_BattleView : MonoBehaviour
         var textComponent = button.GetComponentInChildren<TMPro.TMP_Text>();
         if (textComponent != null)
         {
-            textComponent.text = text;
+            textComponent.enableAutoSizing = false;
+            textComponent.richText = true;
+            textComponent.fontSize = SkillOtherFontSize;
+
+            if (string.IsNullOrEmpty(text) || text.Contains("<size=") || text.Contains("</size>"))
+            {
+                textComponent.text = text;
+                return;
+            }
+
+            var parts = text.Split('\n');
+            if (parts.Length <= 1)
+            {
+                textComponent.text = $"<size={SkillNameFontSize}>{text}</size>";
+                return;
+            }
+
+            string rest = parts[1];
+            for (int i = 2; i < parts.Length; i++)
+            {
+                rest += "\n" + parts[i];
+            }
+
+            textComponent.text = $"<size={SkillNameFontSize}>{parts[0]}</size>\n<size={SkillOtherFontSize}>{rest}</size>";
             return;
         }
 
@@ -1634,8 +1760,8 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "眼球史莱姆")
         {
-            rectTransform.sizeDelta = new Vector2(102, 75);
-            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为102x75");
+            rectTransform.sizeDelta = new Vector2(104, 75);
+            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为104x75");
         }
         if (displayName == "蘑菇枪兵")
         {

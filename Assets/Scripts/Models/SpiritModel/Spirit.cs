@@ -202,6 +202,12 @@ public class Spirit : IBattleUnit
     {
         Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
     }
+    public void SetRuntimeHPMP(int currentHP, int currentMP)
+    {
+        HP = Mathf.Clamp(currentHP, 0, MaxHP);
+        Mana = Mathf.Clamp(currentMP, 0, MaxMana);
+    }
+
 
     public void SetMaxHpBonusPercent(float percent)
     {

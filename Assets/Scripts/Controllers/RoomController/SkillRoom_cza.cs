@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 namespace DreamWeavers.Rooms
 {
@@ -12,29 +14,35 @@ namespace DreamWeavers.Rooms
     {
         [Header("技能池配置")]
         [Tooltip("技能池资源，用于随机抽取技能")]
-        [SerializeField] private SkillPool skillPool;
-        
+        [SerializeField]
+        private SkillPool skillPool;
+
         [Tooltip("是否使用权重随机（如果技能池配置了权重）")]
-        [SerializeField] private bool useWeightedRandom = false;
+        [SerializeField]
+        private bool useWeightedRandom = false;
 
         [Header("玩家数据")]
         [Tooltip("玩家数据引用，用于获取玩家拥有的精灵")]
-        [SerializeField] private PlayerData playerData;
+        [SerializeField]
+        private PlayerData playerData;
 
         [Header("展示设置")]
         [Tooltip("技能展示生成位置（可选）")]
-        [SerializeField] private Transform spawnPoint;
-        
+        [SerializeField]
+        private Transform spawnPoint;
+
         [Tooltip("技能展示预制体（可选）")]
         [SerializeField] private GameObject skillDisplayPrefab;
-
-        [Header("自动获取设置")]
-        [Tooltip("进入房间时自动将技能添加给玩家对应的精灵")]
-        [SerializeField] private bool autoGrantOnEnter = true;
 
         [Header("UI 按钮绑定")]
         [Tooltip("获取技能按钮（可选）。若未手动绑定，将在运行时按名称尝试自动查找并绑定。")]
         [SerializeField] private UnityEngine.UI.Button getSkillButton;
+        [Tooltip("按钮文本（可选）。未绑定时会自动查找按钮下的 TMP_Text 或 Text 组件")]
+        [SerializeField] private TMP_Text getSkillButtonLabel;
+        [SerializeField] private string defaultGetSkillButtonText = string.Empty;
+        [Tooltip("显示抽取到技能名称的文本（可选）")]
+        [SerializeField] private TMP_Text acquiredSkillNameText;
+        [SerializeField] private string defaultAcquiredSkillNameText = string.Empty;
 
         // 运行时状态
         private ISkill selectedSkill;
@@ -42,13 +50,15 @@ namespace DreamWeavers.Rooms
         private SpiritData matchedSpirit; // 匹配到的精灵
         private GameObject displayInstance;
         private bool granted;
+        private Text legacyGetSkillButtonLabel;
+        private Text legacyAcquiredSkillNameText;
 
         private void Awake()
         {
             Type = RoomType_cza.Skill;
-            
+
             Debug.Log("[SkillRoom] Awake: start binding GetSkill button and validating references");
-            Debug.Log($"[SkillRoom] Refs -> skillPool={(skillPool != null)}, spawnPoint={(spawnPoint != null)}, skillDisplayPrefab={(skillDisplayPrefab != null)}, autoGrantOnEnter={autoGrantOnEnter}");
+            Debug.Log($"[SkillRoom] Refs -> skillPool={(skillPool != null)}, spawnPoint={(spawnPoint != null)}, skillDisplayPrefab={(skillDisplayPrefab != null)}");
             
             // 自动绑定获取按钮（名称包含 GetSkill）
             if (getSkillButton == null)
@@ -57,14 +67,17 @@ namespace DreamWeavers.Rooms
                 foreach (var b in btns)
                 {
                     var n = b.gameObject.name;
-                    if (!string.IsNullOrEmpty(n) && n.IndexOf("GetSkill", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (
+                        !string.IsNullOrEmpty(n)
+                        && n.IndexOf("GetSkill", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    )
                     {
                         getSkillButton = b;
                         break;
                     }
                 }
             }
-            
+
             if (getSkillButton != null)
             {
                 getSkillButton.onClick.RemoveListener(OnClickGetSkill);
@@ -73,8 +86,13 @@ namespace DreamWeavers.Rooms
             }
             else
             {
-                Debug.LogWarning("[SkillRoom] GetSkill button not found in children (name contains 'GetSkill'). You can bind it via Inspector.");
+                Debug.LogWarning(
+                    "[SkillRoom] GetSkill button not found in children (name contains 'GetSkill'). You can bind it via Inspector."
+                );
             }
+
+            CacheGetSkillButtonLabel();
+            CacheAcquiredSkillNameLabel();
         }
 
         public override void EnterRoom()
@@ -82,31 +100,37 @@ namespace DreamWeavers.Rooms
             Debug.Log("[SkillRoom] EnterRoom");
             granted = false;
             matchedSpirit = null;
+            if (getSkillButton != null)
+            {
+                getSkillButton.interactable = true;
+            }
+            UpdateGetSkillButtonText(defaultGetSkillButtonText);
+            UpdateAcquiredSkillNameText(defaultAcquiredSkillNameText);
             
             // 从技能池中随机抽取技能，并匹配对应的精灵
             PickSkillFromPoolAndMatchSpirit();
-
+            getSkillButton.interactable = true;
             // 可选：在房间中生成技能展示
             SpawnSkillDisplay();
 
-            // 自动发放技能给对应的精灵
-            if (autoGrantOnEnter)
+            // 若没有按钮可触发获取，则直接发放以避免卡关
+            if (getSkillButton == null)
             {
+                Debug.LogWarning("[SkillRoom] 未找到 GetSkill 按钮，已自动发放技能。可在 Inspector 绑定或将按钮命名包含 'GetSkill' 以便自动绑定。");
                 GrantSkillToMatchedSpirit();
-            }
-            else if (getSkillButton == null)
-            {
-                Debug.LogWarning("[SkillRoom] 未找到 GetSkill 按钮。可在 Inspector 绑定或将按钮命名包含 'GetSkill' 以便自动绑定。");
             }
             
             string spiritName = matchedSpirit != null ? matchedSpirit.DisplayName : "null";
-            Debug.Log($"[SkillRoom] EnterRoom done: selectedSkill={(selectedSkill != null ? selectedSkill.DisplayName : "null")}, matchedSpirit={spiritName}, granted={granted}");
+            Debug.Log(
+                $"[SkillRoom] EnterRoom done: selectedSkill={(selectedSkill != null ? selectedSkill.DisplayName : "null")}, matchedSpirit={spiritName}, granted={granted}"
+            );
         }
 
         public override void ExitRoom()
         {
             Debug.Log("[SkillRoom] ExitRoom");
             getSkillButton.interactable = true;
+            
             
             // 清理展示物
             if (displayInstance != null)
@@ -124,10 +148,12 @@ namespace DreamWeavers.Rooms
             selectedSkill = null;
             selectedSkillData = null;
             matchedSpirit = null;
-            
+
             if (skillPool == null || skillPool.IsEmpty)
             {
-                Debug.LogWarning($"[SkillRoom] skillPool 未配置或为空，无法抽取技能 (skillPool={(skillPool != null)} IsEmpty={(skillPool != null ? skillPool.IsEmpty : true)})");
+                Debug.LogWarning(
+                    $"[SkillRoom] skillPool 未配置或为空，无法抽取技能 (skillPool={(skillPool != null)} IsEmpty={(skillPool != null ? skillPool.IsEmpty : true)})"
+                );
                 return;
             }
 
@@ -153,8 +179,11 @@ namespace DreamWeavers.Rooms
             List<SpiritData> matchableSpirits = new List<SpiritData>();
             foreach (var spirit in playerSpirits)
             {
-                if (spirit == null) continue;
-                string spiritName = string.IsNullOrWhiteSpace(spirit.DisplayName) ? spirit.name : spirit.DisplayName;
+                if (spirit == null)
+                    continue;
+                string spiritName = string.IsNullOrWhiteSpace(spirit.DisplayName)
+                    ? spirit.name
+                    : spirit.DisplayName;
                 if (spiritSkillMapping.ContainsKey(spiritName))
                 {
                     matchableSpirits.Add(spirit);
@@ -171,11 +200,13 @@ namespace DreamWeavers.Rooms
             // 从可匹配的精灵中随机选择一个
             int randomIndex = Random.Range(0, matchableSpirits.Count);
             matchedSpirit = matchableSpirits[randomIndex];
-            string matchedSpiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName) ? matchedSpirit.name : matchedSpirit.DisplayName;
+            string matchedSpiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName)
+                ? matchedSpirit.name
+                : matchedSpirit.DisplayName;
 
             // 获取该精灵对应的技能
             selectedSkillData = spiritSkillMapping[matchedSpiritName];
-            
+
             // 转换为 ISkill
             if (selectedSkillData is ISkill skill)
             {
@@ -188,12 +219,16 @@ namespace DreamWeavers.Rooms
 
             if (selectedSkill != null)
             {
-                Debug.Log($"[SkillRoom] 抽取到技能: {selectedSkill.DisplayName}，对应精灵: {matchedSpiritName}");
+                Debug.Log(
+                    $"[SkillRoom] 抽取到技能: {selectedSkill.DisplayName}，对应精灵: {matchedSpiritName}"
+                );
             }
             else
             {
                 Debug.LogWarning("[SkillRoom] 未能从技能池中抽取到有效技能");
             }
+
+            ApplyButtonLabelFromSkill();
         }
 
         /// <summary>
@@ -216,6 +251,8 @@ namespace DreamWeavers.Rooms
             {
                 Debug.Log($"[SkillRoom] (随机抽取) 抽取到技能: {selectedSkill.DisplayName}");
             }
+
+            ApplyButtonLabelFromSkill();
         }
 
         /// <summary>
@@ -254,9 +291,14 @@ namespace DreamWeavers.Rooms
                 return;
             }
 
-            displayInstance = Instantiate(skillDisplayPrefab, spawnPoint.position, spawnPoint.rotation, spawnPoint);
+            displayInstance = Instantiate(
+                skillDisplayPrefab,
+                spawnPoint.position,
+                spawnPoint.rotation,
+                spawnPoint
+            );
             Debug.Log($"[SkillRoom] 已生成技能展示物: {selectedSkill.DisplayName}");
-            
+
             // TODO: 可以在这里设置展示物的UI显示，如技能名称、图标等
             // 例如：displayInstance.GetComponent<SkillDisplayUI>()?.Setup(selectedSkill);
         }
@@ -266,6 +308,17 @@ namespace DreamWeavers.Rooms
         /// </summary>
         private void OnClickGetSkill()
         {
+            if (selectedSkillData == null)
+            {
+                Debug.LogWarning("[SkillRoom] 点击按钮时未找到已抽取的技能，尝试重新抽取");
+                PickSkillFromPoolAndMatchSpirit();
+                if (selectedSkillData == null)
+                {
+                    Debug.LogWarning("[SkillRoom] 重新抽取仍然失败，无法发放技能");
+                    return;
+                }
+            }
+
             // 如果技能尚未获取，先获取技能
             if (!granted)
             {
@@ -275,13 +328,13 @@ namespace DreamWeavers.Rooms
             {
                 Debug.Log("[SkillRoom] 技能已被获取（可能是autoGrantOnEnter），直接进入路线选择");
             }
-            
+
             // 禁用按钮
             if (getSkillButton != null)
             {
                 getSkillButton.interactable = false;
             }
-            
+
             // 触发路线选择
             if (RoomStateMachine_cza.Instance != null)
             {
@@ -290,7 +343,9 @@ namespace DreamWeavers.Rooms
             }
             else
             {
-                Debug.LogWarning("[SkillRoom] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+                Debug.LogWarning(
+                    "[SkillRoom] RoomStateMachine_cza.Instance 为 null，无法触发路线选择"
+                );
             }
         }
 
@@ -318,9 +373,13 @@ namespace DreamWeavers.Rooms
                 if (success)
                 {
                     granted = true;
-                    string skillName = selectedSkill != null ? selectedSkill.DisplayName : selectedSkillData.name;
-                    string spiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName) ? matchedSpirit.name : matchedSpirit.DisplayName;
+                    string skillName =
+                        selectedSkill != null ? selectedSkill.DisplayName : selectedSkillData.name;
+                    string spiritName = string.IsNullOrWhiteSpace(matchedSpirit.DisplayName)
+                        ? matchedSpirit.name
+                        : matchedSpirit.DisplayName;
                     Debug.Log($"[SkillRoom] 成功将技能 [{skillName}] 添加给精灵 [{spiritName}]");
+                    UpdateAcquiredSkillNameText(skillName);
                     
                     // 禁用获取按钮
                     if (getSkillButton != null)
@@ -353,7 +412,7 @@ namespace DreamWeavers.Rooms
             {
                 // 获取当前技能列表
                 var currentSkills = spiritData.Skills;
-                
+
                 // 检查技能是否已存在
                 if (currentSkills != null)
                 {
@@ -370,7 +429,7 @@ namespace DreamWeavers.Rooms
                 // 创建新的技能数组，包含原有技能和新技能
                 int newLength = (currentSkills?.Length ?? 0) + 1;
                 var newSkills = new ScriptableObject[newLength];
-                
+
                 // 复制原有技能
                 if (currentSkills != null)
                 {
@@ -379,16 +438,20 @@ namespace DreamWeavers.Rooms
                         newSkills[i] = currentSkills[i];
                     }
                 }
-                
+
                 // 添加新技能
                 newSkills[newLength - 1] = skillData;
-                
+
                 // 更新精灵的技能数组
                 spiritData.Skills = newSkills;
-                
-                string spiritName = string.IsNullOrWhiteSpace(spiritData.DisplayName) ? spiritData.name : spiritData.DisplayName;
-                Debug.Log($"[SkillRoom] 已将技能添加到精灵 [{spiritName}] 的技能列表，当前技能数量: {newLength}");
-                
+
+                string spiritName = string.IsNullOrWhiteSpace(spiritData.DisplayName)
+                    ? spiritData.name
+                    : spiritData.DisplayName;
+                Debug.Log(
+                    $"[SkillRoom] 已将技能添加到精灵 [{spiritName}] 的技能列表，当前技能数量: {newLength}"
+                );
+
                 return true;
             }
             catch (System.Exception e)
@@ -428,6 +491,126 @@ namespace DreamWeavers.Rooms
         public bool IsSkillGranted()
         {
             return granted;
+        }
+
+        private void CacheGetSkillButtonLabel()
+        {
+            if (getSkillButton == null)
+                return;
+
+            if (getSkillButtonLabel == null)
+            {
+                getSkillButtonLabel = getSkillButton.GetComponentInChildren<TMP_Text>(true);
+            }
+
+            if (getSkillButtonLabel == null && legacyGetSkillButtonLabel == null)
+            {
+                legacyGetSkillButtonLabel = getSkillButton.GetComponentInChildren<Text>(true);
+            }
+
+            if (!string.IsNullOrEmpty(defaultGetSkillButtonText))
+                return;
+
+            if (getSkillButtonLabel != null)
+            {
+                defaultGetSkillButtonText = getSkillButtonLabel.text;
+            }
+            else if (legacyGetSkillButtonLabel != null)
+            {
+                defaultGetSkillButtonText = legacyGetSkillButtonLabel.text;
+            }
+            else
+            {
+                defaultGetSkillButtonText = "获取技能";
+            }
+        }
+
+        private void CacheAcquiredSkillNameLabel()
+        {
+            if (acquiredSkillNameText == null)
+            {
+                var tmpTexts = GetComponentsInChildren<TMP_Text>(true);
+                foreach (var text in tmpTexts)
+                {
+                    var n = text.gameObject.name;
+                    if (!string.IsNullOrEmpty(n) && n.IndexOf("SkillName", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        acquiredSkillNameText = text;
+                        break;
+                    }
+                }
+            }
+
+            if (acquiredSkillNameText == null && legacyAcquiredSkillNameText == null)
+            {
+                var uiTexts = GetComponentsInChildren<Text>(true);
+                foreach (var text in uiTexts)
+                {
+                    var n = text.gameObject.name;
+                    if (!string.IsNullOrEmpty(n) && n.IndexOf("SkillName", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        legacyAcquiredSkillNameText = text;
+                        break;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(defaultAcquiredSkillNameText))
+                return;
+
+            if (acquiredSkillNameText != null)
+            {
+                defaultAcquiredSkillNameText = acquiredSkillNameText.text;
+            }
+            else if (legacyAcquiredSkillNameText != null)
+            {
+                defaultAcquiredSkillNameText = legacyAcquiredSkillNameText.text;
+            }
+            else
+            {
+                defaultAcquiredSkillNameText = string.Empty;
+            }
+        }
+
+        private void UpdateGetSkillButtonText(string text)
+        {
+            string finalText = string.IsNullOrWhiteSpace(text) ? defaultGetSkillButtonText : text;
+            if (getSkillButtonLabel != null)
+            {
+                getSkillButtonLabel.text = finalText;
+            }
+            else if (legacyGetSkillButtonLabel != null)
+            {
+                legacyGetSkillButtonLabel.text = finalText;
+            }
+        }
+
+        private void UpdateAcquiredSkillNameText(string text)
+        {
+            string finalText = string.IsNullOrWhiteSpace(text) ? defaultAcquiredSkillNameText : text;
+            if (acquiredSkillNameText != null)
+            {
+                acquiredSkillNameText.text = finalText;
+            }
+            else if (legacyAcquiredSkillNameText != null)
+            {
+                legacyAcquiredSkillNameText.text = finalText;
+            }
+        }
+
+        private void ApplyButtonLabelFromSkill()
+        {
+            string label = null;
+            if (selectedSkill != null)
+            {
+                label = selectedSkill.DisplayName;
+            }
+            else if (selectedSkillData != null)
+            {
+                label = selectedSkillData.name;
+            }
+
+            UpdateAcquiredSkillNameText(label);
         }
     }
 }

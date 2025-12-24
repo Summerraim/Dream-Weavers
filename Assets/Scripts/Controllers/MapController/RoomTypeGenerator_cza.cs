@@ -20,7 +20,7 @@ public static class RoomType_czaGenerator_cza
         if (roll < w.PropsWeight)
             return RoomType_cza.Props;
 
-        return RoomType_cza.Events; // 最后剩下的权重
+        return RoomType_cza.Skill; // 最后剩下的权重
     }
 
     public static RoomType_cza GenerateRoomType_czaWithConstraints(int floor, SeedRNG_cza rng, bool allowRest, bool allowProps)
@@ -39,6 +39,6 @@ public static class RoomType_czaGenerator_cza
         if (roll < rest) return RoomType_cza.Rest;
         roll -= rest;
         if (roll < props) return RoomType_cza.Props;
-        return RoomType_cza.Events;
+        return RoomType_cza.Skill;
     }
 }

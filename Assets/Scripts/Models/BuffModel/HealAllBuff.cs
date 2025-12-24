@@ -15,13 +15,23 @@ public class HealAllBuff : Buff
     private readonly SpiritData penalizedSpirit; // 特定心兽
     private readonly float penalizePercent; // 0..1
 
-    public HealAllBuff(IBattleUnit owner, int duration, BattleModel battleModel, float healPercent, SpiritData penalizedSpirit, float penalizePercent, Effect sourceEffect = null)
+    // 桥接函数：用于访问所有Spirit的数据
+    private readonly System.Func<List<SpiritData>> getDeployedSpirits;
+    private readonly System.Func<int, SpiritRuntimeData> getSpiritRuntimeData;
+    private readonly System.Action<int, int, int> saveSpiritHP;
+
+    public HealAllBuff(IBattleUnit owner, int duration, BattleModel battleModel, float healPercent, SpiritData penalizedSpirit, float penalizePercent,
+        System.Func<List<SpiritData>> getDeployedSpirits, System.Func<int, SpiritRuntimeData> getSpiritRuntimeData, System.Action<int, int, int> saveSpiritHP,
+        Effect sourceEffect = null)
         : base(owner, duration, sourceEffect)
     {
         this.battleModel = battleModel;
         this.healPercent = Mathf.Clamp01(healPercent);
         this.penalizedSpirit = penalizedSpirit;
         this.penalizePercent = Mathf.Clamp01(penalizePercent);
+        this.getDeployedSpirits = getDeployedSpirits;
+        this.getSpiritRuntimeData = getSpiritRuntimeData;
+        this.saveSpiritHP = saveSpiritHP;
         IsOneTime = true;
     }
 
@@ -33,50 +43,68 @@ public class HealAllBuff : Buff
             return;
         }
 
-        // 收集场上所有单位：玩家 + 敌人
-        var units = new List<IBattleUnit>();
-        if (battleModel.PlayerUnit != null) units.Add(battleModel.PlayerUnit);
-        if (battleModel.EnemyUnits != null)
+        Debug.Log($"[HealAllBuff] OnApplied called, healPercent={healPercent}");
+
+        // 方案1：治疗当前上场的Spirit（通过battleModel）
+        if (battleModel.PlayerUnit != null)
         {
-            for (int i = 0; i < battleModel.EnemyUnits.Count; i++)
-            {
-                var enemy = battleModel.EnemyUnits[i];
-                if (enemy != null) units.Add(enemy);
-            }
+            var currentSpirit = battleModel.PlayerUnit;
+            int amount = Mathf.CeilToInt(currentSpirit.MaxHP * healPercent);
+            currentSpirit.ReceiveHeal(amount);
+            Debug.Log($"[HealAllBuff] 当前上场Spirit {currentSpirit.DisplayName} 恢复 {amount} 生命值 (HP: {currentSpirit.HP}/{currentSpirit.MaxHP})");
         }
 
-        // 先执行群体治疗
-        foreach (var unit in units)
+        // 方案2：治疗队列中所有其他Spirit（通过桥接函数）
+        if (getDeployedSpirits != null && getSpiritRuntimeData != null && saveSpiritHP != null)
         {
-            int amount = 0;
-            // 依据 MaxHP 百分比治疗
-            if (unit is Spirit spiritUnit)
+            var deployedSpirits = getDeployedSpirits();
+            if (deployedSpirits != null)
             {
-                amount = Mathf.CeilToInt(spiritUnit.MaxHP * healPercent);
+                Debug.Log($"[HealAllBuff] 开始治疗队列中的所有Spirit，总数: {deployedSpirits.Count}");
+
+                for (int i = 0; i < deployedSpirits.Count; i++)
+                {
+                    var spiritData = deployedSpirits[i];
+                    var runtimeData = getSpiritRuntimeData(i);
+
+                    if (runtimeData.CurrentHP <= 0)
+                    {
+                        Debug.Log($"[HealAllBuff] Spirit {i} ({spiritData.DisplayName}) 已死亡，跳过治疗");
+                        continue;
+                    }
+
+                    // 计算治疗量
+                    int healAmount = Mathf.CeilToInt(runtimeData.MaxHP * healPercent);
+                    int newHP = Mathf.Min(runtimeData.CurrentHP + healAmount, runtimeData.MaxHP);
+
+                    // 保存新的HP
+                    saveSpiritHP(i, newHP, runtimeData.MaxHP);
+
+                    Debug.Log($"[HealAllBuff] Spirit {i} ({spiritData.DisplayName}) 恢复 {healAmount} 生命值 (HP: {runtimeData.CurrentHP} -> {newHP}/{runtimeData.MaxHP})");
+                }
             }
             else
             {
-                amount = Mathf.CeilToInt(unit.MaxHP * healPercent);
+                Debug.LogWarning("[HealAllBuff] getDeployedSpirits returned null");
             }
-            unit.ReceiveHeal(amount);
-            Debug.Log($"HealAllBuff: {unit.DisplayName} 恢复 {amount} 生命值");
+        }
+        else
+        {
+            Debug.LogWarning("[HealAllBuff] 桥接函数未设置，无法治疗队列中的Spirit");
         }
 
-        // 查找并惩罚指定心兽：仅在队伍中存在时生效（扣除最大生命值上限30%）
-        if (penalizedSpirit != null)
+        // 查找并惩罚指定心兽（当前上场的）
+        if (penalizedSpirit != null && battleModel.PlayerUnit is Spirit currentSpiritForPenalty)
         {
-            foreach (var unit in units)
+            if (currentSpiritForPenalty.Data == penalizedSpirit)
             {
-                // 只针对 Spirit 类型进行匹配
-                if (unit is Spirit s && s.Data == penalizedSpirit)
-                {
-                    // 通过设置负向最大生命值加成来降低上限
-                    s.SetMaxHpBonusPercent(-Mathf.Abs(penalizePercent));
-                    Debug.Log($"HealAllBuff: 特定心兽 {s.DisplayName} 最大生命值上限降低 {penalizePercent * 100}% ，当前上限 {s.MaxHP}");
-                }
+                // 通过设置负向最大生命值加成来降低上限
+                currentSpiritForPenalty.SetMaxHpBonusPercent(-Mathf.Abs(penalizePercent));
+                Debug.Log($"[HealAllBuff] 特定心兽 {currentSpiritForPenalty.DisplayName} 最大生命值上限降低 {penalizePercent * 100}% ，当前上限 {currentSpiritForPenalty.MaxHP}");
             }
         }
 
         HasTriggered = true;
+        Debug.Log($"[HealAllBuff] OnApplied finished");
     }
 }

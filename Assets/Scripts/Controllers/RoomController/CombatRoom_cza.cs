@@ -134,6 +134,17 @@ namespace DreamWeavers.Rooms
         {
             return enemyPool;
         }
+        public void SetEnemyPool(EnemyPool newPool)
+        {
+            if (newPool == null)
+            {
+                Debug.LogWarning("[CombatRoom] SetEnemyPool: newPool is null; ignoring.");
+                return;
+            }
+
+            enemyPool = newPool;
+            Debug.Log("[CombatRoom] EnemyPool switched -> " + (string.IsNullOrEmpty(enemyPool.DisplayName) ? enemyPool.name : enemyPool.DisplayName));
+        }
 
         /// <summary>
         /// 从对象池随机选择敌人和对应精灵
@@ -509,14 +520,35 @@ namespace DreamWeavers.Rooms
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(playerData);
 #endif
-            Debug.Log($"[CombatRoom] 掉落已立即写入玩家已有道具: {item.DisplayName} x{Mathf.Max(1, quantity)}");
+            Debug.Log($"[CombatRoom] 掉落已写入玩家数据: {item.DisplayName} x{Mathf.Max(1, quantity)}");
+        }
+
+        private bool TryAddDropToInventoryImmediately(ItemData item, int quantity)
+        {
+            var inv = InventoryManager.Instance;
+            if (inv == null)
+            {
+                Debug.LogWarning("[CombatRoom] 未找到 InventoryManager.Instance，掉落暂未加入背包");
+                return false;
+            }
+
+            bool ok = inv.AddItem(item, quantity);
+            if (!ok)
+            {
+                Debug.LogWarning("[CombatRoom] 掉落加入背包失败（可能背包已满），将在离开房间时重试");
+            }
+            else
+            {
+                Debug.Log($"[CombatRoom] 掉落已立即加入背包: {item.DisplayName} x{quantity}");
+            }
+            return ok;
         }
 
         private void SpawnDropPickupVisual()
         {
             if (pickupPrefab == null || pendingDropItem == null)
             {
-                Debug.Log("[CombatRoom] SpawnDropPickupVisual skipped: pickupPrefab或掉落道具未配置");
+                Debug.Log("[CombatRoom] SpawnDropPickupVisual skipped: pickupPrefab或掉落数据未设置");
                 return;
             }
 
@@ -597,12 +629,20 @@ namespace DreamWeavers.Rooms
 
         private void GrantPendingDrop()
         {
-            if (pendingDropItem == null || pendingDropGranted)
+            if (pendingDropItem == null)
             {
                 // 如果道具已添加到背包，仍需清理展示与引用
                 pendingDropItem = null;
                 pendingDropQuantity = 0;
                 pendingDropGranted = false;
+                DestroyDropPickupInstance();
+                return;
+            }
+
+            if (pendingDropGranted)
+            {
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
                 DestroyDropPickupInstance();
                 return;
             }
@@ -683,10 +723,18 @@ namespace DreamWeavers.Rooms
             }
 
             var sm = RoomStateMachine_cza.Instance;
-            if (sm != null && subscribedRoomCompleted)
+            if (sm != null)
             {
-                sm.OnRoomCompleted -= HandleRoomCompleted;
-                subscribedRoomCompleted = false;
+                if (subscribedRoomCompleted)
+                {
+                    sm.OnRoomCompleted -= HandleRoomCompleted;
+                    subscribedRoomCompleted = false;
+                }
+                if (subscribedBranchChoices)
+                {
+                    sm.OnBranchChoicesUpdated -= HandleBranchChoicesUpdated;
+                    subscribedBranchChoices = false;
+                }
             }
             if (sm != null && subscribedBranchChoices)
             {

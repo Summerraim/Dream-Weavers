@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: 36eca8848b3a1314cba028d1e6e00614
   - enabled: 1
+    path: Assets/Scenes/wanyun.unity
+    guid: ba66902541c1ed74f8b6734704d7dca7
+  - enabled: 0
     path: Assets/Scenes/StartScenetest.unity
     guid: 733f29b46501a79448e3f3c32be07d83
   - enabled: 0
