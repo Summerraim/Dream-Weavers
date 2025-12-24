@@ -2619,6 +2619,37 @@ PrefabInstance:
       addedObject: {fileID: 2004765750}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6487076af566e7443950623585036548, type: 3}
+--- !u!1 &259264740
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 259264741}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &259264741
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 259264740}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 205.14215, y: 114.127045, z: -99.822914}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &272602791
 GameObject:
   m_ObjectHideFlags: 0
@@ -5834,9 +5865,7 @@ MonoBehaviour:
   - type: 3
     panelName: EventsPanel
   - type: 4
-    panelName: CombatPanel
-  - type: 4
-    panelName: CombatPanel
+    panelName: SkillPanel
   choosePanelName: Panel_Routes
   chooseRoot: {fileID: 0}
   usePrefabOnlyForChoices: 1
@@ -9183,7 +9212,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spiritPanel: {fileID: 1288890094}
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
 --- !u!114 &1084009555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9580,7 +9609,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b474fe37b3e4a1a4cb8fe65122af109b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
 --- !u!1 &1208411889
 GameObject:
   m_ObjectHideFlags: 0
@@ -10572,7 +10601,7 @@ MonoBehaviour:
   enemyPool: {fileID: 11400000, guid: db6fd1abc6b18a149b2c46c2a1466caf, type: 2}
   useWeightedRandom: 0
   itemPool: {fileID: 11400000, guid: f61e1fa6c79feeb4e89a87bb59312eb3, type: 2}
-  spawnPoint: {fileID: 0}
+  spawnPoint: {fileID: 259264741}
   dropQuantity: 1
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
@@ -10591,7 +10620,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RoomID: 
-  Type: 4
+  Type: 3
   floor1BossData: {fileID: 11400000, guid: d84f2f69082ee2b4aa8d0adeb3031706, type: 2}
   floor2BossData: {fileID: 11400000, guid: 00681de8ab311b846bfbf163f9655b08, type: 2}
   floor3BossData: {fileID: 11400000, guid: c1a049471044216419ddcdfdab6cb2f1, type: 2}
@@ -10600,7 +10629,7 @@ MonoBehaviour:
   floor2SpiritData: {fileID: 11400000, guid: 3116b20114e32af4aaa45e6d5572b41a, type: 2}
   floor3SpiritData: {fileID: 11400000, guid: 0fcefb66face54842bdc5eb4095ee519, type: 2}
   floor4SpiritData: {fileID: 0}
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
   itemPool: {fileID: 0}
   spawnPoint: {fileID: 0}
   dropQuantity: 1
@@ -11095,8 +11124,8 @@ MonoBehaviour:
   itemPool: {fileID: 11400000, guid: f61e1fa6c79feeb4e89a87bb59312eb3, type: 2}
   useWeightedRandom: 0
   quantity: 1
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
-  spawnPoint: {fileID: 0}
+  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
+  spawnPoint: {fileID: 259264741}
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
   autoGrantOnEnter: 0
@@ -13866,10 +13895,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RoomID: 
-  Type: 5
+  Type: 4
   skillPool: {fileID: 11400000, guid: e26cf380e162ffb448114776a5db5fe3, type: 2}
   useWeightedRandom: 0
-  playerData: {fileID: 11400000, guid: 87b8e12a4379a7442b3bbd3069304db6, type: 2}
+  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
   spawnPoint: {fileID: 0}
   skillDisplayPrefab: {fileID: 0}
   getSkillButton: {fileID: 378054474}
@@ -14991,8 +15020,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 3.8, y: -16}
-  m_SizeDelta: {x: 107.5, y: 21.3}
+  m_AnchoredPosition: {x: 49, y: -0.8}
+  m_SizeDelta: {x: 147.26, y: 18.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1970670679
 MonoBehaviour:
@@ -15042,8 +15071,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 22
-  m_fontSizeBase: 22
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -15078,7 +15107,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0.4000368, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -16289,3 +16318,4 @@ SceneRoots:
   - {fileID: 1159765905}
   - {fileID: 1183017441}
   - {fileID: 1999060658}
+  - {fileID: 259264741}
