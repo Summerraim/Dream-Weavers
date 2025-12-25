@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DreamWeavers.Rooms;
 
 public class MapManager_cza : MonoBehaviour
 {
@@ -9,8 +10,12 @@ public class MapManager_cza : MonoBehaviour
     [Header("Combat EnemyPools (floors 1-4)")]
     [Tooltip("Switches CombatRoom.enemyPool based on the current floor. Index 0 => floor 1.")]
     [SerializeField] private EnemyPool[] combatEnemyPoolsByFloor = new EnemyPool[4];
+    [Header("Guide Room (optional)")]
+    [Tooltip("若配置则在进入第一层前先进入新手引导房")]
+    [SerializeField] private GuideRoom_cza guideRoom;
     // [SerializeField] private Text roomInfoText;
     private bool subscribed;
+    private static bool guideCompletedOnce;
 
     private IEnumerator Start()
     {
@@ -37,6 +42,15 @@ public class MapManager_cza : MonoBehaviour
             RoomStateMachine_cza.Instance.OnRoomEntered += OnRoomEntered;
             RoomStateMachine_cza.Instance.OnFloorPreparing += OnFloorPreparing;
             subscribed = true;
+        }
+
+        // 先进入新手引导房（仅首层且未完成过）
+        if (!guideCompletedOnce && startFloor == 1 && guideRoom != null)
+        {
+            bool guideDone = false;
+            guideRoom.StartGuide(() => guideDone = true);
+            yield return new WaitUntil(() => guideDone);
+            guideCompletedOnce = true;
         }
 
         if (RoomStateMachine_cza.Instance.CurrentMap == null)
