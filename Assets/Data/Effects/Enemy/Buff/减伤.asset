@@ -16,5 +16,5 @@ MonoBehaviour:
   description: 
   image: {fileID: 21300000, guid: 51fbc81600c90bd4e83de612f9c8afe1, type: 3}
   damageReduction: 0.2
-  duration: 3
+  duration: 2
   applyToCaster: 1
