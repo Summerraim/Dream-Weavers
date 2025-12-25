@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  initHealing: 10
+  initHealing: 15
   percentMaxHP: 0
   applyToCaster: 1

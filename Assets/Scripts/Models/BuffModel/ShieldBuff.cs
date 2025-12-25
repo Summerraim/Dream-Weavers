@@ -8,6 +8,9 @@ public class ShieldBuff : Buff
     public override string DisplayName => "护盾";
     public override string Description => "吸收一定伤害";
 
+    // 护盾不在UI中显示
+    public override bool ShowInUI => false;
+
     private int shieldAmount;
     private int maxShieldAmount; // 记录初始最大护盾值
 

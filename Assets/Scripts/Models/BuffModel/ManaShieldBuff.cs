@@ -11,6 +11,9 @@ public class ManaShieldBuff : Buff
     public override string DisplayName => "能量护甲";
     public override string Description => $"吸收{(absorptionPercent * 100):F0}%伤害转化为魔法消耗";
 
+    // 护盾不在UI中显示
+    public override bool ShowInUI => false;
+
     /// <summary>
     /// 创建能量护甲Buff
     /// </summary>

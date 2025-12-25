@@ -247,7 +247,6 @@ public class BattleController : MonoBehaviour
         // 设置Buff系统的静态引用
         Strengthen.CurrentBattle = model;
         ToughSkin.CurrentBattle = model;
-        ManaRegeneration.CurrentBattle = model;
         HealthRegeneration.CurrentBattle = model;
         Vampiric.CurrentBattle = model;
         Thorns.CurrentBattle = model;
