@@ -104,4 +104,9 @@ public class Enemy : IBattleUnit
     {
         Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
     }
+
+    public void ReceiveMana(int amount)
+    {
+        Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
+    }
 }
