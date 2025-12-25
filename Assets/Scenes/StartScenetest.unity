@@ -380,8 +380,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 62
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 120.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2790,37 +2790,6 @@ PrefabInstance:
       addedObject: {fileID: 2004765750}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6487076af566e7443950623585036548, type: 3}
---- !u!1 &259264740
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 259264741}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &259264741
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259264740}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 205.14215, y: 114.127045, z: -99.822914}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &272602791
 GameObject:
   m_ObjectHideFlags: 0
@@ -4150,7 +4119,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 2.028305, y: -86.250015}
+  m_AnchoredPosition: {x: 4.7, y: -86.250015}
   m_SizeDelta: {x: -4.0565, y: -172.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &407618979
@@ -10099,8 +10068,8 @@ Transform:
   - {fileID: 913153654}
   - {fileID: 1084009553}
   - {fileID: 1896369820}
-  - {fileID: 1657717815}
   - {fileID: 1195827164}
+  - {fileID: 2075337098}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1167192263
@@ -11268,7 +11237,7 @@ MonoBehaviour:
   enemyPool: {fileID: 11400000, guid: db6fd1abc6b18a149b2c46c2a1466caf, type: 2}
   useWeightedRandom: 0
   itemPool: {fileID: 11400000, guid: f61e1fa6c79feeb4e89a87bb59312eb3, type: 2}
-  spawnPoint: {fileID: 259264741}
+  spawnPoint: {fileID: 0}
   dropQuantity: 1
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
@@ -11780,7 +11749,7 @@ MonoBehaviour:
   useWeightedRandom: 0
   quantity: 1
   playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
-  spawnPoint: {fileID: 259264741}
+  spawnPoint: {fileID: 0}
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
   autoGrantOnEnter: 0
@@ -13964,84 +13933,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1648144804}
   m_CullTransparentMesh: 1
---- !u!1 &1657717813
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1657717815}
-  - component: {fileID: 1657717814}
-  m_Layer: 0
-  m_Name: AudioController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &1657717814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1657717813}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dd71d7ddd128914bb0e30d2c9c5c87a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioMixer: {fileID: 24100000, guid: c1fc41f95eacae84fb481d48181544fd, type: 2}
-  masterVolumeParam: MasterVolume
-  bgmVolumeParam: BGMVolume
-  sfxVolumeParam: SFXVolume
-  uiVolumeParam: UIVolume
-  bgmSource: {fileID: 0}
-  bgmCrossfadeSource: {fileID: 0}
-  crossfadeDuration: 1.5
-  sfxPoolSize: 20
-  sfxPrefab: {fileID: 0}
-  sfxPoolParent: {fileID: 0}
-  uiSfxSource: {fileID: 0}
-  defaultBGM: {fileID: 8300000, guid: 25308605164211f43a00c5b5cffb0cd0, type: 3}
-  menuBGM: {fileID: 0}
-  gameplayBGM: {fileID: 0}
-  battleBGM: {fileID: 8300000, guid: 13600e9a8d9b5e74194560b0cbf718dd, type: 3}
-  level1BGM: {fileID: 8300000, guid: ec2c4b91518786644be0ca5e5fcd8522, type: 3}
-  level2BGM: {fileID: 8300000, guid: 2d0fb056c942aeb4e9a4d64e61bd31a2, type: 3}
-  level3BGM: {fileID: 8300000, guid: fd3aa5304d13bf04f872bb467dbd4b4d, type: 3}
-  level4BGM: {fileID: 8300000, guid: 45fe740c565a9ba45bb369e079667bfe, type: 3}
-  enableSceneMusicAutoSwitch: 1
-  buttonClickSFX: {fileID: 0}
-  buttonHoverSFX: {fileID: 0}
-  notificationSFX: {fileID: 0}
-  victorySFX: {fileID: 0}
-  defeatSFX: {fileID: 0}
-  levelUpSFX: {fileID: 0}
-  masterVolume: 1
-  bgmVolume: 1
-  sfxVolume: 1
-  uiVolume: 1
-  isMuted: 0
-  isPaused: 0
-  enableCrossfade: 1
---- !u!4 &1657717815
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1657717813}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1057.4402, y: 415.888, z: -3.781721}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1159765905}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1663317985
 GameObject:
   m_ObjectHideFlags: 0
@@ -17221,6 +17112,84 @@ MonoBehaviour:
   m_Spacing: {x: 2, y: 5}
   m_Constraint: 0
   m_ConstraintCount: 2
+--- !u!1 &2075337097
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2075337098}
+  - component: {fileID: 2075337099}
+  m_Layer: 0
+  m_Name: AudioController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2075337098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075337097}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1057.4402, y: 415.888, z: -3.781721}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1159765905}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2075337099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075337097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dd71d7ddd128914bb0e30d2c9c5c87a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioMixer: {fileID: 24100000, guid: c1fc41f95eacae84fb481d48181544fd, type: 2}
+  masterVolumeParam: MasterVolume
+  bgmVolumeParam: BGMVolume
+  sfxVolumeParam: SFXVolume
+  uiVolumeParam: UIVolume
+  bgmSource: {fileID: 0}
+  bgmCrossfadeSource: {fileID: 0}
+  crossfadeDuration: 1.5
+  sfxPoolSize: 20
+  sfxPrefab: {fileID: 0}
+  sfxPoolParent: {fileID: 0}
+  uiSfxSource: {fileID: 0}
+  defaultBGM: {fileID: 8300000, guid: 25308605164211f43a00c5b5cffb0cd0, type: 3}
+  menuBGM: {fileID: 0}
+  gameplayBGM: {fileID: 0}
+  battleBGM: {fileID: 8300000, guid: 13600e9a8d9b5e74194560b0cbf718dd, type: 3}
+  level1BGM: {fileID: 8300000, guid: ec2c4b91518786644be0ca5e5fcd8522, type: 3}
+  level2BGM: {fileID: 8300000, guid: 2d0fb056c942aeb4e9a4d64e61bd31a2, type: 3}
+  level3BGM: {fileID: 8300000, guid: fd3aa5304d13bf04f872bb467dbd4b4d, type: 3}
+  level4BGM: {fileID: 8300000, guid: 45fe740c565a9ba45bb369e079667bfe, type: 3}
+  enableSceneMusicAutoSwitch: 1
+  buttonClickSFX: {fileID: 0}
+  buttonHoverSFX: {fileID: 0}
+  notificationSFX: {fileID: 0}
+  victorySFX: {fileID: 0}
+  defeatSFX: {fileID: 0}
+  levelUpSFX: {fileID: 0}
+  masterVolume: 1
+  bgmVolume: 1
+  sfxVolume: 1
+  uiVolume: 1
+  isMuted: 0
+  isPaused: 0
+  enableCrossfade: 1
 --- !u!1 &2082164761
 GameObject:
   m_ObjectHideFlags: 0
@@ -17574,4 +17543,3 @@ SceneRoots:
   - {fileID: 1159765905}
   - {fileID: 1183017441}
   - {fileID: 1999060658}
-  - {fileID: 259264741}
