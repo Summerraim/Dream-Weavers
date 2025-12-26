@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
   m_Name: DialogData
   m_EditorClassIdentifier: 
-  dialogueId: 1
+  dialogueId: First Dialog
   dialogueEntries:
   - speakerName: "\u7D22\u62C9"
     dialogueText: "\u554A\uFF0C\u5934\u597D\u6655\uFF0C\u6211\u8FD9\u662F\u5728\u54EA\u91CC\uFF1F"
