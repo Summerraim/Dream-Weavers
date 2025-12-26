@@ -11,8 +11,8 @@ public class BlindDebuff : Buff
     public override string Description => $"技能有{(missChance * 100):F0}%概率失效";
     public override bool IsStackable => true; // 允许叠加持续时间
 
-    public BlindDebuff(IBattleUnit owner, int duration, float chance)
-        : base(owner, duration)
+    public BlindDebuff(IBattleUnit owner, int duration, float chance, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         missChance = Mathf.Clamp01(chance);
     }

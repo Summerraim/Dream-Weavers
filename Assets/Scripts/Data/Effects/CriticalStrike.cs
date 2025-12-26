@@ -19,15 +19,13 @@ public class CriticalStrike : Effect
     [SerializeField]
     private bool applyToCaster = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToCaster ? caster : target;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("CriticalStrike: No active battle model found");
             return;
@@ -38,8 +36,9 @@ public class CriticalStrike : Effect
             duration,
             damageBonus,
             critChance,
-            critMultiplier
+            critMultiplier,
+            this
         );
-        CurrentBattle.AddBuff(buff);
+        BattleModel.ActiveBattle.AddBuff(buff);
     }
 }

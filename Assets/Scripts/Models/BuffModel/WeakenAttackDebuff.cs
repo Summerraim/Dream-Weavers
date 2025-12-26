@@ -17,8 +17,8 @@ public class WeakenAttackDebuff : Buff
     /// <summary>
     /// 基于百分比的攻击降低
     /// </summary>
-    public WeakenAttackDebuff(IBattleUnit owner, int duration, float percent)
-        : base(owner, duration)
+    public WeakenAttackDebuff(IBattleUnit owner, int duration, float percent, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damageReduction = 0;
         damageReductionPercent = Mathf.Clamp01(percent);
@@ -27,8 +27,8 @@ public class WeakenAttackDebuff : Buff
     /// <summary>
     /// 基于固定值的攻击降低
     /// </summary>
-    public WeakenAttackDebuff(IBattleUnit owner, int duration, int reduction)
-        : base(owner, duration)
+    public WeakenAttackDebuff(IBattleUnit owner, int duration, int reduction, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         damageReduction = Mathf.Max(0, reduction);
         damageReductionPercent = 0f;

@@ -13,21 +13,19 @@ public class Curse : Effect
     [SerializeField]
     private bool applyToTarget = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToTarget ? target : caster;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("Curse: No active battle model found");
             return;
         }
 
-        var debuff = new CurseDebuff(receiver, duration, maxHPReduction);
-        CurrentBattle.AddBuff(debuff);
+        var debuff = new CurseDebuff(receiver, duration, maxHPReduction, this);
+        BattleModel.ActiveBattle.AddBuff(debuff);
     }
 }

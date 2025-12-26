@@ -19,15 +19,13 @@ public class WeakenAttack : Effect
     [SerializeField]
     private bool applyToTarget = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToTarget ? target : caster;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("WeakenAttack: No active battle model found");
             return;
@@ -36,13 +34,13 @@ public class WeakenAttack : Effect
         Buff debuff;
         if (usePercentReduction)
         {
-            debuff = new WeakenAttackDebuff(receiver, duration, reductionPercent);
+            debuff = new WeakenAttackDebuff(receiver, duration, reductionPercent, this);
         }
         else
         {
-            debuff = new WeakenAttackDebuff(receiver, duration, initReduction);
+            debuff = new WeakenAttackDebuff(receiver, duration, initReduction, this);
         }
 
-        CurrentBattle.AddBuff(debuff);
+        BattleModel.ActiveBattle.AddBuff(debuff);
     }
 }

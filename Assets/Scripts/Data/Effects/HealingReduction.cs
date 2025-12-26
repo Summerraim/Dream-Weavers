@@ -13,21 +13,19 @@ public class HealingReduction : Effect
     [SerializeField]
     private bool applyToTarget = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToTarget ? target : caster;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("HealingReduction: No active battle model found");
             return;
         }
 
-        var debuff = new HealingReductionDebuff(receiver, duration, reductionPercent);
-        CurrentBattle.AddBuff(debuff);
+        var debuff = new HealingReductionDebuff(receiver, duration, reductionPercent, this);
+        BattleModel.ActiveBattle.AddBuff(debuff);
     }
 }

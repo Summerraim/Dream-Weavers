@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
   m_Name: "\u7A81\u51FB"
   m_EditorClassIdentifier: 
-  displayNameOverride: "\u7A81\u51FB"
-  <Description>k__BackingField: "\u7A81\u51FB"
+  displayNameOverride: "\u8D1D\u58F3\u649E\u51FB "
+  <Description>k__BackingField: "\u9020\u6210\u57FA\u7840\u653B\u51FB\u4F24\u5BB3"
   <Mana>k__BackingField: 0
   <CooldownTurns>k__BackingField: 1
   <MaxUsesPerBattle>k__BackingField: 0
