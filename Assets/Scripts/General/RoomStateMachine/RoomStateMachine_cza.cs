@@ -379,6 +379,25 @@ public class RoomStateMachine_cza : MonoBehaviour
     {
         Debug.Log($"[RoomState] HandleRoomEnter: 房间类型={room.Type}");
         
+        // 触发房间进入对话
+        try
+        {
+            var roomManager = RoomManager.Instance;
+            if (roomManager != null)
+            {
+                Debug.Log($"[RoomState] 触发房间进入对话: 房间ID={room.Id}, 类型={room.Type}");
+                roomManager.EnterRoom(room.Id);
+            }
+            else
+            {
+                Debug.LogWarning("[RoomState] RoomManager实例未找到，无法触发房间对话");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[RoomState] 触发房间对话时发生错误: {ex.Message}");
+        }
+        
         switch (room.Type)
         {
             case RoomType_cza.Combat:

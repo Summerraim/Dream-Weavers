@@ -29,17 +29,41 @@ public class DialogController : MonoBehaviour
 
     private void Start()
     {
+        LogDebug("DialogController Start方法开始执行");
+        
         // 如果没有UI引用，尝试查找
         if (dialogView == null)
         {
+            LogDebug("dialogView引用为空，尝试查找UI_DialogView...");
             dialogView = FindObjectOfType<UI_DialogView>();
+            
+            if (dialogView == null)
+            {
+                LogDebug("无法找到UI_DialogView组件！请确保UI_DialogView已添加到场景中。");
+                LogDebug("对话系统需要UI_DialogView组件才能正常工作");
+            }
+            else
+            {
+                LogDebug("成功找到UI_DialogView组件");
+            }
+        }
+        else
+        {
+            LogDebug("dialogView引用已设置");
         }
         
         // 订阅UI事件
         if (dialogView != null)
         {
             dialogView.OnDialogContinue += OnContinueDialogue;
+            LogDebug("已订阅UI_DialogView的OnDialogContinue事件");
         }
+        else
+        {
+            LogDebug("无法订阅UI事件，dialogView为空");
+        }
+        
+        LogDebug("DialogController初始化完成");
     }
 
     private void OnDestroy()
@@ -53,21 +77,7 @@ public class DialogController : MonoBehaviour
 
     private void Update()
     {
-        // 快捷键支持：按T键开始测试对话
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            StartTestDialogue();
-        }
-        
-        // 快捷键支持：按E键结束当前对话
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            if (isDialogueActive)
-            {
-                EndDialogue();
-                LogDebug("手动结束对话");
-            }
-        }
+        // 按键触发功能已移除，对话现在通过房间进入自动触发
     }
 
     #endregion
@@ -277,16 +287,77 @@ public class DialogController : MonoBehaviour
     [ContextMenu("开始测试对话")]
     public void StartTestDialogue()
     {
+        LogDebug("开始执行测试对话");
+        
+        // 检查UI组件
+        if (dialogView == null)
+        {
+            dialogView = FindObjectOfType<UI_DialogView>();
+            if (dialogView == null)
+            {
+                LogDebug("错误：无法找到UI_DialogView组件！");
+                Debug.LogError("DialogController: 无法找到UI_DialogView组件，请确保场景中有UI_DialogView组件");
+                return;
+            }
+        }
+        
+        // 获取测试对话数据
         DialogueData testDialogue = GetDialogueDataForTest();
         
         if (testDialogue == null)
         {
-            LogDebug("无法获取有效的对话数据");
+            LogDebug("错误：无法获取有效的对话数据");
+            Debug.LogError("DialogController: 无法获取测试对话数据");
             return;
         }
         
+        LogDebug($"准备开始测试对话: {testDialogue.dialogueId}");
         StartDialogue(testDialogue);
         LogDebug("测试对话已开始");
+    }
+
+    /// <summary>
+    /// 测试对话系统是否正常工作
+    /// </summary>
+    [ContextMenu("测试对话系统")]
+    public void TestDialogueSystem()
+    {
+        LogDebug("开始测试对话系统");
+        
+        // 检查UI组件
+        if (dialogView == null)
+        {
+            dialogView = FindObjectOfType<UI_DialogView>();
+            if (dialogView == null)
+            {
+                Debug.LogError("DialogController: 测试失败 - 无法找到UI_DialogView组件");
+                return;
+            }
+        }
+        
+        // 创建简单的测试对话
+        DialogueData testDialogue = ScriptableObject.CreateInstance<DialogueData>();
+        testDialogue.dialogueId = "Test_Dialogue";
+        testDialogue.dialogueEntries = new DialogueEntry[]
+        {
+            new DialogueEntry
+            {
+                speakerName = "系统",
+                dialogueText = "这是一个测试对话",
+                portrait = null,
+                portraitPosition = UI_DialogView.PortraitPosition.None
+            },
+            new DialogueEntry
+            {
+                speakerName = "测试员",
+                dialogueText = "如果看到这个对话，说明系统基本工作正常",
+                portrait = null,
+                portraitPosition = UI_DialogView.PortraitPosition.Left
+            }
+        };
+        
+        LogDebug("开始测试对话");
+        StartDialogue(testDialogue);
     }
 
     /// <summary>
