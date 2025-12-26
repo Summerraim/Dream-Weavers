@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DreamWeavers.Services;
 
 /// <summary>
 /// 房间管理器
@@ -48,6 +49,7 @@ public class RoomManager : MonoBehaviour
     
     private FloorMap_cza currentFloorMap;                    // 当前楼层地图
     private bool hasTriggeredFloorDialogue = false;          // 是否已触发当前楼层对话
+    private DialogControllerService dialogService;           // DialogControllerService引用
     
     #endregion
     
@@ -83,6 +85,17 @@ public class RoomManager : MonoBehaviour
         currentFloor = 1;
         currentRoomId = 1;
         hasTriggeredFloorDialogue = false;
+        
+        // 获取DialogControllerService实例
+        dialogService = DialogControllerService.Instance;
+        if (dialogService != null)
+        {
+            Debug.Log("DialogControllerService 初始化成功");
+        }
+        else
+        {
+            Debug.LogWarning("DialogControllerService 初始化失败，对话功能可能无法正常工作");
+        }
         
         // 生成初始楼层地图
         GenerateFloorMap(currentFloor);
@@ -147,8 +160,19 @@ public class RoomManager : MonoBehaviour
         }
         
         string dialogueId = $"Floor_{currentFloor}_Enter";
-        Debug.Log($"RoomManager: 加载对话数据: {dialogueId}");
-        DialogueData dialogueData = LoadDialogueData(dialogueId);
+        Debug.Log($"RoomManager: 使用DialogControllerService加载对话数据: {dialogueId}");
+        
+        // 使用DialogControllerService获取对话数据
+        DialogueData dialogueData = null;
+        if (dialogService != null)
+        {
+            dialogueData = dialogService.GetDialogueData(dialogueId);
+        }
+        else
+        {
+            Debug.LogWarning("DialogControllerService未初始化，使用备用方法加载对话数据");
+            dialogueData = LoadDialogueData(dialogueId);
+        }
         
         if (dialogueData != null)
         {
@@ -225,27 +249,50 @@ public class RoomManager : MonoBehaviour
     /// </summary>
     private void TriggerRoomEnterDialogue(RoomType_cza roomType)
     {
-        if (!enableRoomDialogue) return;
+        Debug.Log($"RoomManager: TriggerRoomEnterDialogue开始执行，房间类型: {roomType}, enableRoomDialogue: {enableRoomDialogue}");
         
-        string dialogueId = GetRoomDialogueId(roomType);
-        DialogueData dialogueData = LoadDialogueData(dialogueId);
+        if (!enableRoomDialogue) 
+        {
+            Debug.Log("RoomManager: 房间对话已禁用，跳过触发");
+            return;
+        }
+        
+        Debug.Log($"RoomManager: 触发房间进入对话，房间类型: {roomType}");
+        
+        // 使用DialogControllerService获取对话数据
+        DialogueData dialogueData = null;
+        if (dialogService != null)
+        {
+            Debug.Log("RoomManager: 使用DialogControllerService获取对话数据");
+            dialogueData = dialogService.GetDialogueForRoom(roomType);
+        }
+        else
+        {
+            Debug.LogWarning("RoomManager: DialogControllerService未初始化，使用备用方法加载对话数据");
+            string dialogueId = GetRoomDialogueId(roomType);
+            Debug.Log($"RoomManager: 备用方法 - 对话ID: {dialogueId}");
+            dialogueData = LoadDialogueData(dialogueId);
+        }
         
         if (dialogueData != null)
         {
+            Debug.Log($"RoomManager: 对话数据加载成功: {dialogueData.dialogueId}");
             DialogController dialogController = FindObjectOfType<DialogController>();
             if (dialogController != null)
             {
+                Debug.Log($"RoomManager: 找到DialogController: {dialogController.gameObject.name}，开始对话");
                 dialogController.StartDialogue(dialogueData);
-                Debug.Log($"触发房间进入对话: {dialogueId}");
+                Debug.Log($"RoomManager: 触发房间进入对话完成: {dialogueData.dialogueId}");
             }
             else
             {
-                Debug.LogError("DialogController实例未找到！");
+                Debug.LogError("RoomManager: DialogController实例未找到！");
+                Debug.LogError("RoomManager: 请确保场景中有DialogController组件");
             }
         }
         else
         {
-            Debug.LogWarning($"未找到房间进入对话数据: {dialogueId}");
+            Debug.LogWarning($"RoomManager: 未找到房间类型 {roomType} 的对话数据");
         }
     }
     
