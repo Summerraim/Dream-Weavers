@@ -10,8 +10,8 @@ public class HealingReductionDebuff : Buff
     public override string DisplayName => "治疗抑制";
     public override string Description => $"受到的治疗效果降低{(reductionPercent * 100):F0}%";
 
-    public HealingReductionDebuff(IBattleUnit owner, int duration, float reduction)
-        : base(owner, duration)
+    public HealingReductionDebuff(IBattleUnit owner, int duration, float reduction, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         reductionPercent = Mathf.Clamp01(reduction);
     }

@@ -17,9 +17,10 @@ public class BurnDebuff : Buff
         int duration,
         int flatDamage,
         float percentDamage,
-        bool usePercentDamage
+        bool usePercentDamage,
+        Effect sourceEffect = null
     )
-        : base(owner, duration)
+        : base(owner, duration, sourceEffect)
     {
         damagePerTurn = flatDamage;
         damagePercent = percentDamage;

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u6C34\u6CE2"
   m_EditorClassIdentifier: 
   displayNameOverride: "\u6C34\u6CE2"
-  <Description>k__BackingField: "\u6C34\u51B2\u51FB"
+  <Description>k__BackingField: "\u6C34\u51B2\u51FB\u9020\u6210\u57FA\u7840\u653B\u51FB\u4F24\u5BB3"
   <Mana>k__BackingField: 0
   <CooldownTurns>k__BackingField: 1
   <MaxUsesPerBattle>k__BackingField: 0

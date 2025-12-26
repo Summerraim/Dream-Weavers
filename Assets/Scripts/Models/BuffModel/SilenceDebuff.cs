@@ -10,7 +10,8 @@ public class SilenceDebuff : Buff
 
     private float manaIncreaseMultiplier;
 
-    public SilenceDebuff(IBattleUnit owner, int duration, float increase) : base(owner, duration)
+    public SilenceDebuff(IBattleUnit owner, int duration, float increase, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         manaIncreaseMultiplier = Mathf.Max(0f, increase);
     }

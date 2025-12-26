@@ -12,18 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40e347803c34a9f4399f76e2ae5533ee, type: 3}
   m_Name: Summer
   m_EditorClassIdentifier: 
-  PlayerName: Player
+  PlayerName: Summer
   InitialItems: []
   initialOwnedSpirits:
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   initialDeployedSpirits:
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   OwnedSpirits:
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   DeployedSpirits:
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+  - {fileID: 11400000, guid: db2cc6c529f7b8c48a3443cf2d06e3c6, type: 2}
   MaxDeployedSpirits: 6

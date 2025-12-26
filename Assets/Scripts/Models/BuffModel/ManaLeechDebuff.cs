@@ -16,8 +16,8 @@ public class ManaLeechDebuff : Buff
     /// <summary>
     /// 基于百分比的魔法流失
     /// </summary>
-    public ManaLeechDebuff(IBattleUnit owner, int duration, float percent)
-        : base(owner, duration)
+    public ManaLeechDebuff(IBattleUnit owner, int duration, float percent, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatManaLoss = 0;
         percentManaLoss = Mathf.Clamp01(percent);
@@ -26,8 +26,8 @@ public class ManaLeechDebuff : Buff
     /// <summary>
     /// 基于固定值的魔法流失
     /// </summary>
-    public ManaLeechDebuff(IBattleUnit owner, int duration, int manaLoss)
-        : base(owner, duration)
+    public ManaLeechDebuff(IBattleUnit owner, int duration, int manaLoss, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         flatManaLoss = Mathf.Max(0, manaLoss);
         percentManaLoss = 0f;

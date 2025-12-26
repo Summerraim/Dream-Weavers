@@ -19,15 +19,13 @@ public class ManaLeech : Effect
     [SerializeField]
     private bool applyToTarget = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToTarget ? target : caster;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("ManaLeech: No active battle model found");
             return;
@@ -36,13 +34,13 @@ public class ManaLeech : Effect
         Buff debuff;
         if (usePercentLoss)
         {
-            debuff = new ManaLeechDebuff(receiver, duration, percentLoss);
+            debuff = new ManaLeechDebuff(receiver, duration, percentLoss, this);
         }
         else
         {
-            debuff = new ManaLeechDebuff(receiver, duration, flatLoss);
+            debuff = new ManaLeechDebuff(receiver, duration, flatLoss, this);
         }
 
-        CurrentBattle.AddBuff(debuff);
+        BattleModel.ActiveBattle.AddBuff(debuff);
     }
 }

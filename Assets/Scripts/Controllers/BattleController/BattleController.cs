@@ -254,20 +254,10 @@ public class BattleController : MonoBehaviour
         Invincibility.CurrentBattle = model;
         ManaShield.CurrentBattle = model;
         Shield.CurrentBattle = model;
-        CriticalStrike.CurrentBattle = model;
 
         // 设置Debuff系统的静态引用
-        WeakenAttack.CurrentBattle = model;
-        WeakenDefense.CurrentBattle = model;
         Weaken.CurrentBattle = model;
-        ManaLeech.CurrentBattle = model;
-        HealingReduction.CurrentBattle = model;
-        Vulnerability.CurrentBattle = model;
         Poison.CurrentBattle = model;
-        Burn.CurrentBattle = model;
-        Blind.CurrentBattle = model;
-        Silence.CurrentBattle = model;
-        Curse.CurrentBattle = model;
 
         // 设置ControlDebuff系统的静态引用
         Frozen.CurrentBattle = model;

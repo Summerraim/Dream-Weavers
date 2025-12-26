@@ -17,9 +17,10 @@ public class CriticalStrikeBuff : Buff
         int duration,
         float bonus,
         float chance,
-        float multiplier
+        float multiplier,
+        Effect sourceEffect = null
     )
-        : base(owner, duration)
+        : base(owner, duration, sourceEffect)
     {
         damageBonus = Mathf.Max(0f, bonus);
         critChance = Mathf.Clamp01(chance);

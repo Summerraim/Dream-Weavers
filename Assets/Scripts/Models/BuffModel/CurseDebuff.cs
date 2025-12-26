@@ -12,8 +12,8 @@ public class CurseDebuff : Buff
     private int originalMaxHP;
     private int reducedAmount;
 
-    public CurseDebuff(IBattleUnit owner, int duration, float reduction)
-        : base(owner, duration)
+    public CurseDebuff(IBattleUnit owner, int duration, float reduction, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         maxHPReduction = Mathf.Clamp01(reduction);
     }
