@@ -10,4 +10,5 @@ public enum RoomType_cza
     // Events,
     Boss,
     Skill,
+    Guide,
 }

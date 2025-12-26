@@ -104,29 +104,47 @@ namespace DreamWeavers.Rooms
 			EnterRoom();
 		}
 
-		public override void EnterRoom()
-		{
-			if (guideStarted)
+			public override void EnterRoom()
 			{
-				Debug.Log("[GuideRoom] 已经启动过引导，跳过重复进入");
-				return;
-			}
+				if (guideStarted)
+				{
+					Debug.Log("[GuideRoom] 已经启动过引导，跳过重复进入");
+					return;
+				}
 
-			guideStarted = true;
-			Debug.Log("[GuideRoom] 进入新手引导房间，等待玩家选择精灵");
+				guideStarted = true;
+				Debug.Log("[GuideRoom] 进入新手引导房间，等待玩家选择精灵");
 
-			if (selectionPanel != null)
-			{
-				selectionPanel.SetActive(true);
-			}
+				// 触发新手引导房间对话
+				try
+				{
+					var dialogService = DreamWeavers.Services.DialogControllerService.Instance;
+					if (dialogService != null)
+					{
+						dialogService.StartDialogueForRoomWithEnemy(RoomType_cza.Guide, null);
+					}
+					else
+					{
+						Debug.LogWarning("[GuideRoom] 无法找到DialogControllerService，跳过对话触发");
+					}
+				}
+				catch (Exception e)
+				{
+					Debug.LogWarning($"[GuideRoom] 触发对话时发生错误: {e.Message}");
+				}
 
-			// 如果没有UI按钮，默认选择第0个
-			if (option0Button == null && option1Button == null)
-			{
-				Debug.Log("[GuideRoom] 未绑定按钮，使用默认选项0");
-				SelectOption(0);
+				if (selectionPanel != null)
+				{
+					selectionPanel.SetActive(true);
+				}
+
+				// 如果没有UI按钮，默认选择第0个
+				if (option0Button == null && option1Button == null)
+				{
+					Debug.Log("[GuideRoom] 未绑定按钮，使用默认选项0");
+					SelectOption(0);
+				}
 			}
-		}
 
 		public override void ExitRoom()
 		{

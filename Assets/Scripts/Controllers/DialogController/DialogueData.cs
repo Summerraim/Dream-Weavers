@@ -20,4 +20,6 @@ public class DialogueData : ScriptableObject
 {
     public string dialogueId;                     // 对话ID
     public DialogueEntry[] dialogueEntries;       // 对话条目数组
+    public EnemyData associatedEnemy;             // 关联的敌人数据（可选，用于敌人特定对话）
+    public string enemyNameFilter;                // 敌人名称过滤器（可选，用于名称匹配）
 }
