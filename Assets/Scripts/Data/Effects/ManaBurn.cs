@@ -51,7 +51,17 @@ public class ManaBurn : Effect
         totalDamage = Mathf.Max(0, totalDamage);
         if (totalDamage > 0)
         {
+            // 记录目标受伤前的HP，用于计算实际伤害
+            int hpBefore = target.HP;
+
             target.ReceiveDamage(totalDamage);
+
+            // 计算实际造成的伤害并通知BattleModel
+            int actualDamage = hpBefore - target.HP;
+            if (caster != null && actualDamage > 0 && BattleModel.ActiveBattle != null)
+            {
+                BattleModel.ActiveBattle.NotifyDamageDealt(caster, actualDamage, target);
+            }
         }
     }
 }

@@ -10,6 +10,9 @@ public class BeginnerBuff : Buff
     public override string DisplayName => "初心者";
     public override string Description => "第一次技能释放不消耗MP且不进入冷却";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private bool hasUsedFirstSkill;
 
     public bool HasUsedFirstSkill => hasUsedFirstSkill;

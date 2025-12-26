@@ -29,6 +29,18 @@ public class Damage : Effect
         if (totalDamage == 0)
             return;
 
+        // 记录目标受伤前的HP，用于计算实际伤害
+        int hpBefore = target.HP;
+
         target.ReceiveDamage(totalDamage);
+
+        // 计算实际造成的伤害（可能被护盾、防御等减免）
+        int actualDamage = hpBefore - target.HP;
+
+        // 通知BattleModel，触发施法者的OnDamageDealt（如吸血）
+        if (caster != null && actualDamage > 0 && BattleModel.ActiveBattle != null)
+        {
+            BattleModel.ActiveBattle.NotifyDamageDealt(caster, actualDamage, target);
+        }
     }
 }

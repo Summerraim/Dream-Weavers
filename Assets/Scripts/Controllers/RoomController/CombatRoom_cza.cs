@@ -413,6 +413,7 @@ namespace DreamWeavers.Rooms
         {
             GrantPendingDrop();
             DestroyDropPickupInstance();
+
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
             if (playerData == null)
             {
@@ -609,6 +610,10 @@ namespace DreamWeavers.Rooms
         {
             if (pendingDropItem == null)
             {
+                // 如果道具已添加到背包，仍需清理展示与引用
+                pendingDropItem = null;
+                pendingDropQuantity = 0;
+                pendingDropGranted = false;
                 DestroyDropPickupInstance();
                 return;
             }
@@ -649,6 +654,7 @@ namespace DreamWeavers.Rooms
             }
 
             DestroyDropPickupInstance();
+            pendingDropGranted = false;
         }
 
         private void HandleRoomCompleted(RoomNode_cza node)
@@ -708,6 +714,11 @@ namespace DreamWeavers.Rooms
                     sm.OnBranchChoicesUpdated -= HandleBranchChoicesUpdated;
                     subscribedBranchChoices = false;
                 }
+            }
+            if (sm != null && subscribedBranchChoices)
+            {
+                sm.OnBranchChoicesUpdated -= HandleBranchChoicesUpdated;
+                subscribedBranchChoices = false;
             }
         }
 

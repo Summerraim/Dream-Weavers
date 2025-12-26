@@ -10,6 +10,9 @@ public class RageBuff : Buff
     public override string Description =>
         $"每层增加{damagePerStack}点攻击力。当前层数：{currentStacks}";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private int currentStacks;
     private int maxStacks;
     private int damagePerStack; // 每层怒意增加的攻击力

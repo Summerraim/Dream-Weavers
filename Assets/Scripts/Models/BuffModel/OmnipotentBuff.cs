@@ -9,6 +9,9 @@ public class OmnipotentBuff : Buff
     public override string Description =>
         $"每次死亡时回复{revivePercent * 100}%最大生命值和法力值（剩余{remainingRevives}次）";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float revivePercent;
     private int maxRevives;
     private int remainingRevives;

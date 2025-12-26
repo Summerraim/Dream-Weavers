@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Data/Effects/Base/Heal All (20%)")]
@@ -21,6 +22,21 @@ public class HealAll : Effect
 
     public static BattleModel CurrentBattle { get; set; }
 
+    /// <summary>
+    /// 桥接：获取所有部署的Spirit数据列表
+    /// </summary>
+    public static System.Func<List<SpiritData>> GetDeployedSpirits { get; set; }
+
+    /// <summary>
+    /// 桥接：获取指定索引Spirit的运行时数据
+    /// </summary>
+    public static System.Func<int, SpiritRuntimeData> GetSpiritRuntimeData { get; set; }
+
+    /// <summary>
+    /// 桥接：保存指定索引Spirit的运行时数据（用于治疗后更新）
+    /// </summary>
+    public static System.Action<int, int, int> SaveSpiritHP { get; set; } // index, currentHP, maxHP
+
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         if (CurrentBattle == null)
@@ -36,6 +52,9 @@ public class HealAll : Effect
             healPercent: healPercent,
             penalizedSpirit: penalizedSpirit,
             penalizePercent: penalizePercent,
+            getDeployedSpirits: GetDeployedSpirits,
+            getSpiritRuntimeData: GetSpiritRuntimeData,
+            saveSpiritHP: SaveSpiritHP,
             sourceEffect: this
         );
 

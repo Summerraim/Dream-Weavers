@@ -12,6 +12,9 @@ public class GladiatorBuff : Buff
             ? $"角斗模式激活！已连续登场{consecutiveTurns}回合"
             : $"连续登场{consecutiveTurns}/6回合";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private int consecutiveTurns; // 连续登场回合数
     private bool isGladiatorMode; // 是否已触发角斗模式
     private BattleModel battleModel;

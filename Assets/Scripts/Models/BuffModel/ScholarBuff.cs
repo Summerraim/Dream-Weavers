@@ -8,6 +8,9 @@ public class ScholarBuff : Buff
     public override string DisplayName => "学者";
     public override string Description => $"最大法力值+{manaBonus * 100}%";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float manaBonus;
     private int addedMana; // 记录增加的法力值
 

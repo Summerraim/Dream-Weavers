@@ -402,13 +402,36 @@ public class BattleModel
     }
 
     /// <summary>
-    /// 添加Buff到战斗中
+    /// 添加Buff到战斗中（支持叠加）
     /// </summary>
     public void AddBuff(Buff buff)
     {
         if (buff == null)
             return;
 
+        // 如果是可叠加的Buff，检查是否已存在同类型的Buff
+        if (buff.IsStackable && buff.Owner != null)
+        {
+            // 查找同一单位身上是否已有同类型的Buff
+            var existingBuff = activeBuffs.Find(b =>
+                b != null &&
+                b.Owner == buff.Owner &&
+                b.GetType() == buff.GetType() &&
+                b.IsStackable
+            );
+
+            if (existingBuff != null)
+            {
+                // 叠加持续时间
+                existingBuff.AddDuration(buff.RemainingTurns);
+                Debug.Log(
+                    $"[BattleModel] Buff {buff.DisplayName} 已存在，叠加持续时间 {buff.RemainingTurns} 回合 (总计: {existingBuff.RemainingTurns} 回合)"
+                );
+                return; // 不添加新的Buff，直接返回
+            }
+        }
+
+        // 添加新的Buff
         activeBuffs.Add(buff);
         buff.OnApplied();
         Debug.Log(
@@ -474,6 +497,24 @@ public class BattleModel
             if (i < activeBuffs.Count)
             {
                 activeBuffs[i].OnTurnEnd();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 通知某个单位造成了伤害，触发其所有Buff的OnDamageDealt
+    /// </summary>
+    public void NotifyDamageDealt(IBattleUnit dealer, int actualDamage, IBattleUnit target)
+    {
+        if (dealer == null || actualDamage <= 0)
+            return;
+
+        var dealerBuffs = GetBuffsForUnit(dealer);
+        foreach (var buff in dealerBuffs)
+        {
+            if (buff != null && !buff.IsExpired)
+            {
+                buff.OnDamageDealt(actualDamage, target);
             }
         }
     }

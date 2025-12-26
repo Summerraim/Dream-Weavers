@@ -10,6 +10,9 @@ public class PartyTimeBuff : Buff
     public override string DisplayName => "派对狂欢";
     public override string Description => $"释放技能时有{noCooldownChance * 100}%几率没有冷却回合";
 
+    // Synergy Buff不在UI中显示
+    public override bool ShowInUI => false;
+
     private float noCooldownChance;
 
     public float NoCooldownChance => noCooldownChance;

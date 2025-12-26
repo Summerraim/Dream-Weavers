@@ -49,23 +49,19 @@ public class ManaRegenerationBuff : Buff
 
         if (regenAmount > 0)
         {
-            // 需要通过某种方式恢复法力值
-            // 注意：IBattleUnit 接口没有恢复法力值的方法，需要检查实际类型
+            // 恢复法力值
             if (Owner is Spirit spirit)
             {
-                int currentMana = spirit.Mana;
-                int newMana = Mathf.Min(spirit.MaxMana, currentMana + regenAmount);
-                // 这里需要一个方法来设置法力值
+                spirit.ReceiveMana(regenAmount);
                 Debug.Log(
-                    $"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)"
+                    $"{Owner.DisplayName} regenerated {regenAmount} mana ({spirit.Mana}/{spirit.MaxMana})"
                 );
             }
             else if (Owner is Enemy enemy)
             {
-                int currentMana = enemy.Mana;
-                int newMana = Mathf.Min(enemy.MaxMana, currentMana + regenAmount);
+                enemy.ReceiveMana(regenAmount);
                 Debug.Log(
-                    $"{Owner.DisplayName} regenerated {regenAmount} mana (实际恢复需要添加方法)"
+                    $"{Owner.DisplayName} regenerated {regenAmount} mana ({enemy.Mana}/{enemy.MaxMana})"
                 );
             }
         }

@@ -28,6 +28,12 @@ public class SpiritDeployedSlot : MonoBehaviour
     private SpiritData spiritData;
     private System.Action<int> onClickCallback;
 
+    // 运行时数据
+    private int currentHP;
+    private int maxHP;
+    private int currentMP;
+    private int maxMP;
+
     private void Awake()
     {
         button = GetComponent<Button>();
@@ -60,6 +66,15 @@ public class SpiritDeployedSlot : MonoBehaviour
         spiritData = data;
         onClickCallback = onClick;
 
+        // 初始化运行时数据为最大值
+        if (spiritData != null)
+        {
+            currentHP = spiritData.MaxHP;
+            maxHP = spiritData.MaxHP;
+            currentMP = spiritData.MaxMana;
+            maxMP = spiritData.MaxMana;
+        }
+
         // 确保Button组件正确配置
         EnsureButtonSetup();
 
@@ -75,6 +90,18 @@ public class SpiritDeployedSlot : MonoBehaviour
             selectedIndicator.SetActive(false);
 
         // 更新显示
+        UpdateDisplay();
+    }
+
+    /// <summary>
+    /// 更新运行时数据（HP/MP）
+    /// </summary>
+    public void UpdateRuntimeData(int currentHp, int maxHp, int currentMp, int maxMp)
+    {
+        currentHP = currentHp;
+        maxHP = maxHp;
+        currentMP = currentMp;
+        maxMP = maxMp;
         UpdateDisplay();
     }
 
@@ -128,7 +155,7 @@ public class SpiritDeployedSlot : MonoBehaviour
             if (statsText != null)
             {
                 statsText.enabled = true;
-                statsText.text = $"HP:{spiritData.MaxHP} MP:{spiritData.MaxMana}\nATK:{spiritData.Damage} DEF:{spiritData.Defense}";
+                statsText.text = $"HP: {currentHP}/{maxHP}\nMP: {currentMP}/{maxMP}";
             }
 
             if (background != null)

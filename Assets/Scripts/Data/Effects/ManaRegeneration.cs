@@ -13,21 +13,19 @@ public class ManaRegeneration : Effect
     [SerializeField]
     private bool applyToCaster = true;
 
-    public static BattleModel CurrentBattle { get; set; }
-
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         IBattleUnit receiver = applyToCaster ? caster : target;
         if (receiver == null)
             return;
 
-        if (CurrentBattle == null)
+        if (BattleModel.ActiveBattle == null)
         {
             Debug.LogWarning("ApplyManaRegenerationBuff: No active battle model found");
             return;
         }
 
         var buff = new ManaRegenerationBuff(receiver, duration, percentRegeneration, this);
-        CurrentBattle.AddBuff(buff);
+        BattleModel.ActiveBattle.AddBuff(buff);
     }
 }
