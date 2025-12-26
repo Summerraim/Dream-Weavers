@@ -26,3 +26,5 @@ MonoBehaviour:
     dialogueText: "\u51FB\u8D25\u5B83\uFF0C\u6211\u4EEC\u5C31\u53EF\u4EE5\u524D\u5F80\u4E0B\u4E00\u4E2A\u533A\u57DF\uFF01"
     portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 0
+  associatedEnemy: {fileID: 11400000, guid: d84f2f69082ee2b4aa8d0adeb3031706, type: 2}
+  enemyNameFilter: "\u68EE\u6797\u8725"
