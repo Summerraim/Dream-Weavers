@@ -202,6 +202,26 @@ namespace DreamWeavers.Rooms
 			chosenSpiritPending = chosenSpirit;
 			enemyPending = enemyData;
 
+			// 先将两个按钮都恢复为可交互状态
+			if (option0Button != null)
+			{
+				option0Button.interactable = true;
+			}
+			if (option1Button != null)
+			{
+				option1Button.interactable = true;
+			}
+
+			// 只将被点击的按钮设置为灰色（不可交互），让玩家知道选择了哪个
+			if (index == 0 && option0Button != null)
+			{
+				option0Button.interactable = false;
+			}
+			else if (index == 1 && option1Button != null)
+			{
+				option1Button.interactable = false;
+			}
+
 			bool deferStart = confirmButton != null || selectionPanel != null;
 			if (deferStart)
 			{
