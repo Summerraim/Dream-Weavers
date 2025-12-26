@@ -19,7 +19,7 @@ namespace DreamWeavers.Services
             new RoomDialogueMapping { roomType = RoomType_cza.Combat, dialogueId = "Room_Combat_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Rest, dialogueId = "Room_Rest_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Props, dialogueId = "Room_Props_Enter" },
-            new RoomDialogueMapping { roomType = RoomType_cza.Events, dialogueId = "Room_Events_Enter" },
+            // new RoomDialogueMapping { roomType = RoomType_cza.Events, dialogueId = "Room_Events_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Boss, dialogueId = "Room_Boss_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Skill, dialogueId = "Room_Skill_Enter" }
         };

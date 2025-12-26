@@ -1748,8 +1748,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   enemyMappings:
-  - {fileID: 11400000, guid: ddb74fb08a062f945a60893798efd3f8, type: 2}
-  - {fileID: 11400000, guid: 00681de8ab311b846bfbf163f9655b08, type: 2}
+  - {fileID: 11400000, guid: 1baf3882d0d22ae44808b35c926ed619, type: 2}
+  - {fileID: 11400000, guid: a8d2de91940e66d4195fdf34ede06128, type: 2}
   option0Button: {fileID: 1413285501}
   option1Button: {fileID: 960141414}
   selectionPanel: {fileID: 1079753791}
