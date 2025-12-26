@@ -271,6 +271,9 @@ public class BattleController : MonoBehaviour
         Cleanse.CurrentBattle = model;
         Dispel.CurrentBattle = model;
 
+        // 设置进化效果的静态引用
+        Evolution.CurrentBattle = model;
+
         // 设置道具效果的静态引用
         HealAll.CurrentBattle = model;
 
