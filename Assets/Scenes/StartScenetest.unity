@@ -8509,6 +8509,10 @@ MonoBehaviour:
     spiritData: {fileID: 0}
     quantity: 0
     slotIndex: 0
+  - data: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
+    spiritData: {fileID: 0}
+    quantity: 0
+    slotIndex: 0
 --- !u!1 &922862476
 GameObject:
   m_ObjectHideFlags: 0
@@ -11198,6 +11202,37 @@ MonoBehaviour:
     type: 3}
   emptyStatePanel: {fileID: 0}
   emptyStateText: {fileID: 0}
+--- !u!1 &1293764796
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1293764797}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1293764797
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1293764796}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 203.7, y: 100.3, z: -2.0146763}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1296844521
 GameObject:
   m_ObjectHideFlags: 0
@@ -11387,7 +11422,7 @@ MonoBehaviour:
   enemyPool: {fileID: 11400000, guid: db6fd1abc6b18a149b2c46c2a1466caf, type: 2}
   useWeightedRandom: 0
   itemPool: {fileID: 11400000, guid: f61e1fa6c79feeb4e89a87bb59312eb3, type: 2}
-  spawnPoint: {fileID: 0}
+  spawnPoint: {fileID: 1293764797}
   dropQuantity: 1
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
@@ -11899,7 +11934,7 @@ MonoBehaviour:
   useWeightedRandom: 0
   quantity: 1
   playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
-  spawnPoint: {fileID: 0}
+  spawnPoint: {fileID: 1293764797}
   pickupPrefab: {fileID: 5882670229395906191, guid: 796f8e3fefdb56145a2dfead091d2ca2,
     type: 3}
   autoGrantOnEnter: 0
@@ -17695,3 +17730,4 @@ SceneRoots:
   - {fileID: 1159765905}
   - {fileID: 1183017441}
   - {fileID: 1999060658}
+  - {fileID: 1293764797}

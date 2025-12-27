@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5747cb44bf517254e8daf60e6670e831, type: 3}
-  m_Name: "\u9F99\u4E5F\u4E3E\u4E0D\u8D77\u7684\u9524"
+  m_Name: "\u9738\u738B\u9F99\u7684\u8840"
   m_EditorClassIdentifier: 
   itemId: 
-  displayNameOverride: "\u9F99\u4E5F\u4E3E\u4E0D\u8D77\u7684\u9524"
+  displayNameOverride: "\u9738\u738B\u9F99\u7684\u8840"
   <Description>k__BackingField: "\u56DE\u590D\u6240\u6709\u661F\u517D20%\u6700\u5927\u751F\u547D\u503C\uFF0C\u82E5\u961F\u4F0D\u4E2D\u5B58\u5728\u9738\u738B\u9F99\u89D2\u6597\u58EB\uFF0C\u8BE5\u661F\u517D\u6263\u966430%\u6700\u5927\u751F\u547D\u503C\u4E0A\u9650 "
   <MaxStack>k__BackingField: 1
   <RemoveOnUse>k__BackingField: 1
-  <Icon>k__BackingField: {fileID: 21300000, guid: 9a1f9a4310dae3b488274ee06578f24a,
+  <Icon>k__BackingField: {fileID: 21300000, guid: 786be7a7d0da6024aa897458ae608912,
     type: 3}
   effects:
-  - {fileID: 11400000, guid: a811aae660253e643ac1d7c0b5e1dfaf, type: 2}
+  - {fileID: 11400000, guid: d8da8095588316e43b0fcc1794eb9aab, type: 2}
   targetingMode: 2

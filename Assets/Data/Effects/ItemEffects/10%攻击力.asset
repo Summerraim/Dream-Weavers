@@ -9,13 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5021a52c2ea4489478ea0ba235b33ab4, type: 3}
-  m_Name: "\u9738\u738B\u9F99\u7684\u8840"
+  m_Script: {fileID: 11500000, guid: d34e502ed1fefdb4f96b6b49e90762e7, type: 3}
+  m_Name: "10%\u653B\u51FB\u529B"
   m_EditorClassIdentifier: 
   displayName: 
   description: 
   image: {fileID: 0}
-  healPercent: 0.2
-  penalizedSpirit: {fileID: 11400000, guid: fc573b11a0ab7d5498aee7440c2a071a, type: 2}
-  penalizePercent: 0.3
-  dummyDuration: 1
+  damageMultiplier: 0.1
+  duration: 3
+  applyToCaster: 1

@@ -38,3 +38,5 @@ MonoBehaviour:
     dialogueText: "\u4E0D\u597D\uFF01\u662F\u88AB\u6C61\u67D3\u7684\u5FC3\u517D\uFF01\u51C6\u5907\u4F5C\u6218\uFF01"
     portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 1
+  associatedEnemy: {fileID: 11400000, guid: a8d2de91940e66d4195fdf34ede06128, type: 2}
+  enemyNameFilter: "\u585E\u52D2\u65AF"

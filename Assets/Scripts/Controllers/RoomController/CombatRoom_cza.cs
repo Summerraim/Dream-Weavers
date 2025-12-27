@@ -69,7 +69,10 @@ namespace DreamWeavers.Rooms
             SelectEnemyFromPool();
             spawned = true;
 
-            // 2. 激活 BattleController 并传入数据
+            // 2. 触发进入房间对话（基于敌人DisplayName）
+            TriggerRoomEnterDialogue();
+
+            // 3. 激活 BattleController 并传入数据
             StartBattle();
         }
 
@@ -325,6 +328,43 @@ namespace DreamWeavers.Rooms
         // 提供当前敌人/精灵数据访问
         public EnemyData GetSelectedEnemyData() => selectedEnemy;
         public SpiritData GetSelectedSpiritData() => selectedSpirit;
+
+        /// <summary>
+        /// 触发进入房间对话（基于敌人DisplayName）
+        /// </summary>
+        private void TriggerRoomEnterDialogue()
+        {
+            Debug.Log("[CombatRoom] TriggerRoomEnterDialogue 开始...");
+            
+            // 检查敌人数据是否已选择
+            if (selectedEnemy == null)
+            {
+                Debug.LogWarning("[CombatRoom] 无法触发对话：敌人数据为空");
+                return;
+            }
+            
+            // 检查DialogControllerService是否可用
+            var dialogService = DreamWeavers.Services.DialogControllerService.Instance;
+            if (dialogService == null)
+            {
+                Debug.LogWarning("[CombatRoom] 无法触发对话：DialogControllerService不可用");
+                return;
+            }
+            
+            // 获取当前房间类型（战斗房间）
+            RoomType_cza roomType = RoomType_cza.Combat;
+            
+            // 触发基于敌人DisplayName的对话
+            try
+            {
+                dialogService.StartDialogueForRoomWithEnemy(roomType, selectedEnemy);
+                Debug.Log($"[CombatRoom] 成功触发对话 - 房间类型: {roomType}, 敌人: {selectedEnemy.DisplayName}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[CombatRoom] 触发对话时发生错误: {e.Message}");
+            }
+        }
 
         /// <summary>
         /// 尝试捕捉当前敌人对应的精灵

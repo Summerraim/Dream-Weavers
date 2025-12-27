@@ -36,8 +36,6 @@ namespace DreamWeavers.Rooms
 		private bool battleStarted;
 		private bool battleEnded;
 		private int chosenIndex = -1;
-		private SpiritData enemySpiritToCapture;
-		private bool capturedEnemySpirit;
 		private SpiritData chosenSpiritPending;
 		private EnemyData enemyPending;
 
@@ -72,9 +70,6 @@ namespace DreamWeavers.Rooms
 				if (battleController.State == BattleState.Victory || battleController.State == BattleState.Defeat)
 				{
 					battleEnded = true;
-
-					// 捕捉敌方对应精灵
-					CaptureEnemySpiritIfPossible();
 
 					// 尝试收起战斗UI，避免留在屏幕上
 					if (battleView != null)
@@ -198,7 +193,6 @@ namespace DreamWeavers.Rooms
 			}
 
 			chosenIndex = index;
-			enemySpiritToCapture = candidateSpirits.Length > 1 ? candidateSpirits[1 - index] : null;
 			chosenSpiritPending = chosenSpirit;
 			enemyPending = enemyData;
 
@@ -287,59 +281,6 @@ namespace DreamWeavers.Rooms
 
 		private void CaptureEnemySpiritIfPossible()
 		{
-			if (capturedEnemySpirit)
-			{
-				return;
-			}
-
-			if (battleController != null && battleController.State != BattleState.Victory)
-			{
-				// 仅在胜利时捕捉
-				return;
-			}
-
-			var spirit = enemySpiritToCapture;
-			if (spirit == null)
-			{
-				Debug.LogWarning("[GuideRoom] 未配置可捕捉的敌方精灵，跳过捕捉");
-				return;
-			}
-
-			bool success = false;
-			if (PlayerManager.Instance != null)
-			{
-				success = PlayerManager.Instance.CaptureSpirit(spirit);
-			}
-			else if (playerData != null)
-			{
-				var owned = playerData.GetOwnedSpirits();
-				if (!owned.Contains(spirit))
-				{
-					owned.Add(spirit);
-					playerData.OwnedSpirits = owned.ToArray();
-					success = true;
-				}
-
-				// 尝试加入出场列表（若有空位且未在列表中）
-				var deployedList = new List<SpiritData>();
-				if (playerData.DeployedSpirits != null)
-					deployedList.AddRange(playerData.DeployedSpirits);
-				if (!deployedList.Contains(spirit) && deployedList.Count < playerData.MaxDeployedSpirits)
-				{
-					deployedList.Add(spirit);
-					playerData.DeployedSpirits = deployedList.ToArray();
-				}
-			}
-
-			if (success)
-			{
-				capturedEnemySpirit = true;
-				Debug.Log($"[GuideRoom] 捕捉敌方精灵成功: {spirit.DisplayName}");
-			}
-			else
-			{
-				Debug.LogWarning("[GuideRoom] 捕捉敌方精灵失败（可能已拥有或数据未配置）");
-			}
 		}
 
 		private void FinishGuide()

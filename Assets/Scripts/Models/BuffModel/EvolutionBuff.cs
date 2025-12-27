@@ -25,6 +25,7 @@ public class EvolutionBuff : Buff
 
     public override void OnApplied()
     {
+        Debug.Log($"EvolutionBuff.OnApplied: owner={Owner?.DisplayName}, player={battleModel?.PlayerUnit?.DisplayName}, targetSpirit={targetSpiritData?.DisplayName}");
         // 安全检查
         if (battleModel == null)
         {
@@ -40,13 +41,15 @@ public class EvolutionBuff : Buff
         // 仅当玩家单位与拥有者一致时执行替换（当前系统仅支持替换玩家单位）
         if (battleModel.PlayerUnit != null && Owner == battleModel.PlayerUnit)
         {
+            Debug.Log("EvolutionBuff: Owner matches current player, performing evolution");
             var newSpirit = new Spirit(targetSpiritData);
+            Debug.Log($"EvolutionBuff: created new Spirit instance -> {newSpirit.DisplayName}");
             battleModel.UpdatePlayer(newSpirit);
             Debug.Log($"EvolutionBuff: {Owner?.DisplayName} 进化为 {newSpirit.DisplayName}");
         }
         else
         {
-            Debug.LogWarning("EvolutionBuff: Owner is not current player unit; skip evolution");
+            Debug.LogWarning($"EvolutionBuff: Owner is not current player unit; skip evolution. Owner={Owner?.DisplayName}, Player={battleModel.PlayerUnit?.DisplayName}");
         }
 
         HasTriggered = true;
