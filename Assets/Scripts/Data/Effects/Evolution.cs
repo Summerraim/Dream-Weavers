@@ -31,6 +31,8 @@ public class Evolution : Effect
     // 与其它 Effect 保持一致：由外部在战斗开始或切换时注入
     public static BattleModel CurrentBattle { get; set; }
 
+    public SpiritData TargetSpirit => targetSpirit;
+
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         if (CurrentBattle == null)

@@ -623,6 +623,17 @@ public class UI_InventoryView : MonoBehaviour
                 if (battleController != null)
                 {
                     Debug.Log($"[InventoryUI] Requesting item use via BattleController: {item.data.DisplayName}");
+                    
+                    // 如果道具需要选择目标，先关闭背包以便显示目标选择面板
+                    if (item.data.TargetMode == TargetingMode.SingleUnit)
+                    {
+                        // 关闭背包面板
+                        if (inventoryPanel != null)
+                            inventoryPanel.SetActive(false);
+                        if (inventoryBackground != null)
+                            inventoryBackground.gameObject.SetActive(false);
+                    }
+                    
                     battleController.OnItemUseRequested(item.data);
                 }
                 else

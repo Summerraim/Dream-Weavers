@@ -63,6 +63,9 @@ public class BattleController : MonoBehaviour
 
     public BattleState State { get; private set; } = BattleState.None;
 
+    // 提供UI层读取序列化的PlayerData（只读）
+    public PlayerData PlayerData => playerData;
+
     // 道具使用状态机
     private BattleInputState inputState = BattleInputState.Normal;
     private ItemData pendingItem; // 待使用的道具
@@ -1430,6 +1433,9 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void OnItemUseRequested(ItemData item)
     {
+        Debug.Log(
+            $"[BattleController] OnItemUseRequested enter, item={(item != null ? item.DisplayName : "NULL")}, state={State}, inputState={inputState}, battleViewBound={(battleView != null)}"
+        );
         if (item == null)
         {
             Debug.LogWarning("BattleController: OnItemUseRequested called with null item");
@@ -1468,7 +1474,7 @@ public class BattleController : MonoBehaviour
                 // 激活Spirit切换器，提示玩家选择目标
                 if (battleView != null)
                 {
-                    battleView.ShowSpiritSwitcherForItemTarget();
+                    battleView.ShowItemTargetSelector();
                     Debug.Log("BattleController: Waiting for player to select a Spirit as target");
                 }
                 else
@@ -1539,7 +1545,7 @@ public class BattleController : MonoBehaviour
         // 关闭Spirit切换器
         if (battleView != null)
         {
-            battleView.HideSpiritSwitcherPanel();
+            battleView.HideItemTargetSelector();
         }
     }
 
@@ -1558,7 +1564,7 @@ public class BattleController : MonoBehaviour
             // 关闭Spirit切换器
             if (battleView != null)
             {
-                battleView.HideSpiritSwitcherPanel();
+                battleView.HideItemTargetSelector();
             }
         }
     }
@@ -1616,25 +1622,38 @@ public class BattleController : MonoBehaviour
         );
 
         // 如果目标是非当前Spirit，保存使用后的数据
-        if (
-            targetSpiritIndex >= 0
-            && targetSpiritIndex != currentSpiritIndex
-            && target is Spirit targetSpirit
-        )
+        // 注意：targetSpiritIndex 是 OwnedSpirits 的索引，需要转换为 spiritQueue 的索引
+        if (targetSpiritIndex >= 0 && target is Spirit targetSpirit)
         {
-            Debug.Log($"BattleController: Saving runtime data for Spirit {targetSpiritIndex}");
-            SaveSpiritRuntimeDataAfterItem(targetSpiritIndex, targetSpirit);
-        }
-        else if (targetSpiritIndex >= 0)
-        {
-            Debug.Log(
-                $"BattleController: Not saving (index={targetSpiritIndex}, current={currentSpiritIndex}, target is Spirit: {target is Spirit})"
-            );
+            // 获取 OwnedSpirits 中对应的 SpiritData
+            var ownedSpirits = PlayerManager.Instance != null
+                ? PlayerManager.Instance.GetOwnedSpirits()
+                : (playerData != null ? playerData.GetOwnedSpirits() : null);
+
+            if (ownedSpirits != null && targetSpiritIndex < ownedSpirits.Count)
+            {
+                var targetSpiritData = ownedSpirits[targetSpiritIndex];
+                // 查找在 spiritQueue 中的索引
+                int queueIndex = spiritQueue != null ? spiritQueue.IndexOf(targetSpiritData) : -1;
+
+                if (queueIndex >= 0 && queueIndex != currentSpiritIndex)
+                {
+                    Debug.Log($"BattleController: Saving runtime data for Spirit at queue index {queueIndex} (owned index {targetSpiritIndex})");
+                    SaveSpiritRuntimeDataAfterItem(queueIndex, targetSpirit);
+                }
+                else
+                {
+                    Debug.Log($"BattleController: Spirit not in queue or is current, queueIndex={queueIndex}, currentSpiritIndex={currentSpiritIndex}");
+                }
+            }
         }
 
         // 刷新UI
         if (battleView != null)
             battleView.Refresh();
+
+        // 处理进化/替换类道具：在使用后替换玩家拥有/部署列表中的目标精灵
+        TryApplyEvolutionReplacement(item, targetSpiritIndex);
 
         Debug.Log($"BattleController: Item {item.DisplayName} used successfully");
 
@@ -1651,48 +1670,132 @@ public class BattleController : MonoBehaviour
         }
     }
 
+    private void TryApplyEvolutionReplacement(ItemData item, int targetSpiritIndex)
+    {
+        if (item == null || targetSpiritIndex < 0)
+            return;
+
+        var effects = item.Effects;
+        if (effects == null)
+            return;
+
+        Evolution evo = null;
+        foreach (var eff in effects)
+        {
+            if (eff is Evolution e)
+            {
+                evo = e;
+                break;
+            }
+        }
+
+        if (evo == null || evo.TargetSpirit == null)
+            return;
+
+        var newSpiritData = evo.TargetSpirit;
+
+        // 更新PlayerManager拥有列表
+        if (PlayerManager.Instance != null)
+        {
+            PlayerManager.Instance.ReplaceOwnedSpirit(targetSpiritIndex, newSpiritData);
+        }
+
+        // 更新战斗内的部署列表/运行时数据
+        if (spiritQueue != null && targetSpiritIndex < spiritQueue.Count)
+        {
+            spiritQueue[targetSpiritIndex] = newSpiritData;
+
+            if (spiritRuntimeData != null)
+            {
+                spiritRuntimeData[targetSpiritIndex] = new SpiritRuntimeData
+                {
+                    CurrentHP = newSpiritData.MaxHP,
+                    MaxHP = newSpiritData.MaxHP,
+                    CurrentMP = newSpiritData.MaxMana,
+                    MaxMP = newSpiritData.MaxMana,
+                };
+            }
+
+            if (spiritAliveStatus != null)
+            {
+                spiritAliveStatus[targetSpiritIndex] = true;
+            }
+
+            // 如果是当前上场精灵，立即切换实体
+            if (targetSpiritIndex == currentSpiritIndex)
+            {
+                player = new Spirit(newSpiritData);
+                model.UpdatePlayer(player);
+            }
+        }
+
+        // 刷新UI槽位显示
+        if (battleView != null)
+        {
+            battleView.RefreshSpiritSlots();
+            battleView.Refresh();
+        }
+
+        Debug.Log($"BattleController: Evolution replacement applied at index {targetSpiritIndex} -> {newSpiritData.DisplayName}");
+    }
+
     /// <summary>
-    /// 根据索引获取Spirit作为目标（支持选择非当前上场的Spirit）
+    /// 根据索引获取Spirit作为目标（支持从OwnedSpirits列表选择）
     /// </summary>
     private IBattleUnit GetSpiritAsTarget(int spiritIndex)
     {
-        // 如果是当前Spirit，直接返回
-        if (spiritIndex == currentSpiritIndex && player != null)
+        // 获取所有拥有的精灵（与 ItemUseSlot 显示的一致）
+        var ownedSpirits = PlayerManager.Instance != null
+            ? PlayerManager.Instance.GetOwnedSpirits()
+            : (playerData != null ? playerData.GetOwnedSpirits() : null);
+
+        if (ownedSpirits == null || spiritIndex < 0 || spiritIndex >= ownedSpirits.Count)
         {
+            Debug.LogWarning($"BattleController: Invalid spiritIndex {spiritIndex}, ownedSpirits count={(ownedSpirits?.Count ?? 0)}");
+            return null;
+        }
+
+        var spiritData = ownedSpirits[spiritIndex];
+        if (spiritData == null)
+        {
+            Debug.LogWarning($"BattleController: SpiritData at index {spiritIndex} is null");
+            return null;
+        }
+
+        // 检查是否是当前上场的精灵
+        if (player != null && player.Data == spiritData)
+        {
+            Debug.Log($"BattleController: Target is current player Spirit: {player.DisplayName}");
             return player;
         }
 
-        // 否则，创建临时Spirit实例作为目标（使用保存的技能列表，如果存在）
-        if (spiritIndex >= 0 && spiritIndex < spiritQueue.Count)
+        // 检查是否在spiritQueue中（已部署的精灵）
+        int queueIndex = spiritQueue != null ? spiritQueue.IndexOf(spiritData) : -1;
+
+        // 创建临时Spirit实例作为目标
+        SpiritBattleState savedState = model.GetSpiritState(spiritData);
+        Spirit tempSpirit;
+        if (savedState != null && savedState.SelectedSkills.Count > 0)
         {
-            var spiritData = spiritQueue[spiritIndex];
-            SpiritBattleState savedState = model.GetSpiritState(spiritData);
-            Spirit tempSpirit;
-            if (savedState != null && savedState.SelectedSkills.Count > 0)
-            {
-                tempSpirit = new Spirit(spiritData, savedState.SelectedSkills);
-            }
-            else
-            {
-                tempSpirit = new Spirit(spiritData);
-            }
-
-            // 恢复该Spirit的运行时数据（HP/MP）
-            if (spiritRuntimeData.ContainsKey(spiritIndex))
-            {
-                var runtimeData = spiritRuntimeData[spiritIndex];
-                tempSpirit.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
-            }
-
-            Debug.Log(
-                $"BattleController: Created temp Spirit for index {spiritIndex}: HP={tempSpirit.HP}/{tempSpirit.MaxHP}, MP={tempSpirit.Mana}/{tempSpirit.MaxMana}"
-            );
-
-            // 注意：不在这里保存，而是在道具使用后保存
-            return tempSpirit;
+            tempSpirit = new Spirit(spiritData, savedState.SelectedSkills);
+        }
+        else
+        {
+            tempSpirit = new Spirit(spiritData);
         }
 
-        return null;
+        // 如果在spiritQueue中，恢复运行时数据
+        if (queueIndex >= 0 && spiritRuntimeData != null && spiritRuntimeData.ContainsKey(queueIndex))
+        {
+            var runtimeData = spiritRuntimeData[queueIndex];
+            tempSpirit.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
+        }
+
+        Debug.Log(
+            $"BattleController: Created temp Spirit for index {spiritIndex} ({spiritData.DisplayName}): HP={tempSpirit.HP}/{tempSpirit.MaxHP}, MP={tempSpirit.Mana}/{tempSpirit.MaxMana}"
+        );
+
+        return tempSpirit;
     }
 
     /// <summary>

@@ -144,6 +144,19 @@ public class Player
     }
 
     /// <summary>
+    /// 按索引替换拥有的精灵
+    /// </summary>
+    public bool ReplaceOwnedSpirit(int index, SpiritData newSpirit)
+    {
+        if (index < 0 || index >= ownedSpirits.Count || newSpirit == null)
+            return false;
+
+        ownedSpirits[index] = newSpirit;
+        OnDataChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>
     /// 检查是否拥有指定精灵
     /// </summary>
     public bool HasSpirit(SpiritData spirit)

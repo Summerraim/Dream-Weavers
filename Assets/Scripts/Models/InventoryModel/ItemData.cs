@@ -34,6 +34,8 @@ public class ItemData : ScriptableObject, IItem
     [SerializeField]
     private TargetingMode targetingMode = TargetingMode.SingleUnit;
 
+    public IReadOnlyList<Effect> Effects => effects;
+
     public string ItemId => string.IsNullOrWhiteSpace(itemId) ? name : itemId;
 
     public string DisplayName =>

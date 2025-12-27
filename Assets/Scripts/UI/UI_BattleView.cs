@@ -1,4 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -164,6 +165,13 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private GameObject spiritSwitcherPanel;
 
+    [Header("Item Target Selector")]
+    [SerializeField]
+    private GameObject itemTargetPanel;
+
+    [SerializeField]
+    private GameObject itemUseSlotPrefab;
+
     [Header("Effect Display")]
     [SerializeField]
     private GameObject effectSlotPrefab;
@@ -217,6 +225,7 @@ public class UI_BattleView : MonoBehaviour
     private BattleModel model;
     private List<SynergySlot> spiritSynergySlots = new List<SynergySlot>();
     private SpiritSlot[] spiritSlots;
+    private ItemUseSlot[] itemUseSlots;
     private List<EffectSlot> playerEffectSlots = new List<EffectSlot>();
     private List<EffectSlot> enemyEffectSlots = new List<EffectSlot>();
 
@@ -481,6 +490,10 @@ public class UI_BattleView : MonoBehaviour
         if (spiritSwitcherPanel != null)
             spiritSwitcherPanel.SetActive(false);
 
+        // 直接显示“拥有精灵列表”面板，并初始化槽位（不依赖道具逻辑）
+        if (itemTargetPanel != null)
+            EnsurePanelCanvasGroupHidden(itemTargetPanel); // 默认隐藏，由按键控制
+
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
             enemyDeathPanel.SetActive(false);
@@ -506,6 +519,9 @@ public class UI_BattleView : MonoBehaviour
 
         // 初始化Spirit槽位
         InitializeSpiritSlots();
+
+        // 初始化并显示拥有精灵列表
+        InitializeItemUseSlots();
 
         // 初始化Effect槽位
         InitializeEffectSlots();
@@ -758,6 +774,9 @@ public class UI_BattleView : MonoBehaviour
 
         // 更新Spirit槽位显示
         RefreshSpiritSlots();
+
+        // 更新道具目标槽位显示
+        RefreshItemUseSlots();
 
         // 更新Effect显示
         RefreshEffectDisplay();
@@ -1175,16 +1194,11 @@ public class UI_BattleView : MonoBehaviour
             $"UI_BattleView: Spirit Slot {slotIndex} clicked, isSelectingItemTarget={isSelectingItemTarget}"
         );
 
-        // 如果是道具目标选择模式
         if (isSelectingItemTarget)
         {
-            // 通知BattleController选择了目标
-            controller.OnSpiritSelectedAsItemTarget(slotIndex);
-
-            // 重置状态
-            isSelectingItemTarget = false;
-
-            Debug.Log($"UI_BattleView: Spirit {slotIndex} selected as item target");
+            Debug.LogWarning(
+                "UI_BattleView: Ignoring SpiritSlot click while selecting item target via ItemUseSlot"
+            );
             return;
         }
 
@@ -1251,19 +1265,293 @@ public class UI_BattleView : MonoBehaviour
     }
 
     /// <summary>
+    /// 初始化道具目标槽位（使用ItemUseSlot显示部署精灵）
+    /// </summary>
+    private List<SpiritData> itemUseOwnedSpirits = new List<SpiritData>();
+
+    private void InitializeItemUseSlots()
+    {
+        Debug.Log($"[UI_BattleView] InitializeItemUseSlots 开始，controller={(controller != null ? "有效" : "NULL")}");
+        
+        // 仅获取已拥有的精灵，不创建、不销毁槽位
+        itemUseOwnedSpirits = GetOwnedSpiritsFromPlayerDataSimple();
+        Debug.Log($"[UI_BattleView] 获取到拥有精灵数量: {itemUseOwnedSpirits?.Count ?? 0}");
+
+        ItemUseSlot[] existing = itemTargetPanel != null
+            ? itemTargetPanel.GetComponentsInChildren<ItemUseSlot>(true)
+            : GetComponentsInChildren<ItemUseSlot>(true);
+
+        Debug.Log($"[UI_BattleView] itemTargetPanel={(itemTargetPanel != null ? itemTargetPanel.name : "NULL")}");
+        Debug.Log($"[UI_BattleView] 找到 ItemUseSlot 数量: {existing?.Length ?? 0}");
+
+        if (existing == null || existing.Length == 0)
+        {
+            Debug.LogWarning("[UI_BattleView] 未找到任何 ItemUseSlot，请在场景中放置槽位");
+            itemUseSlots = System.Array.Empty<ItemUseSlot>();
+            return;
+        }
+
+        // 打印找到的每个 ItemUseSlot 的信息
+        for (int j = 0; j < existing.Length; j++)
+        {
+            var s = existing[j];
+            Debug.Log($"[UI_BattleView] existing[{j}] = {(s != null ? s.gameObject.name : "NULL")}");
+        }
+
+        itemUseSlots = existing;
+
+        for (int i = 0; i < itemUseSlots.Length; i++)
+        {
+            var slot = itemUseSlots[i];
+            if (slot == null)
+            {
+                Debug.LogWarning($"[UI_BattleView] 槽位 {i} 是 null，跳过");
+                continue;
+            }
+
+            Debug.Log($"[UI_BattleView] 正在初始化槽位 {i}: {slot.gameObject.name}");
+
+            slot.enabled = true;
+            if (slot.IsAutoLoadingFromPlayerData())
+            {
+                slot.SetAutoLoadFromPlayerData(false);
+            }
+
+            SpiritData data = (itemUseOwnedSpirits != null && i < itemUseOwnedSpirits.Count)
+                ? itemUseOwnedSpirits[i]
+                : null;
+
+            Debug.Log($"[UI_BattleView] 槽位 {i}: 精灵={(data != null ? data.DisplayName : "NULL")}");
+            slot.Initialize(i, data, OnItemUseSlotClicked);
+        }
+
+        RefreshItemUseSlots();
+        Debug.Log("[UI_BattleView] InitializeItemUseSlots 完成");
+    }
+
+    // 只从 PlayerData 读取拥有精灵的简化方法
+    private List<SpiritData> GetOwnedSpiritsFromPlayerDataSimple()
+    {
+        Debug.Log("[UI_BattleView] GetOwnedSpiritsFromPlayerDataSimple 开始");
+        
+        // 优先从 PlayerManager 读取（最新数据）
+        if (PlayerManager.Instance != null)
+        {
+            var spirits = PlayerManager.Instance.GetOwnedSpirits();
+            if (spirits != null && spirits.Count > 0)
+            {
+                Debug.Log($"[UI_BattleView] 从 PlayerManager 获取拥有精灵数: {spirits.Count}");
+                foreach (var s in spirits)
+                {
+                    Debug.Log($"  - 精灵: {(s != null ? s.DisplayName : "NULL")}");
+                }
+                return spirits;
+            }
+        }
+
+        var data = ResolvePlayerDataFromController();
+        Debug.Log($"[UI_BattleView] ResolvePlayerDataFromController 返回: {(data != null ? data.name : "NULL")}");
+        
+        if (data != null)
+        {
+            var spirits = data.GetOwnedSpirits() ?? new List<SpiritData>();
+            Debug.Log($"[UI_BattleView] 从 Controller 获取拥有精灵数: {spirits.Count}");
+            if (spirits.Count > 0)
+            {
+                foreach (var s in spirits)
+                {
+                    Debug.Log($"  - 精灵: {(s != null ? s.DisplayName : "NULL")}");
+                }
+            }
+            return spirits;
+        }
+
+        data = ResolvePlayerData();
+        Debug.Log($"[UI_BattleView] ResolvePlayerData 返回: {(data != null ? data.name : "NULL")}");
+        
+        if (data != null)
+        {
+            var spirits = data.GetOwnedSpirits() ?? new List<SpiritData>();
+            Debug.Log($"[UI_BattleView] 从 Resources 获取拥有精灵数: {spirits.Count}");
+            if (spirits.Count > 0)
+            {
+                foreach (var s in spirits)
+                {
+                    Debug.Log($"  - 精灵: {(s != null ? s.DisplayName : "NULL")}");
+                }
+            }
+            return spirits;
+        }
+
+        Debug.LogWarning("[UI_BattleView] 未能从 PlayerData 读取拥有精灵，返回空列表");
+        return new List<SpiritData>();
+    }
+
+    private PlayerData ResolvePlayerDataFromController()
+    {
+        if (controller == null)
+        {
+            Debug.Log("[UI_BattleView] ResolvePlayerDataFromController: controller 为 NULL");
+            return null;
+        }
+
+        // 优先尝试公开属性（避免直接依赖私有字段）
+        var prop = controller.GetType().GetProperty(
+            "PlayerData",
+            BindingFlags.Instance | BindingFlags.Public
+        );
+        if (prop != null)
+        {
+            var result = prop.GetValue(controller) as PlayerData;
+            Debug.Log($"[UI_BattleView] 通过属性 PlayerData 获取: {(result != null ? result.name : "NULL")}");
+            return result;
+        }
+
+        // 兜底读取私有字段
+        var field = controller.GetType().GetField(
+            "playerData",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+
+        if (field != null)
+        {
+            var result = field.GetValue(controller) as PlayerData;
+            Debug.Log($"[UI_BattleView] 通过字段 playerData 获取: {(result != null ? result.name : "NULL")}");
+            return result;
+        }
+
+        Debug.Log("[UI_BattleView] ResolvePlayerDataFromController: 未找到属性或字段");
+        return null;
+    }
+
+    private PlayerData ResolvePlayerData()
+    {
+        var all = Resources.FindObjectsOfTypeAll<PlayerData>();
+        if (all != null && all.Length > 0)
+        {
+            Debug.Log(
+                $"[UI_BattleView] ResolvePlayerData: Resources.FindObjectsOfTypeAll 找到 {all.Length} 个，返回 {all[0].name}"
+            );
+            return all[0];
+        }
+
+        Debug.LogWarning("[UI_BattleView] ResolvePlayerData: Resources 中未找到任何 PlayerData");
+        return null;
+    }
+
+    /// <summary>
+    /// 创建默认的ItemUseSlot（当未提供预制体时）
+    /// </summary>
+    private GameObject CreateDefaultItemUseSlot()
+    {
+        GameObject slotObj = new GameObject("ItemUseSlot");
+
+        var image = slotObj.AddComponent<Image>();
+        image.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+        slotObj.AddComponent<Button>();
+
+        var rectTransform = slotObj.GetComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(100, 100);
+
+        return slotObj;
+    }
+
+    /// <summary>
+    /// 刷新道具目标槽位的状态
+    /// </summary>
+    public void RefreshItemUseSlots()
+    {
+        if (itemUseSlots == null || controller == null)
+            return;
+
+        for (int i = 0; i < itemUseSlots.Length; i++)
+        {
+            var slot = itemUseSlots[i];
+            if (slot == null)
+                continue;
+
+            // 直接从槽位获取当前的 spiritData，而不是从 itemUseOwnedSpirits 列表
+            var spiritData = slot.GetSpiritData();
+            
+            int hp = 0, maxHp = 0, mp = 0, maxMp = 0;
+            bool alive = spiritData != null;
+
+            if (spiritData != null)
+            {
+                maxHp = hp = spiritData.MaxHP;
+                maxMp = mp = spiritData.MaxMana;
+            }
+
+            slot.UpdateStatus(hp, maxHp, mp, maxMp, alive);
+
+            slot.SetSelected(false);
+        }
+    }
+
+    /// <summary>
+    /// ItemUseSlot点击回调（道具目标选择）
+    /// </summary>
+    private void OnItemUseSlotClicked(int slotIndex)
+    {
+        if (!isSelectingItemTarget)
+        {
+            Debug.LogWarning(
+                "UI_BattleView: ItemUseSlot clicked but not in item target selection state"
+            );
+            return;
+        }
+
+        if (controller == null)
+            return;
+
+        controller.OnSpiritSelectedAsItemTarget(slotIndex);
+        isSelectingItemTarget = false;
+        HideItemTargetSelector();
+    }
+
+    /// <summary>
     /// 显示Spirit切换器面板用于选择道具目标
     /// </summary>
     public void ShowSpiritSwitcherForItemTarget()
     {
+        ShowItemTargetSelector();
+    }
+
+    /// <summary>
+    /// 显示道具目标选择面板（使用ItemUseSlot）
+    /// </summary>
+    public void ShowItemTargetSelector()
+    {
+        Debug.Log("UI_BattleView: Showing ItemUseSlots for item target selection");
         isSelectingItemTarget = true;
 
+        // 确保Spirit切换器面板关闭，避免混淆
         if (spiritSwitcherPanel != null)
         {
-            spiritSwitcherPanel.SetActive(true);
-            RefreshSpiritSlots();
+            spiritSwitcherPanel.SetActive(false);
         }
 
-        Debug.Log("UI_BattleView: Showing Spirit Switcher for item target selection");
+        if (itemTargetPanel != null)
+        {
+            EnsurePanelCanvasGroupVisible(itemTargetPanel);
+        }
+
+        InitializeItemUseSlots();
+        Debug.Log("UI_BattleView: Showing ItemUseSlots for item target selection");
+    }
+
+    /// <summary>
+    /// 隐藏道具目标选择面板
+    /// </summary>
+    public void HideItemTargetSelector()
+    {
+        isSelectingItemTarget = false;
+
+        if (itemTargetPanel != null)
+        {
+            EnsurePanelCanvasGroupHidden(itemTargetPanel);
+        }
     }
 
     // ========== Effect Display功能 ==========
@@ -1289,6 +1577,9 @@ public class UI_BattleView : MonoBehaviour
         Debug.Log(
             $"[UI_BattleView] InitializeEffectSlots完成: 玩家槽位数={playerEffectSlots.Count}, 敌人槽位数={enemyEffectSlots.Count}"
         );
+            Debug.Log(
+                $"[UI_BattleView] ShowItemTargetSelector enter, controller={(controller != null)}, itemTargetPanel={(itemTargetPanel != null ? itemTargetPanel.name : "NULL")}, inputStateSelecting={isSelectingItemTarget}"
+            );
     }
 
     /// <summary>
@@ -1340,6 +1631,8 @@ public class UI_BattleView : MonoBehaviour
     /// <summary>
     /// 创建默认Effect槽位（如果没有提供预制体）
     /// </summary>
+
+            
     private GameObject CreateDefaultEffectSlot()
     {
         GameObject slotObj = new GameObject("EffectSlot");
@@ -1480,6 +1773,40 @@ public class UI_BattleView : MonoBehaviour
         {
             panel.SetActive(false);
         }
+    }
+
+    /// <summary>
+    /// 保持Panel激活但隐藏（优先CanvasGroup，便于按键切换脚本工作）
+    /// </summary>
+    private void EnsurePanelCanvasGroupHidden(GameObject panel)
+    {
+        var cg = panel.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = panel.AddComponent<CanvasGroup>();
+        }
+
+        panel.SetActive(true);
+        cg.alpha = 0f;
+        cg.interactable = false;
+        cg.blocksRaycasts = false;
+    }
+
+    /// <summary>
+    /// 保持Panel激活并显示（优先CanvasGroup）
+    /// </summary>
+    private void EnsurePanelCanvasGroupVisible(GameObject panel)
+    {
+        var cg = panel.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = panel.AddComponent<CanvasGroup>();
+        }
+
+        panel.SetActive(true);
+        cg.alpha = 1f;
+        cg.interactable = true;
+        cg.blocksRaycasts = true;
     }
 
     /// <summary>
@@ -1894,6 +2221,9 @@ public class UI_BattleView : MonoBehaviour
         }
 
         Debug.Log($"[UI_BattleView] 显示捕捉成功: {spiritName}");
+
+        // 捕捉成功后立即刷新精灵槽位显示
+        InitializeItemUseSlots();
     }
 
     /// <summary>

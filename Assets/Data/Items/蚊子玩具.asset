@@ -19,5 +19,6 @@ MonoBehaviour:
   <RemoveOnUse>k__BackingField: 1
   <Icon>k__BackingField: {fileID: 21300000, guid: 791fb7365340e6c4eb934ed8f8abec52,
     type: 3}
-  effects: []
+  effects:
+  - {fileID: 11400000, guid: e47a7fba1f124fe48af66f14c49cf81f, type: 2}
   targetingMode: 1
