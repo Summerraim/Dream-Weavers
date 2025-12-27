@@ -130,7 +130,7 @@ public class SpiritPanelController : MonoBehaviour
 
         // 检测是否在战斗中
         bool inBattle = false;
-        BattleController battleController = FindObjectOfType<BattleController>();
+        BattleController battleController = FindObjectOfType<BattleController>(true);
         if (battleController != null)
         {
             BattleState currentState = battleController.State;

@@ -1078,7 +1078,24 @@ public class RoomUIActions_cza : MonoBehaviour
             battleView.HideBattlePanel();
             battleView.HideEnemyDeathPanel();
             battleView.HideCapturePanel();
+            battleView.HideLosePanel();
+            battleView.Unbind();
             Debug.Log("[RoomUI] HideBattleUI: 已隐藏战斗UI");
+        }
+
+        // 同时让 BattleController 退出并停用，避免其在非战斗房间中一直保持激活/刷新
+        var battleController = FindObjectOfType<BattleController>();
+        if (battleController == null)
+        {
+            var all = Resources.FindObjectsOfTypeAll<BattleController>();
+            if (all != null && all.Length > 0)
+            {
+                battleController = all[0];
+            }
+        }
+        if (battleController != null)
+        {
+            battleController.EndBattleAndDeactivate();
         }
     }
 

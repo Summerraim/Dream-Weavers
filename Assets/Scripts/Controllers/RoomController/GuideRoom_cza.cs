@@ -293,6 +293,12 @@ namespace DreamWeavers.Rooms
 			guideCompleted = true;
 			Debug.Log("[GuideRoom] 引导战斗结束，准备进入正式楼层");
 
+			// 离开引导战斗后停用 BattleController，保持与 CombatRoom/BossRoom 一致：仅在战斗房间激活
+			if (battleController != null)
+			{
+				battleController.EndBattleAndDeactivate();
+			}
+
 			onGuideFinished?.Invoke();
 		}
 	}

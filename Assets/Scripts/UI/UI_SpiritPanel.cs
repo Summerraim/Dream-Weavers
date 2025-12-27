@@ -233,6 +233,13 @@ public class UI_SpiritPanel : MonoBehaviour
             }
 
             slot.Initialize(i, spiritData, OnDeployedSlotClicked);
+
+            // 从BattleController获取运行时HP/MP数据并更新槽位显示
+            if (spiritData != null)
+            {
+                UpdateSlotRuntimeData(slot, i);
+            }
+
             deployedSlots[i] = slot;
         }
 
@@ -344,6 +351,12 @@ public class UI_SpiritPanel : MonoBehaviour
                 if (deployedSlots[i].GetSpiritData() != spiritData)
                 {
                     deployedSlots[i].Initialize(i, spiritData, OnDeployedSlotClicked);
+                }
+
+                // 更新运行时HP/MP数据
+                if (spiritData != null)
+                {
+                    UpdateSlotRuntimeData(deployedSlots[i], i);
                 }
 
                 deployedSlots[i].SetSelected(i == selectedDeployedIndex);
@@ -768,6 +781,48 @@ public class UI_SpiritPanel : MonoBehaviour
             return ownedSlots[selectedOwnedIndex]?.GetSpiritData();
         }
         return null;
+    }
+
+    /// <summary>
+    /// 更新槽位的运行时HP/MP数据（从BattleController获取）
+    /// </summary>
+    private void UpdateSlotRuntimeData(SpiritDeployedSlot slot, int slotIndex)
+    {
+        if (slot == null)
+            return;
+
+        // 尝试从BattleController获取运行时数据（包括未激活的）
+        BattleController battleController = FindObjectOfType<BattleController>(true);
+        if (battleController != null)
+        {
+            // 获取该槽位的运行时数据
+            SpiritRuntimeData runtimeData = battleController.GetSpiritRuntimeData(slotIndex);
+
+            // 更新槽位显示
+            slot.UpdateRuntimeData(
+                runtimeData.CurrentHP,
+                runtimeData.MaxHP,
+                runtimeData.CurrentMP,
+                runtimeData.MaxMP
+            );
+
+            Debug.Log($"[UI_SpiritPanel] Updated slot {slotIndex} runtime data: HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}, MP={runtimeData.CurrentMP}/{runtimeData.MaxMP}");
+        }
+        else
+        {
+            // 战斗外，使用Spirit的最大值
+            var spiritData = slot.GetSpiritData();
+            if (spiritData != null)
+            {
+                slot.UpdateRuntimeData(
+                    spiritData.MaxHP,
+                    spiritData.MaxHP,
+                    spiritData.MaxMana,
+                    spiritData.MaxMana
+                );
+                Debug.Log($"[UI_SpiritPanel] No BattleController found, using max values for slot {slotIndex}");
+            }
+        }
     }
 
     private void OnDestroy()
