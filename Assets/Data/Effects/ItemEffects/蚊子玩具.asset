@@ -10,13 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e70ee5258f8d23c468256a49732de658, type: 3}
-  m_Name: "\u65E0\u7528\u5927\u5251\uFF08\u9053\u5177\u6548\u679C\uFF09"
+  m_Name: "\u868A\u5B50\u73A9\u5177"
   m_EditorClassIdentifier: 
-  displayName: "\u65E0\u7528\u5927\u5251\uFF08\u9053\u5177\u6548\u679C\uFF09"
-  description: "\u9E7F\u9A91\u58EB\u8FDB\u5316\u4E3A\u9E7F\u957F\u5B98"
-  image: {fileID: 0}
-  targetSpirit: {fileID: 11400000, guid: 6943564877024184684df88806fe822a, type: 2}
+  displayName: 
+  description: 
+  image: {fileID: 21300000, guid: 791fb7365340e6c4eb934ed8f8abec52, type: 3}
+  targetSpirit: {fileID: 11400000, guid: 1b5a6412264029940af104bfe23725c5, type: 2}
   applyToCaster: 1
   dummyDuration: 1
-  mappedSynergies: []
-  mappedEffects: []
+  mappedSynergies:
+  - {fileID: 11400000, guid: 204834cfd5fe26447b32528e76c05a51, type: 2}
+  mappedEffects:
+  - {fileID: 11400000, guid: 258ae39ac4d2fe3488b7b4c3c93f3058, type: 2}
