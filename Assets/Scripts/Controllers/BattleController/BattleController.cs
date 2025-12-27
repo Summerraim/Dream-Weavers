@@ -52,8 +52,8 @@ public class BattleController : MonoBehaviour
     // Spirit队列系统
     private System.Collections.Generic.List<SpiritData> spiritQueue;
     private int currentSpiritIndex = 0;
-    private System.Collections.Generic.Dictionary<int, bool> spiritAliveStatus; // 跟踪每个Spirit的存活状态
-    private System.Collections.Generic.Dictionary<int, SpiritRuntimeData> spiritRuntimeData; // 跟踪每个Spirit的运行时数据（HP/MP）
+    private System.Collections.Generic.Dictionary<SpiritData, bool> spiritAliveStatus; // 跟踪每个Spirit的存活状态（按SpiritData）
+    private System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData> spiritRuntimeData; // 跟踪每个Spirit的运行时数据（HP/MP）（按SpiritData）
 
     // 缓存的 HP/Mana 值，用于检测变化
     private int lastPlayerHP;
@@ -161,41 +161,42 @@ public class BattleController : MonoBehaviour
         // 如果是首次初始化，创建新字典；否则保留现有数据
         if (spiritAliveStatus == null)
         {
-            spiritAliveStatus = new System.Collections.Generic.Dictionary<int, bool>();
+            spiritAliveStatus = new System.Collections.Generic.Dictionary<SpiritData, bool>();
         }
 
         if (spiritRuntimeData == null)
         {
-            spiritRuntimeData = new System.Collections.Generic.Dictionary<int, SpiritRuntimeData>();
+            spiritRuntimeData = new System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData>();
         }
 
         for (int i = 0; i < spiritQueue.Count; i++)
         {
+            var spiritData = spiritQueue[i];
+
             // 恢复存活状态（如果之前死亡，保持死亡；否则存活）
-            if (!spiritAliveStatus.ContainsKey(i))
+            if (!spiritAliveStatus.ContainsKey(spiritData))
             {
-                spiritAliveStatus[i] = true;
+                spiritAliveStatus[spiritData] = true;
             }
 
             // 初始化运行时数据（仅在首次初始化时设置为满血满蓝）
-            if (!spiritRuntimeData.ContainsKey(i))
+            if (!spiritRuntimeData.ContainsKey(spiritData))
             {
-                var data = spiritQueue[i];
-                spiritRuntimeData[i] = new SpiritRuntimeData
+                spiritRuntimeData[spiritData] = new SpiritRuntimeData
                 {
-                    CurrentHP = data.MaxHP,
-                    MaxHP = data.MaxHP,
-                    CurrentMP = data.MaxMana,
-                    MaxMP = data.MaxMana,
+                    CurrentHP = spiritData.MaxHP,
+                    MaxHP = spiritData.MaxHP,
+                    CurrentMP = spiritData.MaxMana,
+                    MaxMP = spiritData.MaxMana,
                 };
                 Debug.Log(
-                    $"BattleController: Spirit {i} ({data.DisplayName}) initialized with full HP/MP"
+                    $"BattleController: Spirit {i} ({spiritData.DisplayName}) initialized with full HP/MP"
                 );
             }
             else
             {
                 Debug.Log(
-                    $"BattleController: Spirit {i} retaining previous HP/MP: {spiritRuntimeData[i].CurrentHP}/{spiritRuntimeData[i].MaxHP} HP, {spiritRuntimeData[i].CurrentMP}/{spiritRuntimeData[i].MaxMP} MP"
+                    $"BattleController: Spirit {i} ({spiritData.DisplayName}) retaining previous HP/MP: {spiritRuntimeData[spiritData].CurrentHP}/{spiritRuntimeData[spiritData].MaxHP} HP, {spiritRuntimeData[spiritData].CurrentMP}/{spiritRuntimeData[spiritData].MaxMP} MP"
                 );
             }
         }
@@ -222,9 +223,10 @@ public class BattleController : MonoBehaviour
         }
 
         // 恢复第一个Spirit的运行时数据（HP/MP）
-        if (spiritRuntimeData.ContainsKey(currentSpiritIndex))
+        var firstSpirit = spiritQueue[currentSpiritIndex];
+        if (spiritRuntimeData.ContainsKey(firstSpirit))
         {
-            var runtimeData = spiritRuntimeData[currentSpiritIndex];
+            var runtimeData = spiritRuntimeData[firstSpirit];
             player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
 
             Debug.Log(
@@ -283,16 +285,20 @@ public class BattleController : MonoBehaviour
         HealAll.GetSpiritRuntimeData = GetSpiritRuntimeData;
         HealAll.SaveSpiritHP = (index, currentHP, maxHP) =>
         {
-            if (spiritRuntimeData.ContainsKey(index))
+            if (index >= 0 && index < spiritQueue.Count)
             {
-                var data = spiritRuntimeData[index];
-                spiritRuntimeData[index] = new SpiritRuntimeData
+                var spiritData = spiritQueue[index];
+                if (spiritRuntimeData.ContainsKey(spiritData))
                 {
-                    CurrentHP = currentHP,
-                    MaxHP = maxHP,
-                    CurrentMP = data.CurrentMP,
-                    MaxMP = data.MaxMP
-                };
+                    var data = spiritRuntimeData[spiritData];
+                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
+                    {
+                        CurrentHP = currentHP,
+                        MaxHP = maxHP,
+                        CurrentMP = data.CurrentMP,
+                        MaxMP = data.MaxMP
+                    };
+                }
             }
         };
 
@@ -302,16 +308,20 @@ public class BattleController : MonoBehaviour
         Heal.GetSpiritRuntimeData = GetSpiritRuntimeData;
         Heal.SaveSpiritHP = (index, currentHP, maxHP) =>
         {
-            if (spiritRuntimeData.ContainsKey(index))
+            if (index >= 0 && index < spiritQueue.Count)
             {
-                var data = spiritRuntimeData[index];
-                spiritRuntimeData[index] = new SpiritRuntimeData
+                var spiritData = spiritQueue[index];
+                if (spiritRuntimeData.ContainsKey(spiritData))
                 {
-                    CurrentHP = currentHP,
-                    MaxHP = maxHP,
-                    CurrentMP = data.CurrentMP,
-                    MaxMP = data.MaxMP
-                };
+                    var data = spiritRuntimeData[spiritData];
+                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
+                    {
+                        CurrentHP = currentHP,
+                        MaxHP = maxHP,
+                        CurrentMP = data.CurrentMP,
+                        MaxMP = data.MaxMP
+                    };
+                }
             }
         };
 
@@ -529,6 +539,9 @@ public class BattleController : MonoBehaviour
             battleView.HideBattlePanel();
         }
 
+        // 跳过战斗也等同于“结束战斗”，避免 BattleController 在非战斗房间中一直保持激活
+        EndBattleAndDeactivate();
+
         // 通知 RoomStateMachine 完成当前房间
         if (RoomStateMachine_cza.Instance != null)
         {
@@ -561,6 +574,46 @@ public class BattleController : MonoBehaviour
     }
 
     /// <summary>
+    /// 结束当前战斗会话并将 BattleController 设为不活动状态。
+    /// - 由 UI_BattleView “继续”/RoomUI 离开战斗房间时调用
+    /// - 这样 FindObjectOfType&lt;BattleController&gt;() 在非战斗房间会返回 null，避免 BattleController “始终激活”
+    /// </summary>
+    public void EndBattleAndDeactivate()
+    {
+        // 清理/解绑 UI，避免 UI 保留对上一场战斗的 controller/model 引用
+        if (battleView != null)
+        {
+            battleView.HideEnemyDeathPanel();
+            battleView.HideCapturePanel();
+            battleView.HideLosePanel();
+            battleView.Unbind();
+        }
+
+        // 清空当前战斗运行时引用（Spirit 的 HP/MP 已在 Update 中同步进 spiritRuntimeData）
+        player = null;
+        enemy = null;
+        enemyAI = null;
+
+        // 清空房间引用，避免跨房间残留
+        combatRoom = null;
+        bossRoom = null;
+
+        // 重置战斗状态
+        State = BattleState.None;
+        inputState = BattleInputState.Normal;
+        pendingItem = null;
+
+        // 重置缓存值
+        lastPlayerHP = 0;
+        lastPlayerMana = 0;
+        lastEnemyHP = 0;
+        lastEnemyMana = 0;
+
+        // 设为不活动，等待下次进入 Combat/Boss/Guide 房间再由房间脚本激活
+        gameObject.SetActive(false);
+    }
+
+    /// <summary>
     /// 重置所有Spirit的HP/MP为满值（用于游戏开始或重生）
     /// </summary>
     public void ResetAllSpiritsToFull()
@@ -575,19 +628,19 @@ public class BattleController : MonoBehaviour
 
         for (int i = 0; i < spiritQueue.Count; i++)
         {
-            var data = spiritQueue[i];
-            spiritRuntimeData[i] = new SpiritRuntimeData
+            var spiritData = spiritQueue[i];
+            spiritRuntimeData[spiritData] = new SpiritRuntimeData
             {
-                CurrentHP = data.MaxHP,
-                MaxHP = data.MaxHP,
-                CurrentMP = data.MaxMana,
-                MaxMP = data.MaxMana,
+                CurrentHP = spiritData.MaxHP,
+                MaxHP = spiritData.MaxHP,
+                CurrentMP = spiritData.MaxMana,
+                MaxMP = spiritData.MaxMana,
             };
 
             // 如果是死亡的Spirit，恢复为存活
-            if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(i))
+            if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(spiritData))
             {
-                spiritAliveStatus[i] = true;
+                spiritAliveStatus[spiritData] = true;
             }
         }
 
@@ -629,9 +682,14 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public bool IsSpiritAlive(int index)
     {
-        if (spiritAliveStatus == null || !spiritAliveStatus.ContainsKey(index))
+        if (spiritAliveStatus == null || index < 0 || index >= spiritQueue.Count)
             return false;
-        return spiritAliveStatus[index];
+
+        var spiritData = spiritQueue[index];
+        if (!spiritAliveStatus.ContainsKey(spiritData))
+            return false;
+
+        return spiritAliveStatus[spiritData];
     }
 
     /// <summary>
@@ -639,7 +697,7 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void ReviveSpirit(int index)
     {
-        if (spiritAliveStatus == null || !spiritAliveStatus.ContainsKey(index))
+        if (spiritAliveStatus == null || index < 0 || index >= spiritQueue.Count)
         {
             Debug.LogWarning(
                 $"BattleController: Cannot revive spirit at index {index} - invalid index or status not initialized"
@@ -647,20 +705,29 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        // 检查该Spirit的HP是否大于0
-        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(index))
+        var spiritData = spiritQueue[index];
+        if (!spiritAliveStatus.ContainsKey(spiritData))
         {
-            var runtimeData = spiritRuntimeData[index];
+            Debug.LogWarning(
+                $"BattleController: Cannot revive spirit at index {index} - spirit not found in alive status"
+            );
+            return;
+        }
+
+        // 检查该Spirit的HP是否大于0
+        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(spiritData))
+        {
+            var runtimeData = spiritRuntimeData[spiritData];
             if (runtimeData.CurrentHP > 0)
             {
-                spiritAliveStatus[index] = true;
+                spiritAliveStatus[spiritData] = true;
                 Debug.Log(
-                    $"BattleController: Spirit {index} revived with HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}"
+                    $"BattleController: Spirit {index} ({spiritData.DisplayName}) revived with HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}"
                 );
             }
             else
             {
-                Debug.LogWarning($"BattleController: Cannot revive spirit {index} - HP is still 0");
+                Debug.LogWarning($"BattleController: Cannot revive spirit {index} ({spiritData.DisplayName}) - HP is still 0");
             }
         }
     }
@@ -683,9 +750,13 @@ public class BattleController : MonoBehaviour
         }
 
         // 否则返回缓存的数据
-        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(index))
+        if (spiritRuntimeData != null && index >= 0 && index < spiritQueue.Count)
         {
-            return spiritRuntimeData[index];
+            var spiritData = spiritQueue[index];
+            if (spiritRuntimeData.ContainsKey(spiritData))
+            {
+                return spiritRuntimeData[spiritData];
+            }
         }
 
         // 如果没有数据，返回默认值
@@ -1181,9 +1252,10 @@ public class BattleController : MonoBehaviour
         if (player != null && player.IsDead)
         {
             // 标记当前Spirit为死亡
-            if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(currentSpiritIndex))
+            if (spiritAliveStatus != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
             {
-                spiritAliveStatus[currentSpiritIndex] = false;
+                var currentSpiritData = spiritQueue[currentSpiritIndex];
+                spiritAliveStatus[currentSpiritData] = false;
             }
 
             // 检查是否还有存活的Spirit
@@ -1312,9 +1384,10 @@ public class BattleController : MonoBehaviour
             return false;
 
         // 保存当前Spirit的运行时数据
-        if (player != null && spiritRuntimeData.ContainsKey(currentSpiritIndex))
+        if (player != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
         {
-            spiritRuntimeData[currentSpiritIndex] = new SpiritRuntimeData
+            var currentSpiritData = spiritQueue[currentSpiritIndex];
+            spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
             {
                 CurrentHP = player.HP,
                 MaxHP = player.MaxHP,
@@ -1342,9 +1415,9 @@ public class BattleController : MonoBehaviour
         }
 
         // 恢复目标Spirit的运行时数据
-        if (spiritRuntimeData.ContainsKey(targetIndex))
+        if (spiritRuntimeData.ContainsKey(nextSpiritData))
         {
-            var runtimeData = spiritRuntimeData[targetIndex];
+            var runtimeData = spiritRuntimeData[nextSpiritData];
             // 直接恢复之前记录的HP/MP（不走伤害减伤逻辑）
             player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
         }
@@ -1384,9 +1457,10 @@ public class BattleController : MonoBehaviour
                 changed = true;
 
                 // 更新当前Spirit的运行时数据
-                if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(currentSpiritIndex))
+                if (spiritRuntimeData != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
                 {
-                    spiritRuntimeData[currentSpiritIndex] = new SpiritRuntimeData
+                    var currentSpiritData = spiritQueue[currentSpiritIndex];
+                    spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
                     {
                         CurrentHP = player.HP,
                         MaxHP = player.MaxHP,
@@ -1398,8 +1472,8 @@ public class BattleController : MonoBehaviour
                     if (
                         player.HP > 0
                         && spiritAliveStatus != null
-                        && spiritAliveStatus.ContainsKey(currentSpiritIndex)
-                        && !spiritAliveStatus[currentSpiritIndex]
+                        && spiritAliveStatus.ContainsKey(currentSpiritData)
+                        && !spiritAliveStatus[currentSpiritData]
                     )
                     {
                         ReviveSpirit(currentSpiritIndex);
@@ -1738,11 +1812,18 @@ public class BattleController : MonoBehaviour
         // 更新战斗内的部署列表/运行时数据
         if (spiritQueue != null && targetSpiritIndex < spiritQueue.Count)
         {
+            var oldSpiritData = spiritQueue[targetSpiritIndex];
             spiritQueue[targetSpiritIndex] = newSpiritData;
 
+            // 从旧精灵数据移除运行时数据，添加新精灵数据
             if (spiritRuntimeData != null)
             {
-                spiritRuntimeData[targetSpiritIndex] = new SpiritRuntimeData
+                if (spiritRuntimeData.ContainsKey(oldSpiritData))
+                {
+                    spiritRuntimeData.Remove(oldSpiritData);
+                }
+
+                spiritRuntimeData[newSpiritData] = new SpiritRuntimeData
                 {
                     CurrentHP = newSpiritData.MaxHP,
                     MaxHP = newSpiritData.MaxHP,
@@ -1753,7 +1834,12 @@ public class BattleController : MonoBehaviour
 
             if (spiritAliveStatus != null)
             {
-                spiritAliveStatus[targetSpiritIndex] = true;
+                if (spiritAliveStatus.ContainsKey(oldSpiritData))
+                {
+                    spiritAliveStatus.Remove(oldSpiritData);
+                }
+
+                spiritAliveStatus[newSpiritData] = true;
             }
 
             // 如果是当前上场精灵，立即切换实体
@@ -1820,9 +1906,9 @@ public class BattleController : MonoBehaviour
         }
 
         // 如果在spiritQueue中，恢复运行时数据
-        if (queueIndex >= 0 && spiritRuntimeData != null && spiritRuntimeData.ContainsKey(queueIndex))
+        if (queueIndex >= 0 && spiritRuntimeData != null && spiritRuntimeData.ContainsKey(spiritData))
         {
-            var runtimeData = spiritRuntimeData[queueIndex];
+            var runtimeData = spiritRuntimeData[spiritData];
             tempSpirit.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
         }
 
@@ -1841,7 +1927,11 @@ public class BattleController : MonoBehaviour
         if (spirit == null || spiritRuntimeData == null)
             return;
 
-        spiritRuntimeData[spiritIndex] = new SpiritRuntimeData
+        if (spiritIndex < 0 || spiritIndex >= spiritQueue.Count)
+            return;
+
+        var spiritData = spiritQueue[spiritIndex];
+        spiritRuntimeData[spiritData] = new SpiritRuntimeData
         {
             CurrentHP = spirit.HP,
             MaxHP = spirit.MaxHP,
@@ -1857,8 +1947,8 @@ public class BattleController : MonoBehaviour
         if (
             spirit.HP > 0
             && spiritAliveStatus != null
-            && spiritAliveStatus.ContainsKey(spiritIndex)
-            && !spiritAliveStatus[spiritIndex]
+            && spiritAliveStatus.ContainsKey(spiritData)
+            && !spiritAliveStatus[spiritData]
         )
         {
             ReviveSpirit(spiritIndex);

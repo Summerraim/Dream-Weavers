@@ -1965,6 +1965,7 @@ public class UI_BattleView : MonoBehaviour
         if (controller != null)
         {
             controller.CleanupCombatDropVisual();
+            controller.EndBattleAndDeactivate();
         }
 
         // 隐藏主战斗面板
