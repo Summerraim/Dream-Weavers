@@ -276,6 +276,41 @@ public class BattleController : MonoBehaviour
 
         // 设置道具效果的静态引用
         HealAll.CurrentBattle = model;
+        HealAll.GetDeployedSpirits = () => spiritQueue;
+        HealAll.GetSpiritRuntimeData = GetSpiritRuntimeData;
+        HealAll.SaveSpiritHP = (index, currentHP, maxHP) =>
+        {
+            if (spiritRuntimeData.ContainsKey(index))
+            {
+                var data = spiritRuntimeData[index];
+                spiritRuntimeData[index] = new SpiritRuntimeData
+                {
+                    CurrentHP = currentHP,
+                    MaxHP = maxHP,
+                    CurrentMP = data.CurrentMP,
+                    MaxMP = data.MaxMP
+                };
+            }
+        };
+
+        // 设置治疗效果的静态引用（用于治疗所有已部署的精灵）
+        Heal.CurrentBattle = model;
+        Heal.GetDeployedSpirits = () => spiritQueue;
+        Heal.GetSpiritRuntimeData = GetSpiritRuntimeData;
+        Heal.SaveSpiritHP = (index, currentHP, maxHP) =>
+        {
+            if (spiritRuntimeData.ContainsKey(index))
+            {
+                var data = spiritRuntimeData[index];
+                spiritRuntimeData[index] = new SpiritRuntimeData
+                {
+                    CurrentHP = currentHP,
+                    MaxHP = maxHP,
+                    CurrentMP = data.CurrentMP,
+                    MaxMP = data.MaxMP
+                };
+            }
+        };
 
         // 设置Berserker Synergy的静态引用
         BerserkerSynergyBridge.CurrentBattle = model;
