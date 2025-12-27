@@ -59,7 +59,7 @@ MonoBehaviour:
   initialDeployedSpirits:
   - {fileID: 0}
   OwnedSpirits:
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
+  - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   DeployedSpirits:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   MaxDeployedSpirits: 6

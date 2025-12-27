@@ -1465,6 +1465,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  guideRoom: {fileID: 0}
 --- !u!114 &1972824258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2238,6 +2239,32 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8110359457152672103, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8110359457152672103, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -803926245, guid: 1e41c8249ec587e42bb3c1a4a362ca80,
+        type: 3}
+    - target: {fileID: 8110359457152672103, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8110359457152672103, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8110359457152672103, guid: edc4b0e860b849540a96483422d1fa66,
+        type: 3}
+      propertyPath: m_Color.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8117010258138305614, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}

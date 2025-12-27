@@ -18,6 +18,7 @@ MonoBehaviour:
   <CooldownTurns>k__BackingField: 0
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
-  <SkillAnimation>k__BackingField: {fileID: 0}
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 6ad8bb246483a1344bc715c6542091da,
+    type: 2}
   effects:
   - {fileID: 11400000, guid: 6a2374c65d42e2c438b5d109f5426029, type: 2}
