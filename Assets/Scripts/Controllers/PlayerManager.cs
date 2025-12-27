@@ -32,6 +32,11 @@ public class PlayerManager : MonoBehaviour
     private Player player; // 运行时玩家实例
 
     /// <summary>
+    /// 拥有精灵变更事件（捕捉/移除/部署变更时触发）
+    /// </summary>
+    public event System.Action OwnedSpiritsChanged;
+
+    /// <summary>
     /// 获取当前玩家实例
     /// </summary>
     public Player CurrentPlayer => player;
@@ -136,6 +141,11 @@ public class PlayerManager : MonoBehaviour
             }
         }
 
+        if (added)
+        {
+            OwnedSpiritsChanged?.Invoke();
+        }
+
         return added;
     }
 
@@ -145,6 +155,38 @@ public class PlayerManager : MonoBehaviour
     public System.Collections.Generic.List<SpiritData> GetOwnedSpirits()
     {
         return player?.GetAllSpirits() ?? new System.Collections.Generic.List<SpiritData>();
+    }
+
+    /// <summary>
+    /// 按索引替换拥有的精灵，同时同步PlayerData
+    /// </summary>
+    public bool ReplaceOwnedSpirit(int index, SpiritData newSpirit)
+    {
+        if (player == null || newSpirit == null)
+        {
+            Debug.LogWarning("[PlayerManager] ReplaceOwnedSpirit failed: player or newSpirit null");
+            return false;
+        }
+
+        var success = player.ReplaceOwnedSpirit(index, newSpirit);
+        if (!success)
+            return false;
+
+        // 同步到PlayerData
+        if (playerData != null)
+        {
+            var owned = player.GetAllSpirits();
+            if (index < owned.Count)
+            {
+                playerData.OwnedSpirits = owned.ToArray();
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+            }
+        }
+
+        OwnedSpiritsChanged?.Invoke();
+        return true;
     }
 
     /// <summary>
