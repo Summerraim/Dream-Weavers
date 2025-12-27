@@ -45,6 +45,9 @@ public class UI_SpiritPanel : MonoBehaviour
     // 面板关闭标志（防止关闭时响应点击）
     private bool isClosing = false;
 
+    // 只读模式标志（战斗中为true，只能查看不能部署/撤回）
+    private bool isReadOnlyMode = false;
+
     // PlayerData引用（用于初始配置）
     private PlayerData playerData;
     // Player运行时实例引用（用于动态部署/撤回操作）
@@ -71,6 +74,30 @@ public class UI_SpiritPanel : MonoBehaviour
     {
         playerData = data;
         InitializeSlots();
+    }
+
+    /// <summary>
+    /// 设置只读模式（战斗中为true，只能查看不能部署/撤回）
+    /// </summary>
+    public void SetReadOnlyMode(bool readOnly)
+    {
+        isReadOnlyMode = readOnly;
+        if (readOnly)
+        {
+            Debug.Log("[UI_SpiritPanel] 设置为只读模式（战斗中）");
+        }
+        else
+        {
+            Debug.Log("[UI_SpiritPanel] 设置为可编辑模式（战斗外）");
+        }
+    }
+
+    /// <summary>
+    /// 检查是否为只读模式
+    /// </summary>
+    public bool IsReadOnlyMode()
+    {
+        return isReadOnlyMode;
     }
 
     /// <summary>
@@ -454,6 +481,13 @@ public class UI_SpiritPanel : MonoBehaviour
             Debug.Log($"[UI_SpiritPanel] Showing details for {spiritData.DisplayName}");
         }
 
+        // 只读模式下，只显示详情，不允许撤回
+        if (isReadOnlyMode)
+        {
+            Debug.Log("[UI_SpiritPanel] 只读模式：战斗中无法撤回精灵");
+            yield break;
+        }
+
         // 撤回Spirit - 直接操作player并同步到PlayerData
         Debug.Log($"[UI_SpiritPanel] OnDeployedSlotClicked: 准备撤回 {spiritData.DisplayName}，槽位索引={slotIndex}");
         bool success = player.RecallSpirit(spiritData);
@@ -536,6 +570,13 @@ public class UI_SpiritPanel : MonoBehaviour
         {
             detailPanel.ShowSpiritDetails(spiritData);
             Debug.Log($"[UI_SpiritPanel] Showing details for {spiritData.DisplayName}");
+        }
+
+        // 只读模式下，只显示详情，不允许部署/撤回
+        if (isReadOnlyMode)
+        {
+            Debug.Log("[UI_SpiritPanel] 只读模式：战斗中无法调整精灵部署");
+            yield break;
         }
 
         // 【重要】实时从Player查询部署状态，而不是使用槽位缓存的状态
