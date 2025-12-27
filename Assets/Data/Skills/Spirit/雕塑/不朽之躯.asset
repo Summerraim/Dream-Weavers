@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
-  m_Name: "\u72C2\u6218\u58EB\u4E4B\u6012"
+  m_Name: "\u4E0D\u673D\u4E4B\u8EAF"
   m_EditorClassIdentifier: 
-  displayNameOverride: "\u72C2\u6218\u58EB\u4E4B\u6012"
-  <Description>k__BackingField: "\u72C2\u6218\u58EB\u4E4B\u6012"
-  <Mana>k__BackingField: 0
-  <CooldownTurns>k__BackingField: 1
-  <MaxUsesPerBattle>k__BackingField: 1
+  displayNameOverride: "\u4E0D\u673D\u4E4B\u8EAF "
+  <Description>k__BackingField: "\u6FC0\u6D3B\u4E0D\u673D\u77F3\u8D28\u8EAB\u8EAF "
+  <Mana>k__BackingField: 45
+  <CooldownTurns>k__BackingField: 5
+  <MaxUsesPerBattle>k__BackingField: 5
   <Image>k__BackingField: {fileID: 0}
   <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 3c06117054ebb47419a283c79ec1ff6c,
     type: 2}
   effects:
-  - {fileID: 11400000, guid: e37890e4bce4a36468b1702a20d05eb5, type: 2}
-  - {fileID: 11400000, guid: 76f367890488d214d9626da0f9782119, type: 2}
+  - {fileID: 11400000, guid: bce838f726a839b4182f13f69b244f10, type: 2}
+  - {fileID: 11400000, guid: d1b58bcba192af24ca7310849ca3eff1, type: 2}

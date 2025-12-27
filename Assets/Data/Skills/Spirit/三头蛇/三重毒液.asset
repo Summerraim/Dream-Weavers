@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
-  m_Name: "\u5851\u8EAB"
+  m_Name: "\u4E09\u91CD\u6BD2\u6DB2"
   m_EditorClassIdentifier: 
-  displayNameOverride: "\u5851\u8EAB"
-  <Description>k__BackingField: "\u5851\u8EAB"
-  <Mana>k__BackingField: 30
-  <CooldownTurns>k__BackingField: 3
+  displayNameOverride: "\u4E09\u91CD\u6BD2\u6DB2 "
+  <Description>k__BackingField: "\u4E09\u4E2A\u5934\u540C\u65F6\u55B7\u5C04\u6BD2\u6DB2 "
+  <Mana>k__BackingField: 24
+  <CooldownTurns>k__BackingField: 5
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
-  <SkillAnimation>k__BackingField: {fileID: 0}
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: b849fc710f36a7b44bc486c7499d2575,
+    type: 2}
   effects:
-  - {fileID: 11400000, guid: 0c42110e4811c1648993a2e4b26d6d27, type: 2}
-  - {fileID: 11400000, guid: 1efe7e5aa2b8b554cb19066973966d5c, type: 2}
+  - {fileID: 11400000, guid: 397377472c3557b4fbcd147c4f0861ea, type: 2}

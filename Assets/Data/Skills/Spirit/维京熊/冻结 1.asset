@@ -9,14 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b693269e58e03154daaf0c32154fcee5, type: 3}
-  m_Name: "\u4E2D\u6BD2 1"
+  m_Script: {fileID: 11500000, guid: 0c0cd9f7e76baf748a53cfd467032a5e, type: 3}
+  m_Name: "\u51BB\u7ED3 1"
   m_EditorClassIdentifier: 
   displayName: 
   description: 
-  image: {fileID: 21300000, guid: 7ff1adbff7674ca41aa7a579cd851211, type: 3}
-  usePercentDamage: 1
-  percentDamage: 0.1
-  initDamage: 25
-  duration: 3
+  image: {fileID: 21300000, guid: 8aff6be2760e16d4186aa63661f03fbf, type: 3}
+  duration: 1
+  triggerChance: 0.3
   applyToTarget: 1
