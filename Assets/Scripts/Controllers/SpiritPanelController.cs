@@ -128,6 +128,22 @@ public class SpiritPanelController : MonoBehaviour
             Debug.Log($"[SpiritPanelController] PlayerData 实例ID: {playerData.GetInstanceID()}, 名称: {playerData.name}");
         }
 
+        // 检测是否在战斗中
+        bool inBattle = false;
+        BattleController battleController = FindObjectOfType<BattleController>();
+        if (battleController != null)
+        {
+            BattleState currentState = battleController.State;
+            // 战斗中的状态：PlayerTurn, EnemyTurn, Victory, Defeat
+            // 非战斗状态：None
+            inBattle = currentState != BattleState.None;
+            Debug.Log($"[SpiritPanelController] 战斗状态检测: State={currentState}, inBattle={inBattle}");
+        }
+        else
+        {
+            Debug.Log("[SpiritPanelController] 未找到 BattleController，判定为战斗外");
+        }
+
         // 优先使用 PlayerManager 的全局 Player 实例（保持数据一致性）
         if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
         {
@@ -193,11 +209,22 @@ public class SpiritPanelController : MonoBehaviour
             }
         }
 
+        // 根据战斗状态设置只读模式
         if (spiritPanel != null)
         {
+            spiritPanel.SetReadOnlyMode(inBattle);
+
             Debug.Log("[SpiritPanelController] Calling spiritPanel.ShowPanel()...");
             spiritPanel.ShowPanel();
-            Debug.Log("[SpiritPanelController] Showing Spirit panel");
+
+            if (inBattle)
+            {
+                Debug.Log("[SpiritPanelController] 战斗中，精灵面板设置为只读模式（仅可查看）");
+            }
+            else
+            {
+                Debug.Log("[SpiritPanelController] 战斗外，精灵面板可正常管理");
+            }
         }
         else
         {
