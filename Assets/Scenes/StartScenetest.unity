@@ -17007,6 +17007,58 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 6
   m_TargetDisplay: 0
+<<<<<<< HEAD
+=======
+--- !u!1 &1839521381
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1839521383}
+  - component: {fileID: 1839521382}
+  m_Layer: 0
+  m_Name: RoomManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1839521382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839521381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84019703138cb6e4d81fb5ff7d6b823a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentFloor: 1
+  currentRoomId: 1
+  currentRoomType: 0
+  enableFloorDialogue: 1
+  enableRoomDialogue: 1
+--- !u!4 &1839521383
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839521381}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 183.09566, y: 120.17203, z: -40.074165}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+>>>>>>> 0084ef21514f477d327917e37e55d3265fbedea8
 --- !u!224 &1848968861 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4638610993879855976, guid: 1dd1204c62611074298f9f5a2da0691a,
@@ -19498,3 +19550,4 @@ SceneRoots:
   - {fileID: 1159765905}
   - {fileID: 1183017441}
   - {fileID: 1999060658}
+  - {fileID: 1839521383}
