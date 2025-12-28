@@ -332,17 +332,19 @@ public class RoomManager : MonoBehaviour
         switch (roomType)
         {
             case RoomType_cza.Combat:
-                return "Room_Combat_Enter";
+                return "First Dialog";  // 使用现有的对话数据文件ID
             case RoomType_cza.Rest:
-                return "Room_Rest_Enter";
+                return "Rest Dialog";   // 使用现有的对话数据文件ID
             case RoomType_cza.Props:
-                return "Room_Props_Enter";
+                return "Props Dialog";  // 使用现有的对话数据文件ID
             case RoomType_cza.Skill:
-                return "Room_Skill_Enter";
+                return "Skill Dialog";  // 使用现有的对话数据文件ID
             case RoomType_cza.Boss:
-                return "Room_Boss_Enter";
+                return "Boss Dialog";   // 使用现有的对话数据文件ID
+            case RoomType_cza.Guide:
+                return "First Dialog";  // 引导房间也使用First Dialog
             default:
-                return "Room_Combat_Enter";
+                return "First Dialog";  // 默认使用First Dialog
         }
     }
     
