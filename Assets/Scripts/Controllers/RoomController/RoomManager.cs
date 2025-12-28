@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DreamWeavers.Services;
+using DreamWeavers.Rooms;
 
 /// <summary>
 /// 房间管理器
@@ -108,15 +109,34 @@ public class RoomManager : MonoBehaviour
     #region 楼层管理
     
     /// <summary>
-    /// 生成楼层地图
+    /// 同步楼层地图（从 RoomStateMachine_cza 获取，确保使用同一份地图）
     /// </summary>
     private void GenerateFloorMap(int floor)
     {
-        // 使用地图生成器生成楼层地图
-        SeedRNG_cza rng = new SeedRNG_cza(System.DateTime.Now.Millisecond);
-        currentFloorMap = MapGenerator_cza.GenerateFloor(floor, rng);
-        
-        Debug.Log($"生成楼层 {floor} 地图完成，共 {currentFloorMap.Rooms.Count} 个房间");
+        // 优先使用 RoomStateMachine_cza 的地图，避免生成两份不同的地图导致房间类型不一致
+        var sm = RoomStateMachine_cza.Instance;
+        if (sm != null && sm.CurrentMap != null && sm.CurrentMap.FloorIndex == floor)
+        {
+            currentFloorMap = sm.CurrentMap;
+            Debug.Log($"[RoomManager] 同步楼层 {floor} 地图（来自 RoomStateMachine），共 {currentFloorMap.Rooms.Count} 个房间");
+        }
+        else
+        {
+            // 如果 RoomStateMachine 还没初始化，先让它初始化
+            if (sm != null)
+            {
+                sm.InitFloor(floor);
+                currentFloorMap = sm.CurrentMap;
+                Debug.Log($"[RoomManager] 触发 RoomStateMachine 初始化并同步楼层 {floor} 地图，共 {currentFloorMap?.Rooms?.Count ?? 0} 个房间");
+            }
+            else
+            {
+                // 兜底：如果 RoomStateMachine 不存在，自己生成（不推荐）
+                SeedRNG_cza rng = new SeedRNG_cza(System.DateTime.Now.Millisecond);
+                currentFloorMap = MapGenerator_cza.GenerateFloor(floor, rng);
+                Debug.LogWarning($"[RoomManager] RoomStateMachine 不存在，独立生成楼层 {floor} 地图，共 {currentFloorMap.Rooms.Count} 个房间");
+            }
+        }
     }
     
     /// <summary>
