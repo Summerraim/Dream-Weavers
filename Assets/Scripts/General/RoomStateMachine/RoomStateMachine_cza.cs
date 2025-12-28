@@ -182,53 +182,33 @@ public class RoomStateMachine_cza : MonoBehaviour
     // 进入指定房间
     public void EnterRoom(int roomId)
     {
-        if (CurrentMap == null)
-        {
-            Debug.LogWarning("[RoomState] EnterRoom 失败: CurrentMap=null, roomId=" + roomId);
+        if (CurrentMap == null || !CurrentMap.Rooms.ContainsKey(roomId))
             return;
-        }
-        if (!CurrentMap.Rooms.ContainsKey(roomId))
-        {
-            Debug.LogWarning($"[RoomState] EnterRoom 失败: 房间 {roomId} 不存在 (RoomsCount={CurrentMap.Rooms.Count})");
-            return;
-        }
         if (visitedRooms.Contains(roomId))
-        {
-            Debug.LogWarning($"[RoomState] EnterRoom 拒绝: 房间 {roomId} 已访问，禁止重复进入 (visited=[{string.Join(",", visitedRooms)}])");
             return;
-        }
-        Debug.Log($"[RoomState] EnterRoom 准备进入: roomId={roomId} (visitedCount={visitedRooms.Count})");
+            
         CurrentRoom = CurrentMap.Rooms[roomId];
-        // 每次进入房间都退出选择模式，避免误触
         awaitingChoice = false;
         visitedRooms.Add(roomId);
         visitedOrderDebug.Add(roomId);
-        Debug.Log($"[RoomState] 记录访问房间 -> {roomId}; 总数={visitedRooms.Count}; 集合=[{string.Join(",", visitedRooms)}]; 顺序=[{string.Join("->", visitedOrderDebug)}]; floorInitCounter={floorInitCounter}");
         branchChoices.Clear();
-        Debug.Log($"[RoomState] 进入房间 Id={roomId} Type={CurrentRoom.Type}");
+        
+        Debug.Log($"[Room] 进入房间 Id={roomId} Type={CurrentRoom.Type} (CurrentMap.FloorIndex={CurrentMap.FloorIndex})");
+        
         var beforeInvokeRoom = CurrentRoom;
+        Debug.Log($"[Room] 即将调用 HandleRoomEnter, CurrentRoom.Type={CurrentRoom.Type}");
         HandleRoomEnter(CurrentRoom);
+        Debug.Log($"[Room] HandleRoomEnter 完成, CurrentRoom.Type={CurrentRoom?.Type}");
         if (OnRoomEntered != null)
         {
             foreach (var d in OnRoomEntered.GetInvocationList())
             {
-                Debug.Log($"[RoomState] OnRoomEntered 调用订阅者: {d.Method.DeclaringType.FullName}.{d.Method.Name}() InstanceID={GetInstanceID()} CurrentRoom={(CurrentRoom!=null ? CurrentRoom.Id.ToString() : "null")}");
                 d.DynamicInvoke(CurrentRoom);
-                if (CurrentRoom == null)
+                if (CurrentRoom == null && beforeInvokeRoom != null)
                 {
-                    Debug.LogError("[RoomState] 警告: 某订阅者执行后 CurrentRoom 被设置为 null，尝试恢复");
-                    if (beforeInvokeRoom != null)
-                    {
-                        CurrentRoom = beforeInvokeRoom;
-                        Debug.LogError($"[RoomState] 恢复 CurrentRoom -> {CurrentRoom.Id}");
-                    }
+                    CurrentRoom = beforeInvokeRoom;
                 }
             }
-        }
-        var afterInvokeRoom = CurrentRoom;
-        if (beforeInvokeRoom != afterInvokeRoom)
-        {
-            Debug.LogWarning($"[RoomState] EnterRoom: CurrentRoom 在事件调用期间变化: before={(beforeInvokeRoom!=null?beforeInvokeRoom.Id.ToString():"null")} after={(afterInvokeRoom!=null?afterInvokeRoom.Id.ToString():"null")}");
         }
         OnBranchChoicesUpdated?.Invoke(branchChoices);
     }
@@ -236,31 +216,20 @@ public class RoomStateMachine_cza : MonoBehaviour
     // 当前房间完成（战斗胜利/事件结束等）
     public void CompleteCurrentRoom()
     {
-        Debug.Log($"[RoomState] CompleteCurrentRoom 调用: roomId={CurrentRoom.Id} Type={CurrentRoom.Type}");
-        // 防重复：若已在选择阶段，忽略再次完成触发，避免重复生成不同候选
+        // 防重复：若已在选择阶段，忽略再次完成触发
         if (awaitingChoice)
-        {
-            Debug.Log("[RoomState] 已处于选择阶段，忽略重复 Complete 调用");
             return;
-        }
-        // 若尚未初始化楼层或未进入任何房间，此时不再兜底重置楼层，直接提示并返回，避免清空已访问记录
         if (CurrentMap == null || CurrentRoom == null)
-        {
-            string reason = (CurrentMap == null ? "CurrentMap=null" : "") + (CurrentRoom == null ? (CurrentMap == null ? ", " : "") + "CurrentRoom=null" : "");
-            Debug.LogWarning($"[RoomState] Complete 调用时状态不完整 ({reason})，已取消本次完成操作，避免重置楼层");
             return;
-        }
-        Debug.Log($"[RoomState] 完成房间 Id={CurrentRoom.Id} Type={CurrentRoom.Type}");
+            
+        Debug.Log($"[Room] 完成房间 Id={CurrentRoom.Id} Type={CurrentRoom.Type}");
         OnRoomCompleted?.Invoke(CurrentRoom);
 
-        // 完成后进入选择模式（若有后续房间）
-        // Boss 房直接结束
+        // Boss 房直接进入下一层
         if (CurrentRoom.Type == RoomType_cza.Boss)
         {
             awaitingChoice = false;
-            int currentFloor = CurrentMap != null ? CurrentMap.FloorIndex : 0;
-            int nextFloor = currentFloor + 1;
-            Debug.Log($"[RoomState] Boss 房完成，自动初始化下一层 -> Floor {nextFloor}");
+            int nextFloor = (CurrentMap?.FloorIndex ?? 0) + 1;
             InitFloor(nextFloor);
             return;
         }
@@ -269,13 +238,15 @@ public class RoomStateMachine_cza : MonoBehaviour
         branchChoices.Clear();
         var candidates = GetUnvisitedRoomIds();
 
-        // 安全：理论上当前房间已在 visited 中，但这里确保不包含
+        // 安全：确保不包含当前房间
         candidates.Remove(CurrentRoom.Id);
+        
+        // 调试：打印候选和已访问
+        Debug.Log($"[Room] 候选(排除当前{CurrentRoom.Id}): [{string.Join(",", candidates)}] visited=[{string.Join(",", visitedRooms)}]");
 
         if (candidates.Count == 0)
         {
             awaitingChoice = false;
-            Debug.Log("[RoomState] 无后续分支（不存在未访问房间）");
             OnBranchChoicesUpdated?.Invoke(branchChoices);
             return;
         }
@@ -322,17 +293,14 @@ public class RoomStateMachine_cza : MonoBehaviour
         awaitingChoice = branchChoices.Count > 0;
         if (awaitingChoice)
         {
-            // 打印已访问集合便于核对
-            Debug.Log($"[RoomState] 已访问集合(Count={visitedRooms.Count})=[{string.Join(",", visitedRooms)}]; 顺序=[{string.Join("->", visitedOrderDebug)}]; floorInitCounter={floorInitCounter}");
-            Debug.Log($"[RoomState] 选择阶段 可选={string.Join(",", branchChoices)}");
-            for (int i = 0; i < branchChoices.Count; i++)
+            // 关键日志：显示当前可选路线及其类型
+            var details = new List<string>();
+            foreach (var rid in branchChoices)
             {
-                Debug.Log($"[RoomState] 选项 {i+1} -> 房间 {branchChoices[i]}");
+                string t = CurrentMap.Rooms.TryGetValue(rid, out var n) ? n.Type.ToString() : "?";
+                details.Add($"{rid}({t})");
             }
-        }
-        else
-        {
-            Debug.Log("[RoomState] 无后续分支");
+            Debug.Log($"[Room] 选择阶段: 可选房间={string.Join(", ", details)}");
         }
         OnBranchChoicesUpdated?.Invoke(new List<int>(branchChoices));
     }
@@ -359,11 +327,21 @@ public class RoomStateMachine_cza : MonoBehaviour
     {
         if (!awaitingChoice) return;
         if (branchChoices.Count == 0) return;
-        int raw = idx;
+        
+        // 诊断日志：显示点击的按钮索引和当前 branchChoices
+        var details = new List<string>();
+        for (int i = 0; i < branchChoices.Count; i++)
+        {
+            int rid = branchChoices[i];
+            string t = CurrentMap.Rooms.TryGetValue(rid, out var n) ? n.Type.ToString() : "?";
+            details.Add($"[{i}]={rid}({t})");
+        }
+        Debug.Log($"[Room] ChooseNextByIndex: 点击按钮idx={idx}, branchChoices={string.Join(", ", details)}");
+        
         idx = Mathf.Clamp(idx, 0, branchChoices.Count - 1);
         int target = branchChoices[idx];
+        Debug.Log($"[Room] ChooseNextByIndex: 实际选择 idx={idx} -> roomId={target}");
         awaitingChoice = false;
-        Debug.Log($"[RoomState] 选择输入={raw} 实际={idx+1} -> 进入房间 Id={target}");
         EnterRoom(target);
     }
 
