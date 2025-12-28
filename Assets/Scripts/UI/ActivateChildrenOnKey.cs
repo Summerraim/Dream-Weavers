@@ -47,7 +47,18 @@ public class ActivateChildrenOnKey : MonoBehaviour
 		{
 			toggleCanvas();
 		}
-     
+	}
+
+	/// <summary>
+	/// 同步内部状态与 CanvasGroup 的实际状态（外部代码可能修改了 CanvasGroup）
+	/// </summary>
+	public void SyncStateFromCanvasGroup()
+	{
+		var cg = ResolveCanvasGroup();
+		if (cg != null)
+		{
+			isVisible = cg.alpha > 0.5f;
+		}
 	}
 
 	private void toggleCanvas()
@@ -56,6 +67,10 @@ public class ActivateChildrenOnKey : MonoBehaviour
 		if (cg == null)
 			return;
 
+		// 先同步当前状态（外部代码可能已修改 CanvasGroup）
+		isVisible = cg.alpha > 0.5f;
+
+		// 然后切换
 		isVisible = !isVisible;
 		ApplyVisibility();
 	}
