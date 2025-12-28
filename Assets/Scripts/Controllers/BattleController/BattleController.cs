@@ -1854,6 +1854,7 @@ public class BattleController : MonoBehaviour
         if (battleView != null)
         {
             battleView.RefreshSpiritSlots();
+            battleView.RefreshItemUseSlots(true); // 重新加载精灵数据
             battleView.Refresh();
         }
 

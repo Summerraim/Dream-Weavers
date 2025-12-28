@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 // 放在各房间类型面板（如 Panel_Combat）下，用于按楼层应用不同美术。
 public class RoomUISkinController : MonoBehaviour
@@ -34,6 +36,11 @@ public class RoomUISkinController : MonoBehaviour
 
     private GameObject currentSkinInstance;
     private int currentAppliedFloor = int.MinValue;
+
+    // 缓存皮肤预制体中的路线选择按钮
+    private Button skinRouteBtn1;
+    private Button skinRouteBtn2;
+    private Button skinRouteBtn3;
 
     [Header("路线选择UI（按楼层管理）")]
     [Tooltip("选择阶段的路线界面根容器（可选，仅用于显示/隐藏，不负责实例化）。")]
@@ -140,6 +147,9 @@ public class RoomUISkinController : MonoBehaviour
                 currentSkinInstance.SetActive(true);
                 Debug.Log($"[SkinCtl] Instantiate skin -> {currentSkinInstance.name} under {skinRoot.name}");
             }
+
+            // 自动绑定皮肤预制体中的路线选择按钮
+            BindRouteButtonsInSkin(currentSkinInstance);
 
             // 可选：清理除当前皮肤外的其他子物体，保证唯一（支持隐藏或销毁）
             if (clearOthersOnApply)
@@ -286,5 +296,150 @@ public class RoomUISkinController : MonoBehaviour
             if (keep != null && c == keep) continue;
             c.gameObject.SetActive(false);
         }
+    }
+
+    /// <summary>
+    /// 从皮肤预制体中查找并绑定路线选择按钮（按名称包含 Next1/Next2/Next3 或 Choice1/Choice2/Choice3 等）
+    /// </summary>
+    private void BindRouteButtonsInSkin(GameObject skinInstance)
+    {
+        if (skinInstance == null) return;
+
+        // 清空旧引用
+        skinRouteBtn1 = null;
+        skinRouteBtn2 = null;
+        skinRouteBtn3 = null;
+
+        var buttons = skinInstance.GetComponentsInChildren<Button>(true);
+
+        foreach (var btn in buttons)
+        {
+            var btnName = btn.gameObject.name;
+            if (skinRouteBtn1 == null && ContainsAnyKeyword(btnName, "Next1", "Next01", "Next_1", "Choice1", "Choice01", "Choice_1", "Route1", "Route01", "Route_1"))
+            {
+                skinRouteBtn1 = btn;
+            }
+            else if (skinRouteBtn2 == null && ContainsAnyKeyword(btnName, "Next2", "Next02", "Next_2", "Choice2", "Choice02", "Choice_2", "Route2", "Route02", "Route_2"))
+            {
+                skinRouteBtn2 = btn;
+            }
+            else if (skinRouteBtn3 == null && ContainsAnyKeyword(btnName, "Next3", "Next03", "Next_3", "Choice3", "Choice03", "Choice_3", "Route3", "Route03", "Route_3"))
+            {
+                skinRouteBtn3 = btn;
+            }
+        }
+
+        // 绑定事件（移除旧监听，添加新监听）
+        if (skinRouteBtn1 != null)
+        {
+            skinRouteBtn1.onClick.RemoveAllListeners();
+            skinRouteBtn1.onClick.AddListener(() =>
+            {
+                Debug.Log("[SkinCtl] Click Route Button 1");
+                RoomStateMachine_cza.Instance?.GoToNext(0);
+            });
+            Debug.Log($"[SkinCtl] 绑定皮肤按钮: {skinRouteBtn1.gameObject.name} -> GoToNext(0)");
+        }
+        if (skinRouteBtn2 != null)
+        {
+            skinRouteBtn2.onClick.RemoveAllListeners();
+            skinRouteBtn2.onClick.AddListener(() =>
+            {
+                Debug.Log("[SkinCtl] Click Route Button 2");
+                RoomStateMachine_cza.Instance?.GoToNext(1);
+            });
+            Debug.Log($"[SkinCtl] 绑定皮肤按钮: {skinRouteBtn2.gameObject.name} -> GoToNext(1)");
+        }
+        if (skinRouteBtn3 != null)
+        {
+            skinRouteBtn3.onClick.RemoveAllListeners();
+            skinRouteBtn3.onClick.AddListener(() =>
+            {
+                Debug.Log("[SkinCtl] Click Route Button 3");
+                RoomStateMachine_cza.Instance?.GoToNext(2);
+            });
+            Debug.Log($"[SkinCtl] 绑定皮肤按钮: {skinRouteBtn3.gameObject.name} -> GoToNext(2)");
+        }
+
+        if (skinRouteBtn1 == null && skinRouteBtn2 == null && skinRouteBtn3 == null)
+        {
+            Debug.Log($"[SkinCtl] 皮肤 {skinInstance.name} 中未找到路线选择按钮（这可能是正常的，如果该皮肤不包含路线选择UI）");
+        }
+    }
+
+    /// <summary>
+    /// 更新皮肤中路线选择按钮的标签和交互状态
+    /// </summary>
+    public void UpdateRouteButtons(IReadOnlyList<int> choices, bool selecting)
+    {
+        int count = choices != null ? choices.Count : 0;
+        
+        // 更新按钮1
+        if (skinRouteBtn1 != null)
+        {
+            skinRouteBtn1.interactable = selecting && count >= 1;
+            UpdateButtonLabel(skinRouteBtn1, choices, 0);
+        }
+        
+        // 更新按钮2
+        if (skinRouteBtn2 != null)
+        {
+            skinRouteBtn2.interactable = selecting && count >= 2;
+            UpdateButtonLabel(skinRouteBtn2, choices, 1);
+        }
+        
+        // 更新按钮3
+        if (skinRouteBtn3 != null)
+        {
+            skinRouteBtn3.interactable = selecting && count >= 3;
+            UpdateButtonLabel(skinRouteBtn3, choices, 2);
+        }
+        
+        Debug.Log($"[SkinCtl] UpdateRouteButtons: selecting={selecting}, count={count}, btn1={skinRouteBtn1 != null}, btn2={skinRouteBtn2 != null}, btn3={skinRouteBtn3 != null}");
+    }
+
+    private void UpdateButtonLabel(Button button, IReadOnlyList<int> choices, int index)
+    {
+        if (button == null) return;
+        
+        var label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label == null) return;
+        
+        if (choices != null && index < choices.Count)
+        {
+            int roomId = choices[index];
+            var sm = RoomStateMachine_cza.Instance;
+            if (sm != null && sm.CurrentMap != null && sm.CurrentMap.Rooms.TryGetValue(roomId, out var node))
+            {
+                label.text = $"路线{index + 1}: {node.Type}";
+            }
+            else
+            {
+                label.text = $"路线{index + 1}: 房间{roomId}";
+            }
+        }
+        else
+        {
+            label.text = $"路线{index + 1}: --";
+        }
+    }
+
+    /// <summary>
+    /// 检查是否有绑定的路线按钮
+    /// </summary>
+    public bool HasRouteButtons()
+    {
+        return skinRouteBtn1 != null || skinRouteBtn2 != null || skinRouteBtn3 != null;
+    }
+
+    private bool ContainsAnyKeyword(string source, params string[] keywords)
+    {
+        if (string.IsNullOrEmpty(source)) return false;
+        foreach (var k in keywords)
+        {
+            if (!string.IsNullOrEmpty(k) && source.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+        return false;
     }
 }

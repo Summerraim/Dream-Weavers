@@ -172,6 +172,10 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private GameObject itemUseSlotPrefab;
 
+    [SerializeField]
+    [Tooltip("选择道具目标时显示的提示文本")]
+    private TMP_Text itemTargetHintText;
+
     [Header("Effect Display")]
     [SerializeField]
     private GameObject effectSlotPrefab;
@@ -493,6 +497,10 @@ public class UI_BattleView : MonoBehaviour
         // 直接显示“拥有精灵列表”面板，并初始化槽位（不依赖道具逻辑）
         if (itemTargetPanel != null)
             EnsurePanelCanvasGroupHidden(itemTargetPanel); // 默认隐藏，由按键控制
+
+        // 初始化提示文本（默认隐藏）
+        if (itemTargetHintText != null)
+            itemTargetHintText.gameObject.SetActive(false);
 
         // 初始化敌人死亡面板（默认隐藏）
         if (enemyDeathPanel != null)
@@ -1460,10 +1468,31 @@ public class UI_BattleView : MonoBehaviour
     /// <summary>
     /// 刷新道具目标槽位的状态
     /// </summary>
-    public void RefreshItemUseSlots()
+    /// <param name="reloadData">是否重新加载精灵数据（用于进化等改变精灵数据后）</param>
+    public void RefreshItemUseSlots(bool reloadData = false)
     {
         if (itemUseSlots == null || controller == null)
             return;
+
+        // 如果需要重新加载数据（如精灵进化后）
+        if (reloadData)
+        {
+            itemUseOwnedSpirits = GetOwnedSpiritsFromPlayerDataSimple();
+            
+            for (int i = 0; i < itemUseSlots.Length; i++)
+            {
+                var slot = itemUseSlots[i];
+                if (slot == null)
+                    continue;
+
+                SpiritData data = (itemUseOwnedSpirits != null && i < itemUseOwnedSpirits.Count)
+                    ? itemUseOwnedSpirits[i]
+                    : null;
+
+                // 重新初始化槽位数据
+                slot.Initialize(i, data, OnItemUseSlotClicked);
+            }
+        }
 
         for (int i = 0; i < itemUseSlots.Length; i++)
         {
@@ -1532,13 +1561,20 @@ public class UI_BattleView : MonoBehaviour
             spiritSwitcherPanel.SetActive(false);
         }
 
+        // 通过CanvasGroup显示面板
         if (itemTargetPanel != null)
         {
             EnsurePanelCanvasGroupVisible(itemTargetPanel);
         }
 
+        // 显示提示文本
+        if (itemTargetHintText != null)
+        {
+            itemTargetHintText.gameObject.SetActive(true);
+        }
+
+        // 初始化槽位数据
         InitializeItemUseSlots();
-        Debug.Log("UI_BattleView: Showing ItemUseSlots for item target selection");
     }
 
     /// <summary>
@@ -1548,9 +1584,16 @@ public class UI_BattleView : MonoBehaviour
     {
         isSelectingItemTarget = false;
 
+        // 通过CanvasGroup隐藏面板
         if (itemTargetPanel != null)
         {
             EnsurePanelCanvasGroupHidden(itemTargetPanel);
+        }
+
+        // 隐藏提示文本
+        if (itemTargetHintText != null)
+        {
+            itemTargetHintText.gameObject.SetActive(false);
         }
     }
 

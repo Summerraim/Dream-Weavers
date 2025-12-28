@@ -76,6 +76,11 @@ public class RoomUIActions_cza : MonoBehaviour
     private List<FloorChoosePrefabEntry> floorChoosePrefabs = new List<FloorChoosePrefabEntry>();
 
     private GameObject currentChooseInstance;
+    
+    // 缓存预制体中的路线选择按钮，用于更新标签和交互状态
+    private Button prefabRouteBtn1;
+    private Button prefabRouteBtn2;
+    private Button prefabRouteBtn3;
 
     [Header("技能房 UI")]
     [Tooltip("显示技能信息的文本（技能名字、法力消耗、描述）")]
@@ -218,6 +223,86 @@ public class RoomUIActions_cza : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 从预制体中查找并绑定路线选择按钮（按名称包含 Next1/Next2/Next3 或 Choice1/Choice2/Choice3）
+    /// </summary>
+    private void BindChoosePrefabButtons(GameObject prefabInstance)
+    {
+        // 清空旧缓存
+        prefabRouteBtn1 = null;
+        prefabRouteBtn2 = null;
+        prefabRouteBtn3 = null;
+        
+        if (prefabInstance == null) return;
+
+        var buttons = prefabInstance.GetComponentsInChildren<Button>(true);
+
+        foreach (var btn in buttons)
+        {
+            var btnName = btn.gameObject.name;
+            if (prefabRouteBtn1 == null && ContainsAny(btnName, "Next1", "Next01", "Next_1", "Choice1", "Choice01", "Choice_1", "Route1", "Route01", "Route_1"))
+            {
+                prefabRouteBtn1 = btn;
+            }
+            else if (prefabRouteBtn2 == null && ContainsAny(btnName, "Next2", "Next02", "Next_2", "Choice2", "Choice02", "Choice_2", "Route2", "Route02", "Route_2"))
+            {
+                prefabRouteBtn2 = btn;
+            }
+            else if (prefabRouteBtn3 == null && ContainsAny(btnName, "Next3", "Next03", "Next_3", "Choice3", "Choice03", "Choice_3", "Route3", "Route03", "Route_3"))
+            {
+                prefabRouteBtn3 = btn;
+            }
+        }
+
+        // 绑定事件（移除旧监听，添加新监听）
+        if (prefabRouteBtn1 != null)
+        {
+            prefabRouteBtn1.onClick.RemoveAllListeners();
+            prefabRouteBtn1.onClick.AddListener(() =>
+            {
+                Debug.Log("[RoomUI] Prefab Click Next1");
+                RoomStateMachine_cza.Instance?.GoToNext(0);
+            });
+            Debug.Log($"[RoomUI] 绑定预制体按钮: {prefabRouteBtn1.gameObject.name} -> GoToNext(0)");
+        }
+        if (prefabRouteBtn2 != null)
+        {
+            prefabRouteBtn2.onClick.RemoveAllListeners();
+            prefabRouteBtn2.onClick.AddListener(() =>
+            {
+                Debug.Log("[RoomUI] Prefab Click Next2");
+                RoomStateMachine_cza.Instance?.GoToNext(1);
+            });
+            Debug.Log($"[RoomUI] 绑定预制体按钮: {prefabRouteBtn2.gameObject.name} -> GoToNext(1)");
+        }
+        if (prefabRouteBtn3 != null)
+        {
+            prefabRouteBtn3.onClick.RemoveAllListeners();
+            prefabRouteBtn3.onClick.AddListener(() =>
+            {
+                Debug.Log("[RoomUI] Prefab Click Next3");
+                RoomStateMachine_cza.Instance?.GoToNext(2);
+            });
+            Debug.Log($"[RoomUI] 绑定预制体按钮: {prefabRouteBtn3.gameObject.name} -> GoToNext(2)");
+        }
+
+        if (prefabRouteBtn1 == null && prefabRouteBtn2 == null && prefabRouteBtn3 == null)
+        {
+            Debug.LogWarning($"[RoomUI] 预制体 {prefabInstance.name} 中未找到路线选择按钮（名称需包含 Next1/Next2/Next3 或 Choice1/Choice2/Choice3 等）");
+        }
+    }
+
+    private bool ContainsAny(string source, params string[] keywords)
+    {
+        if (string.IsNullOrEmpty(source)) return false;
+        foreach (var k in keywords)
+        {
+            if (!string.IsNullOrEmpty(k) && source.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+        return false;
+    }
+
     private T FindInChildrenByName<T>(string[] keywords)
         where T : Component
     {
@@ -345,9 +430,12 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private string FormatRouteLabel(int index, int roomId)
     {
+        var sm = RoomStateMachine_cza.Instance;
+        int currentFloor = sm?.CurrentMap?.FloorIndex ?? -1;
         string typeName = TryGetRoomNode(roomId, out var node) && node != null
             ? node.Type.ToString()
             : "未知";
+        Debug.Log($"[RoomUI] FormatRouteLabel: index={index} roomId={roomId} floor={currentFloor} type={typeName}");
         return $"路线{index + 1}:{typeName}";
     }
 
@@ -367,9 +455,31 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private void UpdateChoiceButtonLabels(System.Collections.Generic.IReadOnlyList<int> choices)
     {
+        // 更新面板中的原有按钮标签（预制体按钮在 RefreshChoiceUI 中单独更新）
         UpdateChoiceButtonLabel(btnNext1, choices, 0);
         UpdateChoiceButtonLabel(btnNext2, choices, 1);
         UpdateChoiceButtonLabel(btnNext3, choices, 2);
+    }
+    
+    /// <summary>
+    /// 更新预制体中路线选择按钮的标签和交互状态（在 ShowChoosePrefab 之后调用）
+    /// </summary>
+    private void UpdatePrefabRouteButtons(System.Collections.Generic.IReadOnlyList<int> choices, int count)
+    {
+        // 更新交互状态
+        if (prefabRouteBtn1)
+            prefabRouteBtn1.interactable = count >= 1;
+        if (prefabRouteBtn2)
+            prefabRouteBtn2.interactable = count >= 2;
+        if (prefabRouteBtn3)
+            prefabRouteBtn3.interactable = count >= 3;
+        
+        // 更新标签
+        UpdateChoiceButtonLabel(prefabRouteBtn1, choices, 0);
+        UpdateChoiceButtonLabel(prefabRouteBtn2, choices, 1);
+        UpdateChoiceButtonLabel(prefabRouteBtn3, choices, 2);
+        
+        Debug.Log($"[RoomUI] UpdatePrefabRouteButtons: count={count}, btn1={prefabRouteBtn1 != null}, btn2={prefabRouteBtn2 != null}, btn3={prefabRouteBtn3 != null}");
     }
 
     private void UpdateChoiceButtonLabel(Button button, System.Collections.Generic.IReadOnlyList<int> choices, int index)
@@ -383,7 +493,9 @@ public class RoomUIActions_cza : MonoBehaviour
         if (choices != null && index < choices.Count)
         {
             int roomId = choices[index];
-            label.text = FormatRouteLabel(index, roomId);
+            string labelText = FormatRouteLabel(index, roomId);
+            label.text = labelText;
+            Debug.Log($"[RoomUI] UpdateChoiceButtonLabel: btn={button.gameObject.name} index={index} roomId={roomId} label=\"{labelText}\"");
         }
         else
         {
@@ -398,6 +510,7 @@ public class RoomUIActions_cza : MonoBehaviour
         int count = choices != null ? choices.Count : 0;
         Debug.Log($"[RoomUI] RefreshChoiceUI: selecting={selecting}, count={count}, usePrefabOnlyForChoices={usePrefabOnlyForChoices}");
         
+        // 更新面板中原有按钮的交互状态
         if (btnNext1)
             btnNext1.interactable = selecting && count >= 1;
         if (btnNext2)
@@ -414,7 +527,10 @@ public class RoomUIActions_cza : MonoBehaviour
             // 非选择阶段保留 RefreshRoomInfo 的静态提示
         }
 
-        UpdateChoiceButtonLabels(choices);
+        // 先更新面板中原有按钮的标签
+        UpdateChoiceButtonLabel(btnNext1, choices, 0);
+        UpdateChoiceButtonLabel(btnNext2, choices, 1);
+        UpdateChoiceButtonLabel(btnNext3, choices, 2);
 
         // 选择阶段显示选择面板；非选择阶段隐藏选择面板
         if (selecting)
@@ -430,8 +546,12 @@ public class RoomUIActions_cza : MonoBehaviour
             Debug.Log($"[RoomUI] 显示选择面板: {choosePanelName}");
             ShowPanel(choosePanelName, true);
             
-            // 显示按楼层路选择Prefab
+            // 显示按楼层路选择Prefab（会实例化预制体并绑定按钮到 prefabRouteBtn1/2/3）
             ShowChoosePrefab(true);
+            
+            // 预制体实例化后，更新预制体按钮的标签和交互状态
+            UpdatePrefabRouteButtons(choices, count);
+            
             // 同步调用房间类型面板上的皮肤控制器，显示当前楼层的路线选择 UI（场景内已存在的 uiRoot）
             var sm = RoomStateMachine_cza.Instance;
             int floor = (sm != null && sm.CurrentMap != null) ? sm.CurrentMap.FloorIndex : 0;
@@ -454,6 +574,7 @@ public class RoomUIActions_cza : MonoBehaviour
             Debug.Log($"[RoomUI] 退出选择阶段，隐藏选择面板: {choosePanelName}");
             ShowPanel(choosePanelName, false);
             ShowChoosePrefab(false);
+            
             // 退出选择阶段隐藏所有路线选择 UI
             var sm = RoomStateMachine_cza.Instance;
             int floor = (sm != null && sm.CurrentMap != null) ? sm.CurrentMap.FloorIndex : 0;
@@ -686,18 +807,45 @@ public class RoomUIActions_cza : MonoBehaviour
     // 尝试在房间类型面板的皮肤控制器上应用选择 UI 显隐
     private void TryApplyChooseUIOnSkinController(int floor, bool active)
     {
-        if (string.IsNullOrEmpty(currentRoomPanelName) || UIManagerService.Instance == null)
+        if (UIManagerService.Instance == null)
             return;
-        var panelGO = UIManagerService.Instance.GetPanel(currentRoomPanelName);
-        var skinCtl = panelGO != null ? panelGO.GetComponentInChildren<RoomUISkinController>(true) : null;
-        if (skinCtl != null)
+        
+        // 1. 先处理当前房间类型面板上的选择UI显隐
+        if (!string.IsNullOrEmpty(currentRoomPanelName))
         {
-            skinCtl.ApplyChooseUI(floor, active);
-            Debug.Log($"[RoomUI] ApplyChooseUI via SkinCtl: floor={floor} active={active} panel={currentRoomPanelName}");
+            var panelGO = UIManagerService.Instance.GetPanel(currentRoomPanelName);
+            var skinCtl = panelGO != null ? panelGO.GetComponentInChildren<RoomUISkinController>(true) : null;
+            if (skinCtl != null)
+            {
+                skinCtl.ApplyChooseUI(floor, active);
+                Debug.Log($"[RoomUI] ApplyChooseUI via SkinCtl: floor={floor} active={active} panel={currentRoomPanelName}");
+            }
+            else
+            {
+                Debug.Log($"[RoomUI] SkinCtl not found under panel {currentRoomPanelName}, skip ApplyChooseUI");
+            }
         }
-        else
+        
+        // 2. 同时处理选择面板（choosePanelName）的皮肤，确保路线选择界面背景按楼层切换
+        if (!string.IsNullOrEmpty(choosePanelName))
         {
-            Debug.Log($"[RoomUI] SkinCtl not found under panel {currentRoomPanelName}, skip ApplyChooseUI");
+            var choosePanelGO = UIManagerService.Instance.GetPanel(choosePanelName);
+            var chooseSkinCtl = choosePanelGO != null ? choosePanelGO.GetComponentInChildren<RoomUISkinController>(true) : null;
+            if (chooseSkinCtl != null)
+            {
+                if (active)
+                {
+                    // 进入选择阶段时，应用当前楼层的皮肤
+                    chooseSkinCtl.ApplySkin(floor);
+                    Debug.Log($"[RoomUI] ApplySkin on choose panel: floor={floor} panel={choosePanelName}");
+                }
+                chooseSkinCtl.ApplyChooseUI(floor, active);
+                Debug.Log($"[RoomUI] ApplyChooseUI on choose panel: floor={floor} active={active} panel={choosePanelName}");
+            }
+            else
+            {
+                Debug.Log($"[RoomUI] SkinCtl not found under choose panel {choosePanelName}, skip skin apply");
+            }
         }
     }
 
@@ -794,6 +942,10 @@ public class RoomUIActions_cza : MonoBehaviour
             // 未配置对应楼层的Prefab，保持现有面板逻辑
             if (currentChooseInstance != null)
                 currentChooseInstance.SetActive(false);
+            // 清空按钮缓存
+            prefabRouteBtn1 = null;
+            prefabRouteBtn2 = null;
+            prefabRouteBtn3 = null;
             return;
         }
         // 若当前实例与目标Prefab不同或不存在，则实例化
@@ -805,7 +957,23 @@ public class RoomUIActions_cza : MonoBehaviour
             var parent = chooseRoot != null ? chooseRoot : transform;
             currentChooseInstance = Instantiate(targetPrefab, parent);
             currentChooseInstance.name = targetPrefab.name;
+            
+            // 如果实例化的prefab包含RoomUISkinController，则应用当前楼层皮肤
+            var skinCtl = currentChooseInstance.GetComponentInChildren<RoomUISkinController>(true);
+            if (skinCtl != null)
+            {
+                int floor = 0;
+                var sm = RoomStateMachine_cza.Instance;
+                if (sm != null && sm.CurrentMap != null)
+                    floor = sm.CurrentMap.FloorIndex;
+                skinCtl.ApplySkin(floor);
+                Debug.Log($"[RoomUI] ApplySkin on instantiated choose prefab: floor={floor} prefab={currentChooseInstance.name}");
+            }
         }
+        
+        // 每次显示预制体时都重新绑定按钮（确保缓存有效）
+        BindChoosePrefabButtons(currentChooseInstance);
+        
         currentChooseInstance.SetActive(true);
     }
 
