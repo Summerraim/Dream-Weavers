@@ -22,7 +22,7 @@ namespace DreamWeavers.Services
             // new RoomDialogueMapping { roomType = RoomType_cza.Events, dialogueId = "Room_Events_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Boss, dialogueId = "Room_Boss_Enter" },
             new RoomDialogueMapping { roomType = RoomType_cza.Skill, dialogueId = "Room_Skill_Enter" },
-            new RoomDialogueMapping { roomType = RoomType_cza.Guide, dialogueId = "Room_Guide_Enter" }
+            new RoomDialogueMapping { roomType = RoomType_cza.Guide, dialogueId = "First Dialog" } // 暂时使用First Dialog作为引导房间对话
         };
 
         [Header("自定义对话数据")]
@@ -257,15 +257,27 @@ namespace DreamWeavers.Services
         /// </summary>
         private DialogueData LoadDialogueDataFromResources(string dialogueId)
         {
+            // 首先尝试从Resources/Dialogues/目录加载
             string resourcePath = $"Dialogues/{dialogueId}";
             DialogueData dialogueData = Resources.Load<DialogueData>(resourcePath);
             
             if (dialogueData != null)
             {
                 LogDebug($"从Resources加载对话数据: {resourcePath}");
+                return dialogueData;
             }
             
-            return dialogueData;
+            // 如果找不到，尝试从Data/Dialog/目录加载（兼容旧路径）
+            string dataDialogPath = $"Data/Dialog/{dialogueId}";
+            dialogueData = Resources.Load<DialogueData>(dataDialogPath);
+            
+            if (dialogueData != null)
+            {
+                LogDebug($"从Data/Dialog加载对话数据: {dataDialogPath}");
+                return dialogueData;
+            }
+            
+            return null;
         }
 
         /// <summary>

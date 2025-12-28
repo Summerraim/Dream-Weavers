@@ -64,6 +64,17 @@ public class DialogController : MonoBehaviour
         }
         
         LogDebug("DialogController初始化完成");
+        
+        // 自动开始对话
+        if (customDialogueData != null)
+        {
+            LogDebug("检测到自定义对话数据，自动开始对话");
+            StartDialogue(customDialogueData);
+        }
+        else
+        {
+            LogDebug("没有自定义对话数据，无法自动开始对话");
+        }
     }
 
     private void OnDestroy()

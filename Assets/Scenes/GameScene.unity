@@ -1283,7 +1283,72 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3bcf8b3a55e8a074f97b282d516ed484, type: 3}
   m_Name: 
+  m_EditorClassIdentifier:
+--- !u!1 &999999999
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 999999998}
+  - component: {fileID: 999999997}
+  m_Layer: 0
+  m_Name: DialogControllerService
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &999999998
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 999999999}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &999999997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 999999999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9082f665f6807b4299295c1143907bc, type: 3}
+  m_Name: 
   m_EditorClassIdentifier: 
+  enableDialogueCaching: 1
+  enableDebugLog: 1
+  roomDialogueMappings:
+  - roomType: 0
+    dialogueId: First Dialog
+  - roomType: 1
+    dialogueId: Rest Dialog
+  - roomType: 2
+    dialogueId: Props Dialog
+  - roomType: 4
+    dialogueId: Boss Dialog
+  - roomType: 5
+    dialogueId: Skill Dialog
+  - roomType: 6
+    dialogueId: First Dialog
+  customDialogueData:
+  - {fileID: 11400000, guid: 273713ab064b5624ba7393465419b1ca, type: 3}
+  - {fileID: 11400000, guid: 139cb5ccebf1e224dbe50035ad87de5f, type: 3}
+  - {fileID: 11400000, guid: 2070e43bc0c86904bae25ccc951527a1, type: 3}
+  - {fileID: 11400000, guid: 5c753bfbec149384d9038ca46419d18f, type: 3}
+  - {fileID: 11400000, guid: 75b4aa71ca61ed94da4ca59b13f18d35, type: 3}
 --- !u!1 &444768450
 GameObject:
   m_ObjectHideFlags: 0
@@ -1708,7 +1773,7 @@ RectTransform:
   m_GameObject: {fileID: 599069979}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1742819186}
@@ -1723,10 +1788,10 @@ RectTransform:
   m_Father: {fileID: 1922840452}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &599069981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3625,6 +3690,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dialogView: {fileID: 599069984}
+  customDialogueData: {fileID: 11400000, guid: 273713ab064b5624ba7393465419b1ca, type: 3}
   defaultDisplayTime: 3
   pauseGameDuringDialogue: 1
   currentDialogue: {fileID: 0}
