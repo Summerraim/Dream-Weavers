@@ -14,9 +14,10 @@ public interface IBattleUnit
     float Defense { get; }
     bool IsDead { get; }
     IReadOnlyList<ISkill> GetSkills();
-    void ReceiveDamage(int amount);
+    void ReceiveDamage(int amount, IBattleUnit attacker = null);
     void ReceiveHeal(int amount);
     void ConsumeMana(int amount);
+    void RestoreMana(int amount);
 }
 
 public interface ISkill

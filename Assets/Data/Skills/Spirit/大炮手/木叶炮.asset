@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u6728\u53F6\u70AE"
   m_EditorClassIdentifier: 
   displayNameOverride: "\u6728\u53F6\u70AE"
-  <Description>k__BackingField: "\u7565\u5FAE\u8D85\u8FC7\u4E00\u500D\u4F24\u5BB3"
+  <Description>k__BackingField: "\u6709\u6982\u7387\u5165\u7761\u7684\u70AE\u51FB"
   <Mana>k__BackingField: 0
   <CooldownTurns>k__BackingField: 3
   <MaxUsesPerBattle>k__BackingField: 0
@@ -22,4 +22,4 @@ MonoBehaviour:
     type: 2}
   effects:
   - {fileID: 11400000, guid: 9eb64a255f8f1e542997594ae9ed5da7, type: 2}
-  - {fileID: 11400000, guid: 7ff64c527877cb1419ac6e03a4456a10, type: 2}
+  - {fileID: 11400000, guid: 1fb37a657c0f39a4597903cb64b81ca7, type: 2}

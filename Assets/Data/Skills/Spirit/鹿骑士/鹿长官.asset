@@ -12,15 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a91176816b986144080a692d9d94ec9d, type: 3}
   m_Name: "\u9E7F\u957F\u5B98"
   m_EditorClassIdentifier: 
-  DisplayName: "\u9E7F\u9A91\u58EB"
+  DisplayName: "\u9E7F\u957F\u5B98"
   Description: "\u9E7F\u9A91\u58EB\u5347\u5B98\u4E86\uFF0C\u80FD\u625B\u80FD\u5976\u8FD8\u80FD\u6307\u6325"
   Image: {fileID: -1794171169, guid: 78a46a2c3148f3f4ca0611dcf6843c18, type: 3}
   MaxHP: 215
   MaxMana: 120
-  Damage: 25
+  Damage: 23
   Defense: 10
   Skills:
-  - {fileID: 11400000, guid: b32794139919fb5429027e551727f078, type: 2}
+  - {fileID: 11400000, guid: ee452a451243eb9429aca2edb9ea2832, type: 2}
+  - {fileID: 11400000, guid: faf1ffbdc14f7104fbca8772d5572ebd, type: 2}
   - {fileID: 11400000, guid: 070b561cf6b88ab4d8938779e47fe7dc, type: 2}
   - {fileID: 11400000, guid: 07ad35ceb754ced4cae741b4258102fa, type: 2}
   Synergies:

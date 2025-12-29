@@ -32,7 +32,7 @@ public class Damage : Effect
         // 记录目标受伤前的HP，用于计算实际伤害
         int hpBefore = target.HP;
 
-        target.ReceiveDamage(totalDamage);
+        target.ReceiveDamage(totalDamage, caster);
 
         // 计算实际造成的伤害（可能被护盾、防御等减免）
         int actualDamage = hpBefore - target.HP;

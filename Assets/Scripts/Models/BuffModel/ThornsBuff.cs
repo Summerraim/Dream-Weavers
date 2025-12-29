@@ -54,7 +54,7 @@ public class ThornsBuff : Buff
 
         if (reflectDamage > 0)
         {
-            attacker.ReceiveDamage(reflectDamage);
+            attacker.ReceiveDamage(reflectDamage, Owner);
             Debug.Log($"{Owner?.DisplayName}'s Thorns dealt {reflectDamage} damage to {attacker.DisplayName}");
         }
     }

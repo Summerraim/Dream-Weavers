@@ -1499,6 +1499,14 @@ MonoBehaviour:
   playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
   battleController: {fileID: 1896369822}
   battleView: {fileID: 1896369821}
+  floorToInitAfterGuide: 1
+  victoryDialogueData: {fileID: 11400000, guid: e05cb8b06dddaba4280d81fa668ede4a,
+    type: 2}
+  victoryDialogueId: 
+  victorySkillData: {fileID: 11400000, guid: 897e40f0c283c5a4097eef1a30f1b125, type: 2}
+  victorySkillTargetSpiritDisplayNames:
+  - "\u5FB7\u82AC\u65AF"
+  - "\u585E\u52D2\u65AF"
   candidateSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
@@ -11690,7 +11698,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b474fe37b3e4a1a4cb8fe65122af109b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 11400000, guid: 16082cfeeaa9943429ce3068b95af146, type: 2}
+  playerData: {fileID: 11400000, guid: 71c9b3c297b419a4dba092fcdb5e1d37, type: 2}
 --- !u!1 &1208411889
 GameObject:
   m_ObjectHideFlags: 0
@@ -18195,7 +18203,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bebd2c9814b0ec142a8b32b9ea5ef751, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerData: {fileID: 11400000, guid: 818635734dcc7d347a561a3498e480cb, type: 2}
+  playerData: {fileID: 11400000, guid: 71c9b3c297b419a4dba092fcdb5e1d37, type: 2}
   enemyData: {fileID: 0}
   battleView: {fileID: 1896369821}
   playerSkillAnimator: {fileID: 863241326}

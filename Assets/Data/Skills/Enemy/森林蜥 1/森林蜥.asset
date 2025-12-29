@@ -20,7 +20,7 @@ MonoBehaviour:
   Damage: 70
   Defense: 15
   Skills:
-  - {fileID: 11400000, guid: ec75d2305162b8f49bc9c88f1a4a378e, type: 2}
-  - {fileID: 11400000, guid: 21b94a11dc889a243b06aca2c5e4996f, type: 2}
-  - {fileID: 11400000, guid: c9c935a82206d224c828d0b4fd4f8c62, type: 2}
-  - {fileID: 11400000, guid: da274ec857d20cc44bedf4581e0bc13b, type: 2}
+  - {fileID: 11400000, guid: 623e134a06595be4c845bf5031c0aef6, type: 2}
+  - {fileID: 11400000, guid: 3b9be947db6a9ad4394fd8025e7ad7be, type: 2}
+  - {fileID: 11400000, guid: 47aea0b0ce713344fb0a96ca5dbd492f, type: 2}
+  - {fileID: 11400000, guid: b3a5203628cfdb34486718ac10c8e438, type: 2}

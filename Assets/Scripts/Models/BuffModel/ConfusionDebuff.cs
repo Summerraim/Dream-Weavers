@@ -11,8 +11,8 @@ public class ConfusionDebuff : Buff
 
     private float confusionChance;
 
-    public ConfusionDebuff(IBattleUnit owner, int duration, float chance)
-        : base(owner, duration)
+    public ConfusionDebuff(IBattleUnit owner, int duration, float chance, Effect sourceEffect = null)
+        : base(owner, duration, sourceEffect)
     {
         confusionChance = Mathf.Clamp01(chance);
     }

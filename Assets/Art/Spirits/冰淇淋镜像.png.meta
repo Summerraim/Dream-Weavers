@@ -100,10 +100,10 @@ TextureImporter:
       name: "\u51B0\u6DC7\u6DCB\u955C\u50CF_0"
       rect:
         serializedVersion: 2
-        x: 181
-        y: 88
-        width: 1095
-        height: 1570
+        x: 221
+        y: 123
+        width: 1055
+        height: 1535
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}

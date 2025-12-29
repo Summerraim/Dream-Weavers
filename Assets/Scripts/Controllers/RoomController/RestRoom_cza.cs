@@ -67,27 +67,57 @@ public class RestRoom_cza : RoomBase_cza
             Debug.Log("[RestRoom] 已经休息过，无法重复休息");
             return;
         }
-        
-        // 在休息房：为所有可访问的 Spirit 恢复20%生命与20%法力
-        var targets = CollectSpirits();
-        foreach (var spirit in targets)
+
+        var battleController = GameObject.FindObjectOfType<BattleController>(true);
+        if (battleController == null)
         {
-            if (spirit == null) continue;
-            int healHP = Mathf.CeilToInt(spirit.MaxHP * 0.2f);
-            int healMana = Mathf.CeilToInt(spirit.MaxMana * 0.2f);
-            spirit.ReceiveHeal(healHP);
-            spirit.ReceiveMana(healMana);
+            Debug.LogWarning("[RestRoom] No BattleController found");
+            return;
         }
-        Debug.Log($"[RestRoom] Applied rest to {targets.Count} spirit(s).");
-        
+
+        // 收集所有已部署的精灵
+        var deployedSpirits = CollectDeployedSpiritsWithIndex(battleController);
+        int healedCount = 0;
+
+        foreach (var (spiritData, index) in deployedSpirits)
+        {
+            if (spiritData == null)
+                continue;
+
+            // 获取精灵的运行时数据
+            var runtimeData = battleController.GetSpiritRuntimeData(index);
+
+            // 跳过已死亡的精灵（HP = 0）
+            if (runtimeData.CurrentHP <= 0)
+            {
+                Debug.Log($"[RestRoom] Skipping dead spirit: {spiritData.DisplayName}");
+                continue;
+            }
+
+            // 计算治疗量（20% HP和MP）
+            int healHP = Mathf.CeilToInt(runtimeData.MaxHP * 0.2f);
+            int healMP = Mathf.CeilToInt(runtimeData.MaxMP * 0.2f);
+
+            // 更新运行时数据
+            int newHP = Mathf.Min(runtimeData.CurrentHP + healHP, runtimeData.MaxHP);
+            int newMP = Mathf.Min(runtimeData.CurrentMP + healMP, runtimeData.MaxMP);
+
+            battleController.UpdateSpiritRuntimeData(index, newHP, newMP);
+
+            healedCount++;
+            Debug.Log($"[RestRoom] Healed {spiritData.DisplayName}: HP {runtimeData.CurrentHP}->{newHP}, MP {runtimeData.CurrentMP}->{newMP}");
+        }
+
+        Debug.Log($"[RestRoom] Healed {healedCount}/{deployedSpirits.Count} spirit(s)");
+
         rested = true;
-        
+
         // 禁用按钮
         if (restButton != null)
         {
             restButton.interactable = false;
         }
-        
+
         // 触发路线选择
         if (RoomStateMachine_cza.Instance != null)
         {
@@ -100,21 +130,29 @@ public class RestRoom_cza : RoomBase_cza
         }
     }
 
-    private List<Spirit> CollectSpirits()
+    /// <summary>
+    /// 收集所有已部署的精灵及其索引
+    /// </summary>
+    private List<(SpiritData, int)> CollectDeployedSpiritsWithIndex(BattleController battleController)
     {
-        var list = new List<Spirit>();
+        var list = new List<(SpiritData, int)>();
 
-        // 尝试从战斗控制器中获取当前玩家 Spirit
-        var controllers = GameObject.FindObjectsOfType<BattleController>();
-        foreach (var bc in controllers)
+        if (battleController == null)
         {
-            if (bc != null && bc.Player != null)
+            Debug.LogWarning("[RestRoom] BattleController is null");
+            return list;
+        }
+
+        var spiritQueue = battleController.GetSpiritQueue();
+        if (spiritQueue != null)
+        {
+            for (int i = 0; i < spiritQueue.Count; i++)
             {
-                list.Add(bc.Player);
+                list.Add((spiritQueue[i], i));
             }
         }
 
-        // TODO: 如有队伍/编队管理器，可在此补充收集逻辑
+        Debug.Log($"[RestRoom] Collected {list.Count} deployed spirit(s)");
         return list;
     }
 }

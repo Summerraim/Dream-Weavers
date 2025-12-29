@@ -19,6 +19,22 @@ namespace DreamWeavers.Rooms
 		[SerializeField] private BattleController battleController;
 		[SerializeField] private UI_BattleView battleView;
 
+		[Header("胜利后：路线/奖励")]
+		[Tooltip("引导战胜利后初始化的楼层（默认1）")]
+		[SerializeField] private int floorToInitAfterGuide = 1;
+
+		[Tooltip("胜利后触发的对话数据（可选，优先使用此字段）")]
+		[SerializeField] private DialogueData victoryDialogueData;
+
+		[Tooltip("胜利后触发的对话ID（可选；当 victoryDialogueData 未配置时，尝试通过 DialogControllerService 获取）")]
+		[SerializeField] private string victoryDialogueId = string.Empty;
+
+		[Tooltip("胜利后发放的技能数据（可选，支持 SkillData 或实现 ISkill 的 ScriptableObject）")]
+		[SerializeField] private ScriptableObject victorySkillData;
+
+		[Tooltip("将胜利技能发放给这些精灵（按 DisplayName 匹配，大小写不敏感）")]
+		[SerializeField] private string[] victorySkillTargetSpiritDisplayNames;
+
 		[Header("引导选项（索引0/1）")]
 		[SerializeField] private SpiritData[] candidateSpirits = new SpiritData[2];
 		[SerializeField] private EnemyData[] enemyMappings = new EnemyData[2];
@@ -35,13 +51,14 @@ namespace DreamWeavers.Rooms
 		private bool guideCompleted;
 		private bool battleStarted;
 		private bool battleEnded;
+		private bool battleVictory;
 		private int chosenIndex = -1;
 		private SpiritData chosenSpiritPending;
 		private EnemyData enemyPending;
 
 		private void Awake()
 		{
-			Type = RoomType_cza.Combat; // 仅用于标记，无实际地图参与
+			Type = RoomType_cza.Guide; // 仅用于标记，无实际地图参与
 
 			// 绑定按钮事件（若存在）
 			if (option0Button != null)
@@ -70,6 +87,7 @@ namespace DreamWeavers.Rooms
 				if (battleController.State == BattleState.Victory || battleController.State == BattleState.Defeat)
 				{
 					battleEnded = true;
+					battleVictory = battleController.State == BattleState.Victory;
 
 					// 尝试收起战斗UI，避免留在屏幕上
 					if (battleView != null)
@@ -79,7 +97,7 @@ namespace DreamWeavers.Rooms
 						battleView.HideBattlePanel();
 					}
 
-					FinishGuide();
+					FinishGuide(battleVictory);
 				}
 			}
 		}
@@ -283,7 +301,7 @@ namespace DreamWeavers.Rooms
 		{
 		}
 
-		private void FinishGuide()
+		private void FinishGuide(bool victory)
 		{
 			if (guideCompleted)
 			{
@@ -291,7 +309,7 @@ namespace DreamWeavers.Rooms
 			}
 
 			guideCompleted = true;
-			Debug.Log("[GuideRoom] 引导战斗结束，准备进入正式楼层");
+			Debug.Log($"[GuideRoom] 引导战斗结束，victory={victory}");
 
 			// 离开引导战斗后停用 BattleController，保持与 CombatRoom/BossRoom 一致：仅在战斗房间激活
 			if (battleController != null)
@@ -299,7 +317,265 @@ namespace DreamWeavers.Rooms
 				battleController.EndBattleAndDeactivate();
 			}
 
+			if (!victory)
+			{
+				onGuideFinished?.Invoke();
+				return;
+			}
+
+			// 1) 胜利后：恢复玩家所有 OwnedSpirit 的HP/MP
+			RestoreAllOwnedSpiritsToFull();
+
+			// 2) 胜利后：发放技能（参考 SkillRoom 的做法，直接追加到 SpiritData.Skills）
+			GrantVictorySkillToConfiguredSpirits();
+
+			// 3) 胜利后：准备正式楼层，但不自动进入任意房间（改为进入路线选择）
+			PrepareMainFloorForRouteSelection();
+
+			// 通知 MapManager：引导已完成（让其继续后续流程，如切换敌人池等）
 			onGuideFinished?.Invoke();
+
+			// 4) 胜利后：可选对话（对话结束后进入路线选择）
+			if (!TryStartVictoryDialogueThenBeginRouteSelection())
+			{
+				BeginRouteSelectionNow();
+			}
+		}
+
+		private void RestoreAllOwnedSpiritsToFull()
+		{
+			var bc = battleController != null ? battleController : FindObjectOfType<BattleController>(true);
+			if (bc == null)
+			{
+				Debug.LogWarning("[GuideRoom] RestoreAllOwnedSpiritsToFull: 未找到 BattleController");
+				return;
+			}
+
+			var owned = CollectOwnedSpirits();
+			if (owned.Count == 0)
+			{
+				Debug.LogWarning("[GuideRoom] RestoreAllOwnedSpiritsToFull: 未找到任何 OwnedSpirits");
+				return;
+			}
+
+			bc.RestoreSpiritsToFull(owned);
+		}
+
+		private void GrantVictorySkillToConfiguredSpirits()
+		{
+			if (victorySkillData == null)
+			{
+				return;
+			}
+
+			if (victorySkillTargetSpiritDisplayNames == null || victorySkillTargetSpiritDisplayNames.Length == 0)
+			{
+				Debug.LogWarning("[GuideRoom] 已配置胜利技能，但未配置目标精灵 DisplayName 列表");
+				return;
+			}
+
+			var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			foreach (var raw in victorySkillTargetSpiritDisplayNames)
+			{
+				var name = string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
+				if (!string.IsNullOrEmpty(name))
+				{
+					targets.Add(name);
+				}
+			}
+
+			if (targets.Count == 0)
+			{
+				Debug.LogWarning("[GuideRoom] 胜利技能目标列表为空（全是空字符串）");
+				return;
+			}
+
+			var spiritCandidates = new HashSet<SpiritData>();
+			var owned = CollectOwnedSpirits();
+			for (int i = 0; i < owned.Count; i++)
+			{
+				if (owned[i] != null) spiritCandidates.Add(owned[i]);
+			}
+
+			// 额外：尝试从 Resources/Spirits 加载（参考 SpiritPortraitManager 的做法）
+			var allSpiritData = Resources.LoadAll<SpiritData>("Spirits");
+			if (allSpiritData != null)
+			{
+				for (int i = 0; i < allSpiritData.Length; i++)
+				{
+					if (allSpiritData[i] != null) spiritCandidates.Add(allSpiritData[i]);
+				}
+			}
+
+			int grantedCount = 0;
+			var matchedTargetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			foreach (var spirit in spiritCandidates)
+			{
+				if (spirit == null)
+				{
+					continue;
+				}
+
+				var spiritName = string.IsNullOrWhiteSpace(spirit.DisplayName) ? spirit.name : spirit.DisplayName;
+				if (!targets.Contains(spiritName))
+				{
+					continue;
+				}
+
+				if (AddSkillToSpiritData(spirit, victorySkillData))
+				{
+					grantedCount++;
+					matchedTargetNames.Add(spiritName);
+					Debug.Log($"[GuideRoom] 已将胜利技能 {victorySkillData.name} 发放给精灵 {spiritName}");
+				}
+			}
+
+			if (grantedCount == 0)
+			{
+				Debug.LogWarning("[GuideRoom] 未找到任何匹配的 SpiritData 来发放胜利技能（请检查 DisplayName 是否一致，或 SpiritData 是否位于 Resources/Spirits）");
+				return;
+			}
+
+			// 提示：如果有目标名字没有匹配到任何 SpiritData
+			foreach (var targetName in targets)
+			{
+				if (!matchedTargetNames.Contains(targetName))
+				{
+					Debug.LogWarning($"[GuideRoom] 未找到目标精灵: {targetName}（未发放胜利技能）");
+				}
+			}
+		}
+
+		private List<SpiritData> CollectOwnedSpirits()
+		{
+			var uniq = new HashSet<SpiritData>();
+
+			if (playerData != null)
+			{
+				var ownedFromData = playerData.GetOwnedSpirits();
+				if (ownedFromData != null)
+				{
+					for (int i = 0; i < ownedFromData.Count; i++)
+					{
+						if (ownedFromData[i] != null) uniq.Add(ownedFromData[i]);
+					}
+				}
+			}
+
+			// PlayerManager.Instance 可能在场景中不存在时会被懒创建，但项目内其他逻辑也普遍依赖该行为
+			var pm = PlayerManager.Instance;
+			if (pm != null)
+			{
+				var ownedFromManager = pm.GetOwnedSpirits();
+				if (ownedFromManager != null)
+				{
+					for (int i = 0; i < ownedFromManager.Count; i++)
+					{
+						if (ownedFromManager[i] != null) uniq.Add(ownedFromManager[i]);
+					}
+				}
+			}
+
+			return new List<SpiritData>(uniq);
+		}
+
+		private static bool AddSkillToSpiritData(SpiritData spiritData, ScriptableObject skillData)
+		{
+			if (spiritData == null || skillData == null)
+			{
+				return false;
+			}
+
+			var currentSkills = spiritData.Skills;
+			if (currentSkills != null)
+			{
+				for (int i = 0; i < currentSkills.Length; i++)
+				{
+					if (currentSkills[i] == skillData)
+					{
+						return true; // 已存在，视为成功
+					}
+				}
+			}
+
+			int newLength = (currentSkills?.Length ?? 0) + 1;
+			var newSkills = new ScriptableObject[newLength];
+			if (currentSkills != null)
+			{
+				for (int i = 0; i < currentSkills.Length; i++)
+				{
+					newSkills[i] = currentSkills[i];
+				}
+			}
+			newSkills[newLength - 1] = skillData;
+			spiritData.Skills = newSkills;
+			return true;
+		}
+
+		private void PrepareMainFloorForRouteSelection()
+		{
+			var sm = RoomStateMachine_cza.Instance;
+			if (sm == null)
+			{
+				var go = new GameObject("RoomStateMachine");
+				sm = go.AddComponent<RoomStateMachine_cza>();
+				Debug.LogWarning("[GuideRoom] RoomStateMachine_cza.Instance 不存在，已临时创建");
+			}
+
+			// 若已初始化过楼层，则不重复生成地图
+			if (sm.CurrentMap == null)
+			{
+				int floor = Mathf.Max(1, floorToInitAfterGuide);
+				sm.InitFloor(floor, enterStartRoom: false);
+			}
+		}
+
+		private bool TryStartVictoryDialogueThenBeginRouteSelection()
+		{
+			DialogueData data = victoryDialogueData;
+
+			if (data == null && !string.IsNullOrWhiteSpace(victoryDialogueId))
+			{
+				var service = DreamWeavers.Services.DialogControllerService.Instance;
+				if (service != null)
+				{
+					data = service.GetDialogueData(victoryDialogueId.Trim());
+				}
+			}
+
+			if (data == null)
+			{
+				return false;
+			}
+
+			var dialogController = FindObjectOfType<DialogController>(true);
+			if (dialogController == null)
+			{
+				Debug.LogWarning("[GuideRoom] 未找到 DialogController，跳过胜利对话");
+				return false;
+			}
+
+			void OnEnd()
+			{
+				dialogController.OnDialogueEnd -= OnEnd;
+				BeginRouteSelectionNow();
+			}
+
+			dialogController.OnDialogueEnd += OnEnd;
+			dialogController.StartDialogue(data);
+			return true;
+		}
+
+		private void BeginRouteSelectionNow()
+		{
+			var sm = RoomStateMachine_cza.Instance;
+			if (sm == null)
+			{
+				Debug.LogWarning("[GuideRoom] BeginRouteSelectionNow: RoomStateMachine_cza.Instance 为 null");
+				return;
+			}
+
+			sm.BeginRouteSelection();
 		}
 	}
 }

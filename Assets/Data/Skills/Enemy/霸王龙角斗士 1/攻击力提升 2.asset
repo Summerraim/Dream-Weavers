@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d34e502ed1fefdb4f96b6b49e90762e7, type: 3}
+  m_Name: "\u653B\u51FB\u529B\u63D0\u5347 2"
+  m_EditorClassIdentifier: 
+  displayName: 
+  description: 
+  image: {fileID: 1220492702, guid: ef64ac57dcf69b84dbc228401703d3d1, type: 3}
+  damageMultiplier: 0.3
+  duration: 3
+  applyToCaster: 1

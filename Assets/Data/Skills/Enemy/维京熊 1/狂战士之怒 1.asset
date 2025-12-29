@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
+  m_Name: "\u72C2\u6218\u58EB\u4E4B\u6012 1"
+  m_EditorClassIdentifier: 
+  displayNameOverride: "\u72C2\u6218\u58EB\u4E4B\u6012"
+  <Description>k__BackingField: "\u72C2\u6218\u58EB\u4E4B\u6012"
+  <Mana>k__BackingField: 0
+  <CooldownTurns>k__BackingField: 1
+  <MaxUsesPerBattle>k__BackingField: 1
+  <Image>k__BackingField: {fileID: 0}
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 20f051ff577fbd346a02007ffd0cd371,
+    type: 2}
+  effects:
+  - {fileID: 11400000, guid: 11f1004fe1ec1f640ad488cd4e97f049, type: 2}
+  - {fileID: 11400000, guid: 76f367890488d214d9626da0f9782119, type: 2}
