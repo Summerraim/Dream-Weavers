@@ -33,7 +33,7 @@ public class Confusion : Effect
         if (!TryTrigger(receiver))
             return;
 
-        var debuff = new ConfusionDebuff(receiver, duration, confusionChance);
+        var debuff = new ConfusionDebuff(receiver, duration, confusionChance, this);
         CurrentBattle.AddBuff(debuff);
     }
 

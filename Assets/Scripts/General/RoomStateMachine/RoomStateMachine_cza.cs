@@ -71,7 +71,7 @@ public class RoomStateMachine_cza : MonoBehaviour
     }
 
     // 初始化指定楼层
-    public void InitFloor(int floor)
+    public void InitFloor(int floor, bool enterStartRoom = true)
     {
         var rng = SeedManager_cza.Instance != null ? SeedManager_cza.Instance.RNG : null;
         Debug.Log($"[RoomState] InitFloor({floor}) 调用，floorInitCounter={floorInitCounter} -> {floorInitCounter + 1}; SeedManager={(SeedManager_cza.Instance!=null)} RNG={(rng!=null)}");
@@ -80,6 +80,8 @@ public class RoomStateMachine_cza : MonoBehaviour
         visitedRooms.Clear();
         visitedOrderDebug.Clear();
         branchChoices.Clear();
+        awaitingChoice = false;
+        CurrentRoom = null;
         
         // 重置敌人池（新楼层开始时恢复所有敌人为可用）
         ResetCombatRoomEnemyPool();
@@ -106,13 +108,88 @@ public class RoomStateMachine_cza : MonoBehaviour
         Debug.Log($"[RoomState] 计划进入起始房 startId={startId}");
         // 通知：楼层已生成，尚未进入首个房间（用于外部提前准备，例如切换CombatRoom的EnemyPool）
         try { OnFloorPreparing?.Invoke(floor); } catch (Exception ex) { Debug.LogError("[RoomState] OnFloorPreparing 异常: " + ex); }
-        EnterRoom(startId); // 进入起始房（记录为 visited）
-        Debug.Log($"[RoomState] 初始化楼层 {floor} 完成，CurrentRoom={(CurrentRoom!=null ? CurrentRoom.Id.ToString() : "null")}");
-        // 通知：楼层初始化完成（用于UI隐藏上一层残留）
-        try { OnFloorInitialized?.Invoke(floor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnFloorInitialized 异常: {ex}"); }
-        // 初始化后（并已进入首房）通知 UI 可交互
-        Debug.Log("[RoomState] OnReady 触发（已进入首房）");
-        OnReady?.Invoke();
+
+        if (enterStartRoom)
+        {
+            EnterRoom(startId); // 进入起始房（记录为 visited）
+            Debug.Log($"[RoomState] 初始化楼层 {floor} 完成，CurrentRoom={(CurrentRoom!=null ? CurrentRoom.Id.ToString() : "null")}");
+
+            // 通知：楼层初始化完成（用于UI隐藏上一层残留）
+            try { OnFloorInitialized?.Invoke(floor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnFloorInitialized 异常: {ex}"); }
+            // 初始化后（并已进入首房）通知 UI 可交互
+            Debug.Log("[RoomState] OnReady 触发（已进入首房）");
+            OnReady?.Invoke();
+        }
+        else
+        {
+            Debug.Log($"[RoomState] 初始化楼层 {floor} 完成（延迟进入起始房，等待玩家选择路线）");
+            // 通知：楼层初始化完成（用于UI隐藏上一层残留）
+            try { OnFloorInitialized?.Invoke(floor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnFloorInitialized 异常: {ex}"); }
+        }
+    }
+
+    /// <summary>
+    /// 进入“路线选择”阶段（不依赖当前房间），从未访问房间中抽取最多3个作为候选。
+    /// </summary>
+    public void BeginRouteSelection(int maxChoices = 3, IReadOnlyCollection<int> excludeRoomIds = null)
+    {
+        if (CurrentMap == null || CurrentMap.Rooms == null || CurrentMap.Rooms.Count == 0)
+        {
+            Debug.LogWarning("[RoomState] BeginRouteSelection: CurrentMap 为空，无法进入路线选择");
+            return;
+        }
+
+        branchChoices.Clear();
+
+        var candidates = GetUnvisitedRoomIds();
+        HashSet<int> excluded = null;
+        if (excludeRoomIds != null && excludeRoomIds.Count > 0)
+        {
+            excluded = new HashSet<int>(excludeRoomIds);
+        }
+
+        if (excluded != null)
+        {
+            for (int i = candidates.Count - 1; i >= 0; i--)
+            {
+                if (excluded.Contains(candidates[i]))
+                {
+                    candidates.RemoveAt(i);
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            awaitingChoice = false;
+            OnBranchChoicesUpdated?.Invoke(branchChoices);
+            Debug.Log("[RoomState] BeginRouteSelection: 无候选房间可选");
+            return;
+        }
+
+        int need = Mathf.Min(Mathf.Max(1, maxChoices), candidates.Count);
+        var rng = SeedManager_cza.Instance != null ? SeedManager_cza.Instance.RNG : null;
+        for (int i = 0; i < need; i++)
+        {
+            int pickIndex = rng != null ? rng.NextInt(0, candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
+            int pick = candidates[pickIndex];
+            branchChoices.Add(pick);
+            candidates.RemoveAt(pickIndex);
+        }
+
+        awaitingChoice = branchChoices.Count > 0;
+        if (awaitingChoice)
+        {
+            var details = new List<string>();
+            foreach (var rid in branchChoices)
+            {
+                string t = CurrentMap.Rooms.TryGetValue(rid, out var n) ? n.Type.ToString() : "?";
+                details.Add($"{rid}({t})");
+            }
+            Debug.Log($"[RoomState] BeginRouteSelection: 可选房间={string.Join(", ", details)}");
+        }
+
+        OnBranchChoicesUpdated?.Invoke(new List<int>(branchChoices));
     }
 
     /// <summary>

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DreamWeavers.Rooms;
 using UnityEngine;
 
@@ -54,6 +55,7 @@ public class BattleController : MonoBehaviour
     private int currentSpiritIndex = 0;
     private System.Collections.Generic.Dictionary<SpiritData, bool> spiritAliveStatus; // 跟踪每个Spirit的存活状态（按SpiritData）
     private System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData> spiritRuntimeData; // 跟踪每个Spirit的运行时数据（HP/MP）（按SpiritData）
+    private bool isForcedSwitchDueToDefeat = false; // 标记是否因心兽死亡而强制切换
 
     // 缓存的 HP/Mana 值，用于检测变化
     private int lastPlayerHP;
@@ -155,7 +157,8 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        currentSpiritIndex = 0;
+        // 查找第一个存活的心兽作为初始上场心兽
+        currentSpiritIndex = -1;
 
         // 初始化Spirit存活状态和运行时数据
         // 如果是首次初始化，创建新字典；否则保留现有数据
@@ -199,6 +202,23 @@ public class BattleController : MonoBehaviour
                     $"BattleController: Spirit {i} ({spiritData.DisplayName}) retaining previous HP/MP: {spiritRuntimeData[spiritData].CurrentHP}/{spiritRuntimeData[spiritData].MaxHP} HP, {spiritRuntimeData[spiritData].CurrentMP}/{spiritRuntimeData[spiritData].MaxMP} MP"
                 );
             }
+
+            // 找到第一个存活的心兽（HP > 0）
+            if (currentSpiritIndex == -1 && spiritRuntimeData.ContainsKey(spiritData))
+            {
+                if (spiritRuntimeData[spiritData].CurrentHP > 0)
+                {
+                    currentSpiritIndex = i;
+                    Debug.Log($"BattleController: Found first alive spirit at index {i} ({spiritData.DisplayName})");
+                }
+            }
+        }
+
+        // 如果没有找到存活的心兽，回退到索引0
+        if (currentSpiritIndex == -1)
+        {
+            Debug.LogWarning("BattleController: No alive spirit found, defaulting to index 0");
+            currentSpiritIndex = 0;
         }
 
         // 先创建BattleModel（但不初始化），以便查询保存的Spirit状态
@@ -320,6 +340,29 @@ public class BattleController : MonoBehaviour
                         MaxHP = maxHP,
                         CurrentMP = data.CurrentMP,
                         MaxMP = data.MaxMP
+                    };
+                }
+            }
+        };
+
+        // 设置法力恢复效果的静态引用（用于恢复所有已部署精灵的法力值）
+        RestoreMana.CurrentBattle = model;
+        RestoreMana.GetDeployedSpirits = () => spiritQueue;
+        RestoreMana.GetSpiritRuntimeData = GetSpiritRuntimeData;
+        RestoreMana.SaveSpiritMP = (index, currentMP, maxMP) =>
+        {
+            if (index >= 0 && index < spiritQueue.Count)
+            {
+                var spiritData = spiritQueue[index];
+                if (spiritRuntimeData.ContainsKey(spiritData))
+                {
+                    var data = spiritRuntimeData[spiritData];
+                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
+                    {
+                        CurrentHP = data.CurrentHP,
+                        MaxHP = data.MaxHP,
+                        CurrentMP = currentMP,
+                        MaxMP = maxMP
                     };
                 }
             }
@@ -733,6 +776,23 @@ public class BattleController : MonoBehaviour
     }
 
     /// <summary>
+    /// 检查当前是否为强制切换（因心兽死亡）
+    /// </summary>
+    public bool IsForcedSwitchDueToDefeat()
+    {
+        return isForcedSwitchDueToDefeat;
+    }
+
+    /// <summary>
+    /// 重置强制切换标志
+    /// </summary>
+    public void ResetForcedSwitchFlag()
+    {
+        isForcedSwitchDueToDefeat = false;
+        Debug.Log("BattleController: Reset forced switch flag.");
+    }
+
+    /// <summary>
     /// 获取指定索引Spirit的运行时数据（HP/MP）
     /// </summary>
     public SpiritRuntimeData GetSpiritRuntimeData(int index)
@@ -789,6 +849,98 @@ public class BattleController : MonoBehaviour
         return spiritQueue.Count - currentSpiritIndex;
     }
 
+    /// <summary>
+    /// 获取精灵队列（用于RestRoom等外部访问）
+    /// </summary>
+    public List<SpiritData> GetSpiritQueue()
+    {
+        return spiritQueue;
+    }
+
+    /// <summary>
+    /// 更新指定精灵的运行时数据（用于RestRoom治疗）
+    /// </summary>
+    public void UpdateSpiritRuntimeData(int index, int newHP, int newMP)
+    {
+        if (index < 0 || index >= spiritQueue.Count || spiritRuntimeData == null)
+        {
+            Debug.LogWarning($"BattleController: Cannot update runtime data for invalid index {index}");
+            return;
+        }
+
+        var spiritData = spiritQueue[index];
+        if (!spiritRuntimeData.ContainsKey(spiritData))
+        {
+            Debug.LogWarning($"BattleController: Spirit {spiritData.DisplayName} not found in runtime data");
+            return;
+        }
+
+        var currentData = spiritRuntimeData[spiritData];
+        spiritRuntimeData[spiritData] = new SpiritRuntimeData
+        {
+            CurrentHP = newHP,
+            MaxHP = currentData.MaxHP,
+            CurrentMP = newMP,
+            MaxMP = currentData.MaxMP
+        };
+
+        Debug.Log($"BattleController: Updated {spiritData.DisplayName} runtime data: HP={newHP}/{currentData.MaxHP}, MP={newMP}/{currentData.MaxMP}");
+
+        // 如果是当前上场精灵，同步更新player实例
+        if (index == currentSpiritIndex && player != null)
+        {
+            player.SetRuntimeHPMP(newHP, newMP);
+        }
+    }
+
+    /// <summary>
+    /// 将指定精灵的运行时HP/MP恢复到满值，并标记为存活（用于引导房/休整奖励等）。
+    /// </summary>
+    public void RestoreSpiritsToFull(IEnumerable<SpiritData> spirits)
+    {
+        if (spirits == null)
+        {
+            return;
+        }
+
+        if (spiritRuntimeData == null)
+        {
+            spiritRuntimeData = new System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData>();
+        }
+        if (spiritAliveStatus == null)
+        {
+            spiritAliveStatus = new System.Collections.Generic.Dictionary<SpiritData, bool>();
+        }
+
+        int restored = 0;
+        foreach (var spiritData in spirits)
+        {
+            if (spiritData == null)
+            {
+                continue;
+            }
+
+            spiritRuntimeData[spiritData] = new SpiritRuntimeData
+            {
+                CurrentHP = spiritData.MaxHP,
+                MaxHP = spiritData.MaxHP,
+                CurrentMP = spiritData.MaxMana,
+                MaxMP = spiritData.MaxMana,
+            };
+            spiritAliveStatus[spiritData] = true;
+            restored++;
+        }
+
+        // 若当前上场精灵也在恢复列表中，顺便同步一次
+        if (player != null && player.Data != null && spiritRuntimeData.ContainsKey(player.Data))
+        {
+            var runtime = spiritRuntimeData[player.Data];
+            player.SetRuntimeHPMP(runtime.CurrentHP, runtime.CurrentMP);
+        }
+
+        Debug.Log($"BattleController: Restored {restored} spirit(s) to full HP/MP");
+    }
+
     public void PlayerUseSkill(ISkill skill)
     {
         PlayerUseSkill(skill, -1); // -1 表示不追踪冷却（旧版本兼容）
@@ -833,7 +985,24 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        if (player.Mana < skill.ManaCost)
+        // 初心者羁绊：首次技能释放不消耗MP且不进入冷却（需要允许在MP不足时也能释放）
+        bool hasBeginnerFreeSkill = false;
+        BeginnerBuff beginnerBuff = null;
+        if (model != null)
+        {
+            var buffs = model.GetBuffsForUnit(player);
+            for (int i = 0; i < buffs.Count; i++)
+            {
+                if (buffs[i] is BeginnerBuff b && b.CanTriggerFreeSkill())
+                {
+                    beginnerBuff = b;
+                    hasBeginnerFreeSkill = true;
+                    break;
+                }
+            }
+        }
+
+        if (player.Mana < skill.ManaCost && !hasBeginnerFreeSkill)
         {
             Debug.Log(
                 $"BattleController: Not enough mana. Required: {skill.ManaCost}, Current: {player.Mana}"
@@ -956,6 +1125,26 @@ public class BattleController : MonoBehaviour
 
         // 执行技能效果
         Debug.Log($"BattleController: Executing skill effects...");
+
+        // 初心者：记录是否触发首次免费技能（用于：释放后返还MP + 不进入冷却 + 标记已触发）
+        bool beginnerFreeSkillTriggered = false;
+        BeginnerBuff beginnerBuff = null;
+        int casterManaBefore = 0;
+        if (isPlayerSkill && model != null && caster != null)
+        {
+            var buffs = model.GetBuffsForUnit(caster);
+            for (int i = 0; i < buffs.Count; i++)
+            {
+                if (buffs[i] is BeginnerBuff b && b.CanTriggerFreeSkill())
+                {
+                    beginnerBuff = b;
+                    beginnerFreeSkillTriggered = true;
+                    casterManaBefore = caster.Mana;
+                    break;
+                }
+            }
+        }
+
         skill.Execute(caster, target);
         Debug.Log($"BattleController: Target HP after skill: {target.HP}");
 
@@ -963,18 +1152,58 @@ public class BattleController : MonoBehaviour
         if (battleView != null)
             battleView.Refresh();
 
+        // 初心者：返还MP并标记已使用首次技能
+        if (beginnerFreeSkillTriggered && beginnerBuff != null && caster != null)
+        {
+            int spent = casterManaBefore - caster.Mana;
+            if (spent > 0)
+            {
+                caster.RestoreMana(spent);
+            }
+            beginnerBuff.MarkFirstSkillUsed();
+        }
+
         // 记录技能使用次数和冷却（玩家和敌人都需要）
         if (skillIndex >= 0 && model != null)
         {
-            model.IncrementSkillUsage(skillIndex);
+            // 初心者：首次免费技能不计入使用次数
+            if (!beginnerFreeSkillTriggered)
+            {
+                model.IncrementSkillUsage(skillIndex);
+            }
 
             // 设置冷却
             if (skill.CooldownTurns > 0)
             {
-                model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
-                Debug.Log(
-                    $"BattleController: {(isPlayerSkill ? "Player" : "Enemy")} skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns"
-                );
+                bool skipCooldown = false;
+
+                // 初心者：首次技能不进入冷却
+                if (beginnerFreeSkillTriggered)
+                {
+                    skipCooldown = true;
+                }
+
+                // 派对狂欢：释放技能时概率不进入冷却
+                if (!skipCooldown && isPlayerSkill && caster != null)
+                {
+                    var buffs = model.GetBuffsForUnit(caster);
+                    for (int i = 0; i < buffs.Count; i++)
+                    {
+                        if (buffs[i] is PartyTimeBuff partyTimeBuff && partyTimeBuff.TryTriggerNoCooldown())
+                        {
+                            skipCooldown = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!skipCooldown)
+                {
+                    model.SetSkillCooldown(skillIndex, skill.CooldownTurns);
+                    Debug.Log(
+                        $"BattleController: {(isPlayerSkill ? "Player" : "Enemy")} skill {skillIndex} set on cooldown for {skill.CooldownTurns} turns"
+                    );
+                }
             }
         }
 
@@ -1274,14 +1503,36 @@ public class BattleController : MonoBehaviour
 
             if (hasAliveSpirit)
             {
-                // 还有存活的Spirit，打开Spirit切换面板让玩家手动选择
-                Debug.Log(
-                    $"BattleController: Current spirit defeated. Opening spirit switcher panel."
-                );
-                if (battleView != null)
+                // 标记为强制切换（因心兽死亡）
+                isForcedSwitchDueToDefeat = true;
+
+                // 自动切换到下一个存活的Spirit
+                Debug.Log("BattleController: Current spirit defeated. Auto-switching to next alive spirit.");
+
+                bool switchSuccess = TrySwitchToNextAliveSpirit();
+
+                if (switchSuccess)
                 {
-                    battleView.ShowSpiritSwitcherPanel();
-                    battleView.Refresh();
+                    Debug.Log("BattleController: Successfully auto-switched to next alive spirit.");
+
+                    // 刷新UI显示
+                    if (battleView != null)
+                    {
+                        battleView.Refresh();
+                    }
+
+                    // 重置强制切换标志（因为已经完成切换）
+                    ResetForcedSwitchFlag();
+                }
+                else
+                {
+                    // 自动切换失败，回退到手动选择
+                    Debug.LogWarning("BattleController: Auto-switch failed. Showing spirit switcher panel.");
+                    if (battleView != null)
+                    {
+                        battleView.ShowSpiritSwitcherPanel();
+                        battleView.Refresh();
+                    }
                 }
             }
             else
@@ -1342,20 +1593,27 @@ public class BattleController : MonoBehaviour
 
     /// <summary>
     /// 尝试切换到下一个存活的Spirit（自动切换）
+    /// 从第一个槽位开始查找第一个存活的心兽（排除当前已死亡的）
     /// </summary>
     /// <returns>是否切换成功</returns>
     private bool TrySwitchToNextAliveSpirit()
     {
-        // 从当前索引的下一个开始查找存活的Spirit
-        for (int i = currentSpiritIndex + 1; i < spiritQueue.Count; i++)
+        // 从第一个槽位开始查找存活的Spirit
+        for (int i = 0; i < spiritQueue.Count; i++)
         {
+            // 跳过当前已死的心兽
+            if (i == currentSpiritIndex)
+                continue;
+
             if (IsSpiritAlive(i))
             {
+                Debug.Log($"BattleController: Found alive spirit at index {i}, switching...");
                 return PerformSpiritSwitch(i);
             }
         }
 
         // 没有找到存活的Spirit
+        Debug.LogWarning("BattleController: No alive spirit found for auto-switch");
         return false;
     }
 

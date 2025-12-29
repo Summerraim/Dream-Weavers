@@ -64,27 +64,45 @@ public class Enemy : IBattleUnit
     }
 
     /// <summary>
-    /// 敌人死亡判定：HP <= 0 或 Mana <= 0 都视为死亡
+    /// 敌人死亡判定：HP <= 0 或 Mana < 10 都视为死亡
     /// </summary>
-    public bool IsDead => HP <= 0 || Mana <= 0;
+    public bool IsDead => HP <= 0 || Mana < 10;
 
-    public void ReceiveDamage(int dmg)
+    public void ReceiveDamage(int dmg, IBattleUnit attacker = null)
     {
         int incoming = Mathf.Max(0, dmg);
         if (incoming == 0)
             return;
 
+        float effectiveDefense = Defense;
+        // 虚空遗民：攻击/技能无视敌人部分防御力（在受击方这里调整防御计算）
+        var activeBattle = BattleModel.ActiveBattle;
+        if (attacker != null && activeBattle != null)
+        {
+            var attackerBuffs = activeBattle.GetBuffsForUnit(attacker);
+            for (int i = 0; i < attackerBuffs.Count; i++)
+            {
+                if (attackerBuffs[i] is VoidExileBuff voidExileBuff)
+                {
+                    effectiveDefense = Mathf.Max(
+                        0f,
+                        effectiveDefense * (1f - Mathf.Clamp01(voidExileBuff.IgnoreDefensePercent))
+                    );
+                    break;
+                }
+            }
+        }
+
         float reduction = 1f;
-        float denominator = Defense + 20f;
+        float denominator = effectiveDefense + 20f;
         if (denominator > 0f)
         {
-            reduction = Mathf.Clamp01(1f - (Defense / denominator));
+            reduction = Mathf.Clamp01(1f - (effectiveDefense / denominator));
         }
 
         int finalDamage = Mathf.CeilToInt(incoming * reduction);
 
-        var battle = BattleModel.ActiveBattle;
-        int hpDamage = battle != null ? battle.ModifyDamageReceived(this, finalDamage) : finalDamage;
+        int hpDamage = activeBattle != null ? activeBattle.ModifyDamageReceived(this, finalDamage, attacker) : finalDamage;
         hpDamage = Mathf.Max(0, hpDamage);
 
         if (hpDamage > 0)
@@ -92,7 +110,7 @@ public class Enemy : IBattleUnit
             HP = Mathf.Max(0, HP - hpDamage);
         }
 
-        battle?.NotifyDamageReceived(this, hpDamage);
+        activeBattle?.NotifyDamageReceived(this, hpDamage, attacker);
     }
 
     public void ReceiveHeal(int v)
@@ -103,6 +121,11 @@ public class Enemy : IBattleUnit
     public void ConsumeMana(int amount)
     {
         Mana = Mathf.Max(0, Mana - Mathf.Max(0, amount));
+    }
+
+    public void RestoreMana(int amount)
+    {
+        Mana = Mathf.Min(MaxMana, Mana + Mathf.Max(0, amount));
     }
 
     public void ReceiveMana(int amount)

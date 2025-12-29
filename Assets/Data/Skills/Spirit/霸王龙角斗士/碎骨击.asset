@@ -21,5 +21,5 @@ MonoBehaviour:
   <SkillAnimation>k__BackingField: {fileID: 7400000, guid: b849fc710f36a7b44bc486c7499d2575,
     type: 2}
   effects:
-  - {fileID: 11400000, guid: a175fd43ca433d24cad2b79f282a2363, type: 2}
+  - {fileID: 11400000, guid: 94a68875728bc1f48b79618ea37fa08d, type: 2}
   - {fileID: 11400000, guid: b412fcac1db66d546bcb83a56c8ab9cd, type: 2}

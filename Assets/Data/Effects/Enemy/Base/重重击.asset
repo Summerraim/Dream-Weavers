@@ -17,4 +17,4 @@ MonoBehaviour:
   image: {fileID: 0}
   initDamage: 30
   scaleWithDamage: 1
-  DamageMultiplier: 1.5
+  DamageMultiplier: 1.3

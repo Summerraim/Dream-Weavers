@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 
   image: {fileID: 21300000, guid: 7ff1adbff7674ca41aa7a579cd851211, type: 3}
   usePercentDamage: 0
-  percentDamage: 0.05
-  initDamage: 20
+  percentDamage: 0.1
+  initDamage: 0
   duration: 3
   applyToTarget: 1

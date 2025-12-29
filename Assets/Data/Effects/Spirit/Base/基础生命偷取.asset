@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  initDamage: 30
+  initDamage: 25
   casterDamageMultiplier: 1
-  stealPercent: 0.5
+  stealPercent: 0.3

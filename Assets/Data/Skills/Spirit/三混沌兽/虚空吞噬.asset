@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayNameOverride: "\u865A\u7A7A\u541E\u566C"
   <Description>k__BackingField: "\u865A\u7A7A\u541E\u566C"
-  <Mana>k__BackingField: 20
+  <Mana>k__BackingField: 25
   <CooldownTurns>k__BackingField: 3
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
-  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: e152b472b0155e24ca425425f3d2c30f,
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: df86399bb5dea7f44821eaeeeb220092,
     type: 2}
   effects:
   - {fileID: 11400000, guid: ccfa6577c6b459b4c80d602334480137, type: 2}

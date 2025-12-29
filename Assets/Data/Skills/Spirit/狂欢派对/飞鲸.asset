@@ -21,8 +21,8 @@ MonoBehaviour:
   Defense: 12
   Skills:
   - {fileID: 11400000, guid: 7efcafa9e7e09e24cb6ad9f4572e74f5, type: 2}
-  - {fileID: 11400000, guid: 6d1bdcae3bccfc249a8a564de8eb7f4b, type: 2}
   - {fileID: 11400000, guid: 8402cf45a77751047bec04b3f7af069a, type: 2}
+  - {fileID: 11400000, guid: 6d1bdcae3bccfc249a8a564de8eb7f4b, type: 2}
   Synergies:
   - {fileID: 11400000, guid: b4a9678a9d0221a498286800405365e7, type: 2}
   - {fileID: 11400000, guid: a319139336e390441a0e44e12cfe937f, type: 2}

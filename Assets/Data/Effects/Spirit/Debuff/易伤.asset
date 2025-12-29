@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 1142310747, guid: fea2c2d31834a434eb0c94138bb982e9, type: 3}
-  damageIncrease: 0.5
+  damageIncrease: 0.3
   duration: 3
   applyToTarget: 1

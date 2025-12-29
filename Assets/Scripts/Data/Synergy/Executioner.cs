@@ -23,16 +23,18 @@ public class Executioner : Synergy
         if (model == null || model.Owner == null)
             return;
 
-        int tier = model.GetCurrentTierIndex();
-
-        // 处决者需要至少4个单位才能触发（索引1 = 第2档 = 4个单位）
-        if (tier < 1)
+        // 处决者的档位以“队伍中拥有该羁绊的单位数量”为准：
+        // - 4 个：10%
+        // - 6 个：20%
+        // 注意：这里不依赖 TriggerCounts 的具体配置，避免 [4,6] / [2,4,6] 等配置差异导致档位错位。
+        int activeCount = model.ActiveCount;
+        if (activeCount < 4)
         {
             RemoveExecutionerBuff(model);
             return;
         }
 
-        float threshold = tier == 1 ? tierFourThreshold : tierSixThreshold;
+        float threshold = activeCount >= 6 ? tierSixThreshold : tierFourThreshold;
 
         // 移除旧的Buff
         RemoveExecutionerBuff(model);
@@ -45,7 +47,7 @@ public class Executioner : Synergy
         {
             battleModel.AddBuff(executionerBuff);
             Debug.Log(
-                $"Executioner: Applied to {model.Owner.DisplayName}, Tier={(tier + 1) * 2}, Threshold={threshold * 100}%"
+                $"Executioner: Applied to {model.Owner.DisplayName}, ActiveCount={activeCount}, Threshold={threshold * 100}%"
             );
         }
     }

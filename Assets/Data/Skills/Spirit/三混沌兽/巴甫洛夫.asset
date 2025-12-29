@@ -23,6 +23,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bdf5c6611037e144998a5445754a6a46, type: 2}
   - {fileID: 11400000, guid: 9cb5d20ca744774418b51136a5536850, type: 2}
   - {fileID: 11400000, guid: f5e9b98b33389fa4bbd3428029512dc4, type: 2}
+  - {fileID: 11400000, guid: 94bdde1c9fb13c34e9e2febc5f8fe183, type: 2}
   Synergies:
   - {fileID: 11400000, guid: ff12cd606cf36114d877d422801d6783, type: 2}
   - {fileID: 11400000, guid: 540d575bbbbf2d341910dd296182f618, type: 2}

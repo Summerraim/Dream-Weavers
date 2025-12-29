@@ -100,12 +100,12 @@ TextureImporter:
       name: Confusion_0
       rect:
         serializedVersion: 2
-        x: 517
-        y: 758
+        x: 520
+        y: 722
         width: 1127
         height: 1061
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

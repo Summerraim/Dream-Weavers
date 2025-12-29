@@ -17,11 +17,11 @@ MonoBehaviour:
   Image: {fileID: -1193084413, guid: 8bb8d638c4a7d244ca9f5ee2c78f388d, type: 3}
   MaxHP: 310
   MaxMana: 210
-  Damage: 110
-  Defense: 11
+  Damage: 100
+  Defense: 12
   Skills:
-  - {fileID: 11400000, guid: 57141cdd8cb2331458b06ed961fc5308, type: 2}
-  - {fileID: 11400000, guid: 1291044d3f5875442ac28625a4c2563b, type: 2}
-  - {fileID: 11400000, guid: d99b3ebae3e95684bb73cef47ea166cf, type: 2}
-  - {fileID: 11400000, guid: 3a41737e673967f439666ebf68fe23c9, type: 2}
-  - {fileID: 11400000, guid: 7c0a072febbc2b041a2838d2fefadf10, type: 2}
+  - {fileID: 11400000, guid: 8ee3b1dd1cae31a43ad106db9cb0d0b5, type: 2}
+  - {fileID: 11400000, guid: 9287f58c5fc3f59429ba9b49c6f753ad, type: 2}
+  - {fileID: 11400000, guid: f5e6c13fd36cd9245b5bb4a08f4d123d, type: 2}
+  - {fileID: 11400000, guid: 60c891b49e5635c40bec3ca9271a864f, type: 2}
+  - {fileID: 11400000, guid: ad2d806e4fa5f5d47b68923804b6c8f4, type: 2}
