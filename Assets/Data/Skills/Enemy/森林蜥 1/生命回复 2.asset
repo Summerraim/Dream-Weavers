@@ -15,6 +15,6 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 1939620127, guid: 0dd7f65b75e47b94db499d4bd5f040dd, type: 3}
-  percentRegeneration: 0.2
+  percentRegeneration: 0.18
   duration: 2
   applyToCaster: 1
