@@ -1443,21 +1443,34 @@ public class BattleController : MonoBehaviour
             }
             else if (bossRoom != null)
             {
-                // Boss房间：标记已清理，显示继续按钮
+                // Boss房间：标记已清理
                 bossRoom.MarkAsCleared();
 
-                // 尝试捕捉Boss对应的精灵
-                var (success, capturedSpirit) = bossRoom.AttemptCapture();
+                // 获取Boss名称
+                string bossName = enemy?.DisplayName ?? "";
+
+                // 尝试显示特殊Boss CG
+                bool usedSpecialCG = false;
                 if (battleView != null)
                 {
-                    if (success && capturedSpirit != null)
+                    usedSpecialCG = battleView.ShowSpecialBossCG(bossName, () =>
                     {
-                        battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
-                    }
-                    else
+                        // CG播放完成后的回调：显示捕捉结果
+                        HandleBossCaptureAfterCG(bossRoom);
+                    });
+                }
+
+                // 如果没有使用特殊CG，使用普通流程
+                if (!usedSpecialCG)
+                {
+                    // 显示普通的敌人死亡面板
+                    if (battleView != null)
                     {
-                        battleView.ShowCaptureFailed();
+                        battleView.ShowEnemyDeathPanel();
                     }
+
+                    // 直接执行捕捉逻辑
+                    HandleBossCaptureAfterCG(bossRoom);
                 }
 
                 Debug.Log("BattleController: Boss战斗胜利，等待玩家点击继续按钮离开房间");
@@ -1554,6 +1567,38 @@ public class BattleController : MonoBehaviour
                     Debug.Log("BattleController: Game state set to GameOver");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Boss CG播放完成后处理捕捉逻辑
+    /// </summary>
+    /// <param name="bossRoom">Boss房间引用</param>
+    private void HandleBossCaptureAfterCG(BossRoom_cza bossRoom)
+    {
+        if (bossRoom == null)
+        {
+            Debug.LogWarning("[BattleController] HandleBossCaptureAfterCG: bossRoom为null");
+            return;
+        }
+
+        // 尝试捕捉Boss对应的精灵
+        var (success, capturedSpirit) = bossRoom.AttemptCapture();
+        if (battleView != null)
+        {
+            if (success && capturedSpirit != null)
+            {
+                battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
+                Debug.Log($"[BattleController] Boss捕捉成功: {capturedSpirit.DisplayName}");
+            }
+            else
+            {
+                battleView.ShowCaptureFailed();
+                Debug.Log("[BattleController] Boss捕捉失败");
+            }
+
+            // 显示普通的敌人死亡面板（显示继续按钮）
+            battleView.ShowEnemyDeathPanel();
         }
     }
 

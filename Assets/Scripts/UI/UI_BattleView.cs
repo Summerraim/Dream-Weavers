@@ -225,6 +225,11 @@ public class UI_BattleView : MonoBehaviour
     [SerializeField]
     private TMP_Text captureResultText;
 
+    [Header("Special Boss CG")]
+    [SerializeField]
+    [Tooltip("阿斯蒙蒂斯的特殊CG序列控制器")]
+    private BossDefeatedCGSequence asmontisCGSequence;
+
     private BattleController controller;
     private BattleModel model;
     private List<SynergySlot> spiritSynergySlots = new List<SynergySlot>();
@@ -2333,5 +2338,36 @@ public class UI_BattleView : MonoBehaviour
             capturePanel.SetActive(false);
             Debug.Log("[UI_BattleView] 隐藏捕捉面板");
         }
+    }
+
+    // ========== Special Boss CG功能 ==========
+
+    /// <summary>
+    /// 显示特殊Boss的CG动画（如阿斯蒙蒂斯）
+    /// </summary>
+    /// <param name="bossName">Boss的DisplayName</param>
+    /// <param name="onComplete">CG播放完成后的回调</param>
+    /// <returns>返回true表示使用了特殊CG，false表示应使用普通死亡面板</returns>
+    public bool ShowSpecialBossCG(string bossName, System.Action onComplete)
+    {
+        // 检查是否为阿斯蒙蒂斯
+        if (bossName == "阿斯蒙蒂斯" && asmontisCGSequence != null)
+        {
+            Debug.Log($"[UI_BattleView] 播放阿斯蒙蒂斯特殊CG");
+
+            // 隐藏普通的敌人死亡面板（避免冲突）
+            HideEnemyDeathPanel();
+
+            // 设置完成回调
+            asmontisCGSequence.OnSequenceComplete = onComplete;
+
+            // 播放CG序列
+            asmontisCGSequence.PlaySequence();
+
+            return true;
+        }
+
+        // 其他Boss返回false，使用普通死亡面板
+        return false;
     }
 }
