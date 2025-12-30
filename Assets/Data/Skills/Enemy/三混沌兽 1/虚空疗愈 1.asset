@@ -15,7 +15,7 @@ MonoBehaviour:
   displayNameOverride: "\u865A\u7A7A\u7597\u6108"
   <Description>k__BackingField: "\u865A\u7A7A\u7597\u6108"
   <Mana>k__BackingField: 28
-  <CooldownTurns>k__BackingField: 5
+  <CooldownTurns>k__BackingField: 6
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
   <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 20f051ff577fbd346a02007ffd0cd371,
