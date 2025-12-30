@@ -18,7 +18,7 @@ MonoBehaviour:
   MaxHP: 150
   MaxMana: 100
   Damage: 25
-  Defense: 0
+  Defense: 1
   Skills:
   - {fileID: 11400000, guid: ac46d27a904e7474aabd4601eeead181, type: 2}
   - {fileID: 11400000, guid: eb08d77c75d99b74d9cd59d27eb373af, type: 2}

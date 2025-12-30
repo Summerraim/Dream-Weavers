@@ -1288,6 +1288,15 @@ public class BattleController : MonoBehaviour
         // 增加回合计数（模型负责）
         model?.IncrementTurn();
 
+        // TurnStart debuff/buff 可能会在这里把玩家/敌人打死，需要立刻结算胜负/切换
+        UpdateBattleStateAfterAction();
+        if (State == BattleState.Victory || State == BattleState.Defeat)
+        {
+            if (battleView != null)
+                battleView.Refresh();
+            return;
+        }
+
         State = BattleState.EnemyTurn;
         StartCoroutine(EnemyActCoroutine());
 
@@ -1312,6 +1321,16 @@ public class BattleController : MonoBehaviour
             // 敌人回合结束，处理Buff效果并减少持续时间
             model?.OnTurnEnd();
 
+            // **关键修复**：检查战斗状态（buff效果可能导致敌人死亡）
+            UpdateBattleStateAfterAction();
+
+            // 如果战斗已经结束，不要切换回玩家回合
+            if (State == BattleState.Victory || State == BattleState.Defeat)
+            {
+                Debug.Log($"BattleController: 战斗在敌人被控制期间结束，状态={State}");
+                yield break;
+            }
+
             // 敌人被控制，跳过行动，直接返回玩家回合
             State = BattleState.PlayerTurn;
             if (battleView != null)
@@ -1325,6 +1344,16 @@ public class BattleController : MonoBehaviour
         if (skill == null)
         {
             Debug.Log("AIController: Enemy has no available skills");
+
+            // 即使敌人没有可用技能，也需要触发回合结束的buff结算/过期，并立刻检查胜负
+            model?.OnTurnEnd();
+            UpdateBattleStateAfterAction();
+            if (State == BattleState.Victory || State == BattleState.Defeat)
+            {
+                Debug.Log($"BattleController: Battle ended after enemy skip: {State}");
+                yield break;
+            }
+
             State = BattleState.PlayerTurn;
             yield break;
         }
@@ -1339,6 +1368,16 @@ public class BattleController : MonoBehaviour
 
         // 敌人回合结束，处理Buff效果并减少持续时间
         model?.OnTurnEnd();
+
+        // **关键修复**：检查战斗状态（可能在敌人行动时触发反伤导致敌人死亡）
+        UpdateBattleStateAfterAction();
+
+        // 如果战斗已经结束（Victory/Defeat），不要切换回玩家回合
+        if (State == BattleState.Victory || State == BattleState.Defeat)
+        {
+            Debug.Log($"BattleController: 战斗在敌人回合后结束，状态={State}");
+            yield break;
+        }
 
         // 敌人回合结束
         if (State == BattleState.EnemyTurn)
@@ -1448,21 +1487,43 @@ public class BattleController : MonoBehaviour
 
                 // 获取Boss名称
                 string bossName = enemy?.DisplayName ?? "";
+                Debug.Log($"[BattleController] ===== Boss被击败！=====");
+                Debug.Log($"[BattleController] Boss DisplayName: '{bossName}' (长度: {bossName.Length})");
+
+                // 详细打印每个字符（用于检测隐藏字符、全角半角等问题）
+                if (!string.IsNullOrEmpty(bossName))
+                {
+                    string charDebug = "字符分析: ";
+                    foreach (char c in bossName)
+                    {
+                        charDebug += $"[{c}({(int)c})] ";
+                    }
+                    Debug.Log($"[BattleController] {charDebug}");
+                }
 
                 // 尝试显示特殊Boss CG
                 bool usedSpecialCG = false;
                 if (battleView != null)
                 {
+                    Debug.Log($"[BattleController] 调用 battleView.ShowSpecialBossCG...");
                     usedSpecialCG = battleView.ShowSpecialBossCG(bossName, () =>
                     {
                         // CG播放完成后的回调：显示捕捉结果
+                        Debug.Log("[BattleController] CG播放完成回调被触发");
                         HandleBossCaptureAfterCG(bossRoom);
                     });
+                    Debug.Log($"[BattleController] ShowSpecialBossCG 返回值: {usedSpecialCG}");
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleController] ⚠️ battleView 为 null！无法显示CG");
                 }
 
                 // 如果没有使用特殊CG，使用普通流程
                 if (!usedSpecialCG)
                 {
+                    Debug.Log("[BattleController] 使用普通敌人死亡流程（没有特殊CG）");
+
                     // 显示普通的敌人死亡面板
                     if (battleView != null)
                     {

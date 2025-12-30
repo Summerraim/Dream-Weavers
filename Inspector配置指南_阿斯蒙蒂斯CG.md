@@ -202,17 +202,39 @@ Canvas
 
 ## 🧪 第五步：测试动画播放
 
-### 5.1 单独测试CG序列
+### 5.1 方法一：使用自动播放功能
 1. 选中 `AsmontisCGPanel`
-2. 在 `BossDefeatedCGSequence` 组件中勾选 `Auto Play On Start`
+2. **确保 AsmontisCGPanel 是激活状态**（勾选左上角的复选框）
+3. 在 `BossDefeatedCGSequence` 组件中：
+   - 勾选 `Auto Play On Enable`
+   - 设置 `Auto Play Delay` = 0.5秒（可以调整）
+4. 运行游戏（Play按钮）
+5. 等待0.5秒后，应该会自动播放完整的CG序列
+
+### 5.2 方法二：使用编辑器测试按钮（推荐）
+1. 选中 `AsmontisCGPanel`
+2. **确保 AsmontisCGPanel 是激活状态**
 3. 运行游戏（Play按钮）
-4. 应该会自动播放完整的CG序列
+4. 在Inspector最底部，你会看到：
+   ```
+   === 编辑器测试工具 ===
+   [▶ 测试播放CG序列] 按钮
+   [⬛ 停止播放] 按钮
+   ```
+5. 点击 **▶ 测试播放CG序列** 按钮
+6. 动画应该立即开始播放
+
+**编辑器按钮的优势**：
+- ✅ 可以随时暂停游戏后点击按钮测试
+- ✅ 可以反复测试而不需要重启游戏
+- ✅ 有明确的状态提示
 
 **如果动画没有播放**：
+- ⚠️ **最常见原因**：AsmontisCGPanel 未激活（必须SetActive = true）
 - 检查所有 Animator 是否正确配置
 - 检查 Animation Clip 名称是否与组件中设置的一致
 - 检查 Animation Clip 的 Loop Time 是否取消勾选
-- 查看Console窗口的Debug日志
+- 查看Console窗口的Debug日志（会显示 `[BossDefeatedCGSequence]` 标记）
 
 ### 5.2 测试完整战斗流程
 1. 取消勾选 `Auto Play On Start`
