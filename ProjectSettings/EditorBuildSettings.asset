@@ -8,12 +8,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: 36eca8848b3a1314cba028d1e6e00614
+  - enabled: 1
+    path: Assets/Scenes/StartScenetest.unity
+    guid: a10989b033420f94fa90582d86f298e5
+  - enabled: 0
+    path: Assets/Scenes/cza.unity
+    guid: ea5235d7d7c566b4091a7717778b7267
   - enabled: 0
     path: Assets/Scenes/wanyun.unity
     guid: ba66902541c1ed74f8b6734704d7dca7
-  - enabled: 1
-    path: Assets/Scenes/StartScenetest.unity
-    guid: 733f29b46501a79448e3f3c32be07d83
   - enabled: 0
     path: Assets/Scenes/GameScene.unity
     guid: 4d28016f208f24443904d0a0dd62068a

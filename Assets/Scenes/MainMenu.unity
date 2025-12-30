@@ -2066,7 +2066,7 @@ PrefabInstance:
         type: 3}
       propertyPath: audioManager
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1827342492}
     - target: {fileID: 5050444927587471672, guid: edc4b0e860b849540a96483422d1fa66,
         type: 3}
       propertyPath: aboutCloseButton

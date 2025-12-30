@@ -18,9 +18,8 @@ MonoBehaviour:
   Skills:
   - {fileID: 11400000, guid: a87569d2ed12601439aca1002e9bc53a, type: 2}
   - {fileID: 11400000, guid: 5eecc1b12ba2515468bcdf7af24c8af4, type: 2}
-  - {fileID: 11400000, guid: 897e40f0c283c5a4097eef1a30f1b125, type: 2}
   - {fileID: 11400000, guid: 068bd6b62e091c740a0bf18a788aa00b, type: 2}
-  - {fileID: 11400000, guid: 66cb5d9e511fd424fa452d5e6c57941f, type: 2}
+  - {fileID: 11400000, guid: 0d7585cec31aa9e47ac597d710131b2b, type: 2}
   - {fileID: 11400000, guid: 9f77439cc2aae684d80ec715e04f652d, type: 2}
   - {fileID: 11400000, guid: 444062c368183bc41b91b621bf5fe06e, type: 2}
   - {fileID: 11400000, guid: 8f067736e5eef6b4580cac3eeb27a47d, type: 2}
@@ -28,7 +27,6 @@ MonoBehaviour:
   UseWeights: 0
   Weights: 
   Tags:
-  - 
   - 
   - 
   - 
@@ -46,4 +44,3 @@ MonoBehaviour:
   - "\u68EE\u6797\u8725"
   - "\u86CB\u7CD5,\u98DE\u9CB8,\u6D3E\u5BF9\u718A"
   - "\u8611\u83C7\u70AE\u624B,\u8611\u83C7\u67AA\u5175,\u8611\u83C7\u76FE\u5175"
-  - "\u7EF4\u4EAC\u718A"
