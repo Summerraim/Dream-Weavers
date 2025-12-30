@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,19 @@ public class RestRoom_cza : RoomBase_cza
     [Header("UI 按钮绑定")]
     [Tooltip("休息按钮（可选）。若未手动绑定，将在运行时按名称尝试自动查找并绑定。")]
     [SerializeField] private UnityEngine.UI.Button restButton;
+
+    [Header("动画设置")]
+    [Tooltip("休息动画的Animator组件（可选）")]
+    [SerializeField] private Animator restAnimator;
+    
+    [Tooltip("播放动画时需要显示的对象（可选，如果动画对象默认隐藏）")]
+    [SerializeField] private GameObject animationTarget;
+    
+    [Tooltip("休息动画的触发器名称")]
+    [SerializeField] private string restAnimationTrigger = "Rest";
+    
+    [Tooltip("休息后进入路线选择的延迟时间（秒）")]
+    [SerializeField] private float delayBeforeRouteSelection = 3f;
 
     private bool rested; // 是否已休息
 
@@ -117,6 +131,33 @@ public class RestRoom_cza : RoomBase_cza
         {
             restButton.interactable = false;
         }
+
+        // 播放休息动画
+        if (restAnimator != null)
+        {
+            // 如果指定了动画目标对象，确保它是激活的
+            if (animationTarget != null && !animationTarget.activeInHierarchy)
+            {
+                animationTarget.SetActive(true);
+                Debug.Log($"[RestRoom] 激活动画目标对象: {animationTarget.name}");
+            }
+            
+            restAnimator.SetTrigger(restAnimationTrigger);
+            Debug.Log($"[RestRoom] 播放休息动画，触发器: {restAnimationTrigger}");
+        }
+
+        // 启动延迟协程，等待后进入路线选择
+        StartCoroutine(DelayedRouteSelection());
+    }
+
+    /// <summary>
+    /// 延迟进入路线选择的协程
+    /// </summary>
+    private IEnumerator DelayedRouteSelection()
+    {
+        Debug.Log($"[RestRoom] 等待 {delayBeforeRouteSelection} 秒后进入路线选择...");
+        yield return new WaitForSeconds(delayBeforeRouteSelection);
+        animationTarget.SetActive(false);
 
         // 触发路线选择
         if (RoomStateMachine_cza.Instance != null)
