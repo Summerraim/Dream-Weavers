@@ -16,22 +16,43 @@ MonoBehaviour:
   DisplayName: 
   Description: 
   Skills:
-  - {fileID: 11400000, guid: fc3e61cab987b934580fe94c9017c22c, type: 2}
-  - {fileID: 11400000, guid: bc03c39600647ae4ba23fbbe2eb32881, type: 2}
-  - {fileID: 11400000, guid: 12ce42bd003083c458de0088616e7383, type: 2}
-  - {fileID: 11400000, guid: a6d2947e8007b3b4b9479107d4ea55da, type: 2}
-  - {fileID: 11400000, guid: c6c36020df476bb4692935cf26dd9646, type: 2}
+  - {fileID: 11400000, guid: 5eecc1b12ba2515468bcdf7af24c8af4, type: 2}
+  - {fileID: 11400000, guid: 068bd6b62e091c740a0bf18a788aa00b, type: 2}
+  - {fileID: 11400000, guid: 695184c152ffc51488c9e78a426a5e7d, type: 2}
+  - {fileID: 11400000, guid: 203a96d16dd149f4da9c8c9b13e32e56, type: 2}
+  - {fileID: 11400000, guid: dc2a01c6653d694449cd09e5df062b54, type: 2}
+  - {fileID: 11400000, guid: 1681ffc52f3f8c542b0fdafe68feb7c9, type: 2}
+  - {fileID: 11400000, guid: 444062c368183bc41b91b621bf5fe06e, type: 2}
+  - {fileID: 11400000, guid: adbe4400ad2201747a866d02badf9caa, type: 2}
+  - {fileID: 11400000, guid: 7883be5ac7830be4b801f36a1f4237b4, type: 2}
+  - {fileID: 11400000, guid: d9323d0e76130454f8d289494cc8d2c3, type: 2}
+  - {fileID: 11400000, guid: 3054e0dd45920d64b8bd1ca3bfa6a5ed, type: 2}
+  - {fileID: 11400000, guid: 1fa88275551ab5f4aaed37dac1a9aa6f, type: 2}
   UseWeights: 1
-  Weights: 0100000001000000010000000100000001000000
+  Weights: 010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
   Tags:
   - 
   - 
   - 
   - 
   - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
   SpiritNames:
-  - 
-  - 
-  - 
-  - 
-  - 
+  - "\u51B0\u6DC7\u6DCB"
+  - "\u68EE\u6797\u5927\u70AE\u624B,\u5BD2\u51B0\u5927\u70AE\u624B,\u7CD6\u679C\u5927\u70AE\u624B"
+  - "\u68EE\u6797\u5927\u70AE\u624B"
+  - "\u7CD6\u679C\u5927\u70AE\u624B"
+  - "\u5BD2\u51B0\u5927\u70AE\u624B"
+  - "\u68EE\u6797\u8725"
+  - "\u6392\u961F\u718A,\u86CB\u7CD5,\u98DE\u9CB8"
+  - "\u7EF4\u4EAC\u718A"
+  - "\u8611\u83C7\u70AE\u5175"
+  - "\u8611\u83C7\u76FE\u5175"
+  - "\u8611\u83C7\u67AA\u5175"
+  - "\u96F7\u5FB7\u83F2\u65AF"

@@ -15,8 +15,8 @@ MonoBehaviour:
   DisplayName: "\u96F7\u5FB7\u83F2\u65AF"
   Description: 
   Image: {fileID: -1233126576, guid: e98f180aa6693d845969937d1814777a, type: 3}
-  MaxHP: 190
-  MaxMana: 145
+  MaxHP: 195
+  MaxMana: 160
   Damage: 26
   Defense: 3
   Skills:

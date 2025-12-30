@@ -64,9 +64,9 @@ public class Enemy : IBattleUnit
     }
 
     /// <summary>
-    /// 敌人死亡判定：HP <= 0 或 Mana < 10 都视为死亡
+    /// 敌人死亡判定：HP <= 0 视为死亡
     /// </summary>
-    public bool IsDead => HP <= 0 || Mana < 10;
+    public bool IsDead => HP <= 0;
 
     public void ReceiveDamage(int dmg, IBattleUnit attacker = null)
     {

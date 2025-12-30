@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
-  m_Name: "\u51B0\u6DC7\u6DCB\u5F00\u59CB"
+  m_Name: "\u51B0\u6DC7\u6DCB"
   m_EditorClassIdentifier: 
   dialogueId: Boss Dialog
   dialogueEntries:
@@ -23,8 +23,16 @@ MonoBehaviour:
     portrait: {fileID: -1477757894, guid: 2146afbb6f89c89479307ce1eacb7e71, type: 3}
     portraitPosition: 1
   - speakerName: "\u51B0\u6DC7\u6DCB"
-    dialogueText: "\u51C6\u5907\u597D\u88AB\u6211\u51BB\u7ED3\u6210\u51B0\u96D5\uFF0C\u6C38\u5B58\u5728\u51BB\u571F\u4E4B\u4E2D\uFF01"
+    dialogueText: "\u51C6\u5907\u597D\u88AB\u6211\u51BB\u7ED3\u6210\u51B0\u96D5\uFF0C\u6C38\u5B58\u5728\u51BB\u571F\u4E4B\u4E2D\u966A\u4F34\u6211\u4EEC\u5427\uFF01"
     portrait: {fileID: -1477757894, guid: 2146afbb6f89c89479307ce1eacb7e71, type: 3}
     portraitPosition: 1
+  - speakerName: "\u68EE\u6797\u8725"
+    dialogueText: "\u51B0\u6DC7\u6DCB\u662F\u5BD2\u6B66\u7EAA\u7684\u4E3B\u5BB0\uFF0C\u54B1\u4EEC\u53EF\u5F97\u5F53\u5FC3\u4E00\u70B9\u4E86\u3002\u5B83\u53EF\u6CA1\u6709\u6211\u90A3\u4E48\u4EC1\u6148"
+    portrait: {fileID: 944338676, guid: fa8bb2e6bc8d5af46b0e26558f6c2e4b, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u54FC\uFF0C\u832B\u832B\u51B0\u5DDD\u6211\u90FD\u95EF\u4E86\u8FC7\u6765\uFF0C\u73B0\u5728\u6211\u53EF\u4E0D\u4F1A\u9000\u7F29\uFF01"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
   associatedEnemy: {fileID: 11400000, guid: 00681de8ab311b846bfbf163f9655b08, type: 2}
   enemyNameFilter: "\u51B0\u6DC7\u6DCB"

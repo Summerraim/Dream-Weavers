@@ -27,6 +27,7 @@ public class RestartGameButton : MonoBehaviour
     [Header("Options")]
     [SerializeField] private bool resetTimeScale = true;
     [SerializeField] private bool autoBindOnAwake = true;
+    [SerializeField] private bool resetPlayerDataOnRestart = true;
 
     private Button button;
 
@@ -64,10 +65,27 @@ public class RestartGameButton : MonoBehaviour
                 return;
 
             case RestartMode.LoadSceneByBuildIndex:
+                if (resetPlayerDataOnRestart)
+                {
+                    var playerManager = FindObjectOfType<PlayerManager>();
+                    if (playerManager != null)
+                    {
+                        playerManager.ResetToInitialState();
+                    }
+                }
                 SceneManager.LoadScene(sceneBuildIndex);
                 return;
 
             case RestartMode.LoadSceneByName:
+                if (resetPlayerDataOnRestart)
+                {
+                    var playerManager = FindObjectOfType<PlayerManager>();
+                    if (playerManager != null)
+                    {
+                        playerManager.ResetToInitialState();
+                    }
+                }
+
                 if (string.IsNullOrWhiteSpace(sceneName))
                 {
                     Debug.LogWarning("[RestartGameButton] sceneName 为空，改为使用 sceneBuildIndex");

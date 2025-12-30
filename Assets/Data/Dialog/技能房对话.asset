@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
+  m_Name: "\u6280\u80FD\u623F\u5BF9\u8BDD"
+  m_EditorClassIdentifier: 
+  dialogueId: Skill Dialog
+  dialogueEntries:
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u8FD9\u53C8\u662F\u54EA\u91CC\uFF1F\u6211\u600E\u4E48\u770B\u5230\u4E00\u56E2\u5E72\u51C0\u7684\u80FD\u529B\u7403\uFF1F"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u563F\uFF01\u8FD9\u770B\u4E0A\u53BB\u662F\u66FE\u7ECF\u5728\u6B64\u5904\u5F81\u6218\u7684\u524D\u8F88\u7559\u4E0B\u7684\u6280\u80FD\u7403\u3002\u6216\u8BB8\u4ED6\u4EEC\u7684\u5B50\u5B59\u80FD\u591F\u4ECE\u4E2D\u83B7\u5F97\u63D0\u5347\u3002"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u6211\u61C2\u4E86\uFF0C\u8FD9\u662F\u524D\u8F88\u4EEC\u4E3A\u6211\u4EEC\u7559\u4E0B\u7684\u5F3A\u5927\u52A9\u529B\uFF01\u6211\u4EEC\u53C8\u6709\u4E86\u66F4\u591A\u4E0D\u80FD\u8F93\u7684\u7406\u7531\u4E86\u3002"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u6216\u8BB8\u8FD9\u6837\u5927\u54E5\u4F60\u5C31\u6709\u4E86\u66F4\u591A\u53EF\u4EE5\u9009\u62E9\u7684\u7B56\u7565\u4E86\u3002\u5F3A\u5927\u7684\u6280\u80FD\u52A0\u7F81\u7ECA\u6216\u8BB8\u80FD\u8BA9\u6211\u4EEC\u65E0\u575A\u4E0D\u6467\uFF01"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  associatedEnemy: {fileID: 0}
+  enemyNameFilter: 

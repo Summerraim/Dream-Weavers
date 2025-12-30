@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
-  m_Name: "\u51B0\u5BD2\u53CC\u6740"
+  m_Name: "\u51B0\u7130\u53CC\u6740"
   m_EditorClassIdentifier: 
-  displayNameOverride: "\u51B0\u5BD2\u53CC\u6740"
-  <Description>k__BackingField: "\u51B0\u5BD2\u53CC\u6740"
-  <Mana>k__BackingField: 50
+  displayNameOverride: "\u51B0\u7130\u53CC\u6740"
+  <Description>k__BackingField: "\u51B0\u7130\u53CC\u6740"
+  <Mana>k__BackingField: 55
   <CooldownTurns>k__BackingField: 4
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}

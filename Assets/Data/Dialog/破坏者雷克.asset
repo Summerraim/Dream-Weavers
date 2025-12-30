@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
-  m_Name: "\u7834\u574F\u8005\u96F7\u514B\u5F00\u59CB"
+  m_Name: "\u7834\u574F\u8005\u96F7\u514B"
   m_EditorClassIdentifier: 
-  dialogueId: 
+  dialogueId: Boss Dialog
   dialogueEntries:
   - speakerName: "\u7834\u574F\u8005\u96F7\u514B"
     dialogueText: "\u7834\u574F\uFF01\u7834\u574F\uFF01\uFF01"
@@ -22,9 +22,17 @@ MonoBehaviour:
     dialogueText: "\u5728\u8FD9\u5EA7\u5931\u4E50\u56ED\u91CC\uFF0C\u6211\u5C06\u7834\u574F\u4E00\u5207\uFF01"
     portrait: {fileID: 495759148, guid: e656a49b2de7a7d4998053ba90f8995d, type: 3}
     portraitPosition: 1
-  - speakerName: "\u7834\u574F\u8005\u96F7\u514B"
-    dialogueText: "\u4E0D\u8981\u5984\u60F3\u79BB\u5F00\u8FD9\u5EA7\u57CE\u5821\uFF0C\u6C38\u8FDC\u7684\u56DA\u7981\u4E8E\u6B64\u5427\uFF01"
-    portrait: {fileID: 495759148, guid: e656a49b2de7a7d4998053ba90f8995d, type: 3}
+  - speakerName: "\u585E\u52D2\u65AF"
+    dialogueText: "\u597D\u6D53\u90C1\u7684\u9ED1\u6697\u6C14\u606F\u3002\u770B\u6765\u540D\u4E0D\u865A\u4F20\uFF0C\u96F7\u514B\u7ADF\u4E5F\u88AB\u6C61\u67D3\u4E86\u3002"
+    portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 1
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u522B\u60F3\u7740\u53D9\u65E7\u4E86\u3002\u6211\u4EEC\u5F97\u62EF\u6551\u96F7\u514B\uFF0C\u4E0D\u80FD\u8BA9\u6211\u4EEC\u66FE\u7ECF\u7684\u6B22\u4E50\u56ED\u771F\u7684\u53D8\u6210\u5931\u4E50\u56ED\uFF01"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u662F\u65F6\u5019\u628A\u5FEB\u4E50\u5E26\u56DE\u8FD9\u7247\u4E50\u56ED\u4E86\u3002"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
   associatedEnemy: {fileID: 11400000, guid: c1a049471044216419ddcdfdab6cb2f1, type: 2}
   enemyNameFilter: "\u7834\u574F\u8005\u96F7\u514B"

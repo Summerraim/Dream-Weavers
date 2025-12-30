@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
-  m_Name: DialogData5
+  m_Name: "\u9053\u5177\u623F\u5BF9\u8BDD"
   m_EditorClassIdentifier: 
-  dialogueId: Rest Dialog
+  dialogueId: Props Dialog
   dialogueEntries:
   - speakerName: "\u7D22\u62C9"
-    dialogueText: "\u54C7\uFF0C\u8FD9\u91CC\u597D\u8212\u670D"
-    portrait: {fileID: 0}
+    dialogueText: "\u54C7\uFF01\u6709\u4E1C\u897F\u5728\u95EA\u95EA\u53D1\u5149\u6B38\uFF01"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
     portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"
-    dialogueText: "\u6CA1\u9519\uFF0C\u5728\u8FD9\u91CC\u6211\u4EEC\u53EF\u4EE5\u597D\u597D\u4F11\u606F\uFF0C\u6211\u4EEC\u53EF\u4EE5\u56DE\u590D\u8840\u91CF\u548C\u84DD\u91CF"
+    dialogueText: "\u8FD9\u4E9B\u5F3A\u5927\u9053\u5177\u4E0D\u77E5\u9053\u4E3A\u5565\u73B0\u5728\u6D12\u843D\u7684\u5230\u5904\u90FD\u662F\uFF0C\u6211\u4EEC\u51FB\u8D25\u90A3\u4E9B\u88AB\u6C61\u67D3\u7684\u5FC3\u517D\u65F6\u4E5F\u53EF\u4EE5\u83B7\u53D6\u54E6\uFF01\uFF08\u6309\u201DI\u201C\u53EF\u4EE5\u6253\u5F00\u9762\u677F\u4F7F\u7528\u9053\u5177\uFF09"
     portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 1
   associatedEnemy: {fileID: 0}

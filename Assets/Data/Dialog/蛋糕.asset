@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
+  m_Name: "\u86CB\u7CD5"
+  m_EditorClassIdentifier: 
+  dialogueId: Combat Dialog
+  dialogueEntries:
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u8FD9\u662F\u4EC0\u4E48\uFF0C\u4E3A\u4EC0\u4E48\u4E00\u4E2A\u5927\u86CB\u7CD5\u4E5F\u80FD\u662F\u5FC3\u517D\uFF1F\u8FD8\u80FD\u88AB\u6C61\u67D3\uFF01"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u4E0D\u7136\u5462\uFF0C\u4F60\u8FC7\u751F\u65E5\u6CA1\u5403\u8FC7\u86CB\u7CD5\uFF1F"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u53EF\u662F\uFF0C\u86CB\u7CD5\u53EF\u662F\u7528\u6765\u5403\u7684\u554A\uFF0C\u5B83\u53EF\u662F\u2026\u2026\u5FC3\u517D\u3002"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u8C01\u8BF4\u5FC3\u517D\u4E0D\u80FD\u5403\u7684\u3002"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u7B49\u4E0B\uFF0C\u5B83\u597D\u50CF\u53D1\u73B0\u6211\u4EEC\u4E86\uFF01\u90FD\u602A\u4F60\u58F0\u97F3\u592A\u5927\u4E86\uFF01"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u6211\u2026\u2026\u660E\u660E\u662F\u4F60\u58F0\u97F3\u5927\u3002\uFF08\u5C0F\u58F0\u5600\u5495\uFF09"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  associatedEnemy: {fileID: 11400000, guid: d87b8bdb8210a3341bf43c1b9c7e8ed7, type: 2}
+  enemyNameFilter: "\u86CB\u7CD5"

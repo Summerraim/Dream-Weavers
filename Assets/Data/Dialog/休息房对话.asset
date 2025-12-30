@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
+  m_Name: "\u4F11\u606F\u623F\u5BF9\u8BDD"
+  m_EditorClassIdentifier: 
+  dialogueId: First Dialog
+  dialogueEntries:
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u597D\u6D53\u90C1\u7684\u751F\u547D\u529B\u91CF\u3002\u6211\u4EFF\u4F5B\u611F\u5230\u5FC3\u7075\u90FD\u5F97\u5230\u4E86\u51C0\u5316\u3002"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
+  - speakerName: "\u585E\u52D2\u65AF"
+    dialogueText: "\u521A\u597D\uFF0C\u5927\u5BB6\u4F19\u53EF\u4EE5\u5728\u8FD9\u91CC\u597D\u597D\u4F11\u606F\u4E00\u4E0B\uFF0C\u6574\u7406\u4E0B\u81EA\u5DF1\u7684\u4F24\u52BF\u3002\u6BD5\u7ADF\u4F24\u53E3\u53EF\u4E0D\u4F1A\u7A81\u7136\u6108\u5408\u3002"
+    portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
+    portraitPosition: 1
+  - speakerName: "\u5FB7\u82AC\u65AF"
+    dialogueText: "\u545C\uFF0C\u53EF\u60DC\u90A3\u4E9B\u9635\u4EA1\u7684\u4F19\u4F34\u4EEC\u4E86\uFF0C\u5982\u679C\u4ED6\u4EEC\u91CD\u4F24\u65F6\u80FD\u53CA\u65F6\u83B7\u5F97\u751F\u547D\u4E4B\u529B\uFF0C\u5C31\u4E0D\u4F1A\u2026\u2026"
+    portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
+    portraitPosition: 1
+  associatedEnemy: {fileID: 11400000, guid: a8d2de91940e66d4195fdf34ede06128, type: 2}
+  enemyNameFilter: "\u585E\u52D2\u65AF"

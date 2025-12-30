@@ -238,10 +238,29 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: 4cb97d005f6441847948ff3d30c0efe9, type: 2}
     Count: 1
+  - Item: {fileID: 11400000, guid: 9de12337a6e2cb84db5f697e25df05e5, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 3f05a6edb40992c4f820de80e247a91e, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 9de12337a6e2cb84db5f697e25df05e5, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 9de12337a6e2cb84db5f697e25df05e5, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 4cb97d005f6441847948ff3d30c0efe9, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 03d8d8696f972b34ba0645cb7513997c, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: 89c8b40518a88764e9b59db959cf0534, type: 2}
+    Count: 1
+  - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
+    Count: 1
   initialOwnedSpirits: []
   initialDeployedSpirits: []
   OwnedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+  - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   DeployedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   MaxDeployedSpirits: 6

@@ -297,6 +297,25 @@ public class PlayerManager : MonoBehaviour
 
         // 关键：重置 PlayerData（否则 ScriptableObject 上的 OwnedSpirits/DeployedSpirits 会在“重启游戏”后继续沿用上一局）
         // 逻辑对齐 PlayerData 的 [RuntimeInitializeOnLoadMethod] ResetAllPlayerData()：重置所有 PlayerData 资源。
+        // 优先重置当前正在使用的 PlayerData（避免 FindObjectsOfTypeAll 在某些时机找不到导致不重置）
+        if (playerData == null)
+        {
+            var discovered = Resources.FindObjectsOfTypeAll<PlayerData>();
+            if (discovered != null && discovered.Length > 0)
+            {
+                playerData = discovered[0];
+            }
+        }
+
+        if (playerData != null)
+        {
+            playerData.ResetToInitialState();
+
+#if UNITY_EDITOR
+            UnityEditor.EditorUtility.SetDirty(playerData);
+#endif
+        }
+
         var allPlayerData = Resources.FindObjectsOfTypeAll<PlayerData>();
         if (allPlayerData != null && allPlayerData.Length > 0)
         {
@@ -304,6 +323,7 @@ public class PlayerManager : MonoBehaviour
             {
                 var pd = allPlayerData[i];
                 if (pd == null) continue;
+                if (pd == playerData) continue;
                 pd.ResetToInitialState();
 
 #if UNITY_EDITOR
