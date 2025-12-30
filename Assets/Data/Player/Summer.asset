@@ -28,12 +28,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2c0f2d660f7abdb41b853473b5dc5ed2, type: 2}
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   - {fileID: 11400000, guid: e36bfdcfef0603d41a4a7222b0b094fd, type: 2}
-  - {fileID: 11400000, guid: fc573b11a0ab7d5498aee7440c2a071a, type: 2}
-  - {fileID: 11400000, guid: 3116b20114e32af4aaa45e6d5572b41a, type: 2}
-  - {fileID: 11400000, guid: 984eefad35a558640ab884908ecf1712, type: 2}
-  - {fileID: 11400000, guid: 0fcefb66face54842bdc5eb4095ee519, type: 2}
-  - {fileID: 11400000, guid: 4500ea37d9759f647967c53f3f37adbb, type: 2}
-  - {fileID: 11400000, guid: 3b8fa8b45cd68074a865bdb178448fa2, type: 2}
   DeployedSpirits:
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
   - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}

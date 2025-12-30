@@ -16,10 +16,22 @@ MonoBehaviour:
   DisplayName: 
   Description: 
   Skills:
-  - {fileID: 11400000, guid: 897e40f0c283c5a4097eef1a30f1b125, type: 2}
-  UseWeights: 0
-  Weights: 
+  - {fileID: 11400000, guid: fc3e61cab987b934580fe94c9017c22c, type: 2}
+  - {fileID: 11400000, guid: bc03c39600647ae4ba23fbbe2eb32881, type: 2}
+  - {fileID: 11400000, guid: 12ce42bd003083c458de0088616e7383, type: 2}
+  - {fileID: 11400000, guid: a6d2947e8007b3b4b9479107d4ea55da, type: 2}
+  - {fileID: 11400000, guid: c6c36020df476bb4692935cf26dd9646, type: 2}
+  UseWeights: 1
+  Weights: 0100000001000000010000000100000001000000
   Tags:
   - 
+  - 
+  - 
+  - 
+  - 
   SpiritNames:
-  - "\u585E\u52D2\u65AF,\u5FB7\u82AC\u65AF"
+  - 
+  - 
+  - 
+  - 
+  - 

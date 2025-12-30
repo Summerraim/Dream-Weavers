@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7013141393508049982}
   - component: {fileID: 8050631458208591032}
+  - component: {fileID: 409765904376510350}
   m_Layer: 0
   m_Name: PlayerIcon
   m_TagString: Untagged
@@ -26,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 2034373721283944113}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -28.4, y: -24.6, z: 1.3000678}
+  m_LocalPosition: {x: -28.4, y: -23.8, z: 1.3000678}
   m_LocalScale: {x: 3.0076811, y: 4.819238, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -84,6 +85,27 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &409765904376510350
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2034373721283944113}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4a1a65ff6327e6547824f6c66d7e400c, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5936738259982209523
 GameObject:
   m_ObjectHideFlags: 0
