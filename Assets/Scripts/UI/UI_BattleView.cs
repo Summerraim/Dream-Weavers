@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
@@ -2350,21 +2351,56 @@ public class UI_BattleView : MonoBehaviour
     /// <returns>返回true表示使用了特殊CG，false表示应使用普通死亡面板</returns>
     public bool ShowSpecialBossCG(string bossName, System.Action onComplete)
     {
+        Debug.Log($"[UI_BattleView] ShowSpecialBossCG 被调用");
+        Debug.Log($"[UI_BattleView] 收到的 bossName: '{bossName}' (长度: {bossName?.Length ?? 0})");
+        Debug.Log($"[UI_BattleView] asmontisCGSequence 是否为null: {asmontisCGSequence == null}");
+
         // 检查是否为阿斯蒙蒂斯
-        if (bossName == "阿斯蒙蒂斯" && asmontisCGSequence != null)
+        if (bossName == "阿斯蒙蒂斯")
         {
-            Debug.Log($"[UI_BattleView] 播放阿斯蒙蒂斯特殊CG");
+            Debug.Log($"[UI_BattleView] ✅ Boss名称匹配'阿斯蒙蒂斯'");
 
-            // 隐藏普通的敌人死亡面板（避免冲突）
-            HideEnemyDeathPanel();
+            if (asmontisCGSequence != null)
+            {
+                Debug.Log($"[UI_BattleView] ✅ asmontisCGSequence已配置，开始播放特殊CG");
 
-            // 设置完成回调
-            asmontisCGSequence.OnSequenceComplete = onComplete;
+                // 隐藏普通的敌人死亡面板（避免冲突）
+                HideEnemyDeathPanel();
 
-            // 播放CG序列
-            asmontisCGSequence.PlaySequence();
+                // **关键修复**：先激活AsmontisCGPanel，否则无法启动协程
+                // BossDefeatedCGSequence脚本在AsmontisCGPanel上，必须先激活GameObject才能启动协程
+                if (asmontisCGSequence.gameObject != null && !asmontisCGSequence.gameObject.activeSelf)
+                {
+                    Debug.Log($"[UI_BattleView] 激活 AsmontisCGPanel 以启动协程");
+                    asmontisCGSequence.gameObject.SetActive(true);
+                }
 
-            return true;
+                // 设置完成回调
+                asmontisCGSequence.OnSequenceComplete = onComplete;
+
+                // 播放CG序列
+                asmontisCGSequence.PlaySequence();
+
+                return true;
+            }
+            else
+            {
+                Debug.LogError($"[UI_BattleView] ❌ asmontisCGSequence 未配置！请在 BattleView 的 Inspector 中配置 'Asmontis CG Sequence' 字段");
+                return false;
+            }
+        }
+        else
+        {
+            Debug.Log($"[UI_BattleView] Boss名称不匹配。期望:'阿斯蒙蒂斯'，实际:'{bossName}'");
+
+            // 打印字符对比
+            string expected = "阿斯蒙蒂斯";
+            if (!string.IsNullOrEmpty(bossName) && bossName != expected)
+            {
+                Debug.Log($"[UI_BattleView] 字符对比分析:");
+                Debug.Log($"[UI_BattleView] 期望字符: {string.Join(" ", expected.Select(c => $"[{c}({(int)c})]"))}");
+                Debug.Log($"[UI_BattleView] 实际字符: {string.Join(" ", bossName.Select(c => $"[{c}({(int)c})]"))}");
+            }
         }
 
         // 其他Boss返回false，使用普通死亡面板
