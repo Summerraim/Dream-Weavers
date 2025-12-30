@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
-  m_Name: DialogData
+  m_Name: "\u521D\u59CB\u5BF9\u8BDD1"
   m_EditorClassIdentifier: 
   dialogueId: First Dialog
   dialogueEntries:
@@ -23,20 +23,28 @@ MonoBehaviour:
     portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
     portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"
-    dialogueText: "\u4F60\u597D\uFF01\u6211\u53EB\u585E\u52D2\u65AF\uFF0C\u662F\u8FD9\u91CC\u7684\u5FC3\u517D\uFF0C\u4F60\u662F\u7B2C\u4E00\u6B21\u8FDB\u5165\u7EC7\u68A6\u4E16\u754C\u5427\u3002"
+    dialogueText: "\u54C7\uFF01\u4F60\u597D\uFF01\u6211\u53EB\u585E\u52D2\u65AF\uFF0C\u4F60\u662F\u8C01\uFF0C\u4E3A\u4EC0\u4E48\u4ECE\u6765\u6CA1\u89C1\u8FC7\u4F60\u8FD9\u79CD\u5FC3\u517D\u3002"
     portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 1
   - speakerName: "\u7D22\u62C9"
-    dialogueText: "\u662F\u7684\uFF0C\u6211\u521A\u521A\u660E\u660E\u5728807\u5BDD\u5BA4\u73A9\u5B9D\u53EF\u68A6\u5440\uFF0C\u600E\u4E48\u7A81\u7136\u5C31\u51FA\u73B0\u5728\u4E86\u8FD9\u91CC\uFF1F\uFF1F"
+    dialogueText: "\u4EC0\u4E48\u5FC3\u517D\uFF1F\u6211\u8BB0\u5F97\u6211\u660E\u660E\u521A\u624D\u8FD8\u5728807\u5BDD\u5BA4\u73A9\u5B9D\u53EF\u68A6\u5440\uFF0C\u600E\u4E48\u7A81\u7136\u5C31\u51FA\u73B0\u5728\u4E86\u8FD9\u91CC\uFF1F\uFF1F"
     portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
     portraitPosition: 0
   - speakerName: "\u5FB7\u82AC\u65AF"
-    dialogueText: "\u603B\u6709\u4E00\u4E9B\u50CF\u4F60\u4E00\u6837\u81EA\u79F0\u4EBA\u7C7B\u7684\u7269\u79CD\u8FDB\u5165\u6211\u4EEC\u7684\u4E16\u754C\uFF0C\u81F3\u4E8E\u4E3A\u4EC0\u4E48\uFF0C\u53EF\u80FD\u5C31\u9700\u8981\u4F60\u81EA\u5DF1\u63A2\u7D22\u4E86\uFF01"
+    dialogueText: "\u96BE\u9053\u4F60\u5C31\u662F\u4F20\u8BF4\u4E2D\u7684\u5929\u9009\u4E4B\u5B50\uFF01\u6258\u5FB7\u957F\u8001\u66FE\u7ECF\u8BB2\u8FC7\u4E00\u4E2A\u6545\u4E8B\u4F1A\u6709\u4E00\u4E2A\u5929\u5916\u6765\u5BA2\u62EF\u6551\u6211\u4EEC\u4E16\u754C\uFF01"
     portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
     portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u4EC0\u4E48\u5929\u9009\u4E4B\u5B50\uFF1F\u4EC0\u4E48\u62EF\u6551\uFF1F"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"
-    dialogueText: "\u4E0D\u597D\uFF01\u662F\u88AB\u6C61\u67D3\u7684\u5FC3\u517D\uFF01\u51C6\u5907\u4F5C\u6218\uFF01"
+    dialogueText: "\u54C8\u54C8\uFF01\u5148\u8BA9\u6211\u4EEC\u6765\u770B\u770B\u4F60\u6709\u6CA1\u6709\u62EF\u6551\u6211\u4EEC\u88AB\u6C61\u67D3\u7684\u4E16\u754C\u7684\u6F5C\u80FD\u5427\u3002"
     portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
     portraitPosition: 1
+  - speakerName: "\u7D22\u62C9"
+    dialogueText: "\u600E\u4E48\u7A81\u7136\u5C31\u5F00\u59CB\u6218\u6597\u4E86\uFF0C\u592A\u7A81\u7136\u4E86\u5427\uFF0C\u6211\u90FD\u8FD8\u4E0D\u77E5\u9053\u53D1\u751F\u4E86\u4EC0\u4E48\u2026\u2026"
+    portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
+    portraitPosition: 0
   associatedEnemy: {fileID: 11400000, guid: a8d2de91940e66d4195fdf34ede06128, type: 2}
   enemyNameFilter: "\u585E\u52D2\u65AF"

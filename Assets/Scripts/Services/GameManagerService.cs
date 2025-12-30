@@ -108,6 +108,10 @@ public class GameManagerService : MonoBehaviour
     [Header("游戏数据")]
     public int currentLevel = 1;
     public bool isNewGame = true;
+
+    [Header("新游戏加载")]
+    [SerializeField] private int startNewGameSceneBuildIndex = 1;
+    [SerializeField] private SceneType startNewGameSceneType = SceneType.Gameplay;
     
     [Header("暂停设置")]
     public KeyCode pauseKey = KeyCode.Escape;
@@ -120,6 +124,9 @@ public class GameManagerService : MonoBehaviour
     private bool _isLoadingScene = false;
     private AsyncOperation _currentAsyncOperation;
     private Coroutine _loadingCoroutine;
+
+    // StartNewGame() 里会直接 LoadScene，部分单例可能在调用时尚未就绪；用 sceneLoaded 回调兜底重置
+    private bool _pendingNewGameReset = false;
     
     #endregion
     
@@ -344,8 +351,16 @@ public class GameManagerService : MonoBehaviour
     /// </summary>
     public void StartNewGame()
     {
+        if (_isLoadingScene) return;
+
+        // 先显示加载页，遮住重置/切场时的卡顿（LoadingPanel 可选：未注册时 UIManagerService 会直接忽略）
+        _isLoadingScene = true;
+        _currentSceneType = startNewGameSceneType;
+        UIManagerService.Instance?.ShowPanel("LoadingPanel", hidePrevious: false, addToHistory: false);
+
         isNewGame = true;
         currentLevel = 1;
+        _pendingNewGameReset = true;
 
         Debug.Log("=== GameManager: 开始新游戏，重置所有游戏状态 ===");
 
@@ -386,7 +401,7 @@ public class GameManagerService : MonoBehaviour
         Debug.Log("=== GameManager: 状态重置完成，即将加载场景 ===");
 
         // 直接使用场景索引加载（index=1 是游戏场景）
-        SceneManager.LoadScene(1);
+        _loadingCoroutine = StartCoroutine(LoadSceneByBuildIndexAsync(startNewGameSceneBuildIndex));
     }
     
     /// <summary>
@@ -411,6 +426,42 @@ public class GameManagerService : MonoBehaviour
     public void RestartCurrentLevel()
     {
         LoadScene(_currentSceneType, currentLevel);
+    }
+
+    private IEnumerator LoadSceneByBuildIndexAsync(int buildIndex)
+    {
+        // 等待一帧确保UI更新
+        yield return null;
+
+        // 开始异步加载
+        _currentAsyncOperation = SceneManager.LoadSceneAsync(buildIndex);
+
+        if (_currentAsyncOperation == null)
+        {
+            Debug.LogError($"GameManager: 无法异步加载场景 buildIndex={buildIndex}（请检查 Build Settings）");
+            _isLoadingScene = false;
+            yield break;
+        }
+
+        _currentAsyncOperation.allowSceneActivation = false;
+
+        float progress = 0;
+        while (!_currentAsyncOperation.isDone)
+        {
+            progress = Mathf.Clamp01(_currentAsyncOperation.progress / 0.9f);
+            OnSceneLoadingProgress?.Invoke(progress);
+
+            if (_currentAsyncOperation.progress >= 0.9f)
+            {
+                yield return new WaitForSeconds(0.5f);
+                _currentAsyncOperation.allowSceneActivation = true;
+            }
+
+            yield return null;
+        }
+
+        _isLoadingScene = false;
+        _currentAsyncOperation = null;
     }
     
     /// <summary>
@@ -493,6 +544,24 @@ public class GameManagerService : MonoBehaviour
     /// </summary>
     private void OnSceneLoadedCallback(Scene scene, LoadSceneMode mode)
     {
+        if (_pendingNewGameReset)
+        {
+            _pendingNewGameReset = false;
+
+            // 重新加载场景后再重置一遍，确保 PlayerData/RoomStateMachine 等已完成加载/实例化
+            if (PlayerManager.Instance != null)
+            {
+                PlayerManager.Instance.ResetToInitialState();
+            }
+
+            if (RoomStateMachine_cza.Instance != null)
+            {
+                RoomStateMachine_cza.Instance.ResetToInitialState();
+            }
+
+            EnemyPool.ClearDefeatedEnemies();
+        }
+
         Debug.Log($"场景加载完成: {scene.name}");
         
         // 根据场景类型设置游戏状态

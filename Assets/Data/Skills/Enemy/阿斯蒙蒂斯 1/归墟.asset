@@ -10,15 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c102be0c121f6814a97c14b6291a4bbb, type: 3}
-  m_Name: Test
+  m_Name: "\u5F52\u589F"
   m_EditorClassIdentifier: 
-  displayNameOverride: Test
-  <Description>k__BackingField: 
+  displayNameOverride: "\u5F52\u589F"
+  <Description>k__BackingField: "\u5F52\u589F"
   <Mana>k__BackingField: 0
-  <CooldownTurns>k__BackingField: 0
+  <CooldownTurns>k__BackingField: 2
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
-  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 6ad8bb246483a1344bc715c6542091da,
+  <SkillAnimation>k__BackingField: {fileID: 7400000, guid: 2b1c69b5aa5cb914fabbb14356a3987a,
     type: 2}
   effects:
-  - {fileID: 11400000, guid: 6a2374c65d42e2c438b5d109f5426029, type: 2}
+  - {fileID: 11400000, guid: 2864d8b168970394b88d2cd1e5fd030e, type: 2}
+  - {fileID: 11400000, guid: 4d32b86c4a2dc8f459cb6e70ee003718, type: 2}
+  - {fileID: 11400000, guid: 8864fc3f218a8c5498b15cdfb54852be, type: 2}

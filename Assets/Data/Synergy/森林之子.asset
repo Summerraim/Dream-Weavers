@@ -19,8 +19,8 @@ MonoBehaviour:
   triggerCounts: 020000000400000006000000
   tierTwoHpBonus: 0.1
   tierTwoManaBonus: 0.1
-  tierFourHpBonus: 0.2
-  tierFourManaBonus: 0.2
-  tierSixHpBonus: 0.3
-  tierSixManaBonus: 0.3
+  tierFourHpBonus: 0.15
+  tierFourManaBonus: 0.15
+  tierSixHpBonus: 0.25
+  tierSixManaBonus: 0.25
   tierSixLifeSteal: 0.1

@@ -100,9 +100,9 @@ TextureImporter:
       name: "\u963F\u65AF\u8499\u8482\u65AF_0"
       rect:
         serializedVersion: 2
-        x: 618
+        x: 607
         y: 331
-        width: 1430
+        width: 1441
         height: 1695
       alignment: 0
       pivot: {x: 0.5, y: 0.5}

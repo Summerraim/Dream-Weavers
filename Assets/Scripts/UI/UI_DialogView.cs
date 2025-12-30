@@ -32,34 +32,6 @@ public class UI_DialogView : MonoBehaviour
     private void Awake()
     {
         Debug.Log("UI_DialogView.Awake 被调用");
-        
-        // 确保游戏开始时对话系统完全隐藏
-        if (dialogContainer != null)
-        {
-            // 禁用Canvas组件
-            Canvas canvas = dialogContainer.GetComponent<Canvas>();
-            if (canvas != null)
-            {
-                canvas.enabled = false;
-            }
-            
-            // 禁用游戏对象
-            dialogContainer.SetActive(false);
-            Debug.Log("UI_DialogView: 对话系统已隐藏");
-        }
-        else
-        {
-            Debug.LogWarning("UI_DialogView: dialogContainer引用为空，尝试查找对话容器");
-            // 尝试查找对话容器
-            dialogContainer = GameObject.Find("DialogContainer") ?? GameObject.Find("DialogUI");
-            if (dialogContainer != null)
-            {
-                Canvas canvas = dialogContainer.GetComponent<Canvas>();
-                if (canvas != null) canvas.enabled = false;
-                dialogContainer.SetActive(false);
-                Debug.Log("UI_DialogView: 成功找到并隐藏对话容器");
-            }
-        }
 
         // 设置继续按钮事件
         if (continueButton != null)
@@ -71,6 +43,40 @@ public class UI_DialogView : MonoBehaviour
         {
             Debug.LogWarning("UI_DialogView: continueButton引用为空");
         }
+    }
+
+    private void OnEnable()
+    {
+        Debug.Log("UI_DialogView.OnEnable 被调用");
+
+        // 只在 dialogContainer 未设置时尝试查找，不自动显示
+        if (dialogContainer == null)
+        {
+            Debug.LogWarning("UI_DialogView: dialogContainer引用为空，尝试查找对话容器");
+            dialogContainer = GameObject.Find("DialogContainer") ?? GameObject.Find("DialogUI");
+            if (dialogContainer != null)
+            {
+                Debug.Log("UI_DialogView: 成功找到对话容器");
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        Debug.Log("UI_DialogView.OnDisable 被调用");
+
+        // 停止打字动画协程
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+
+        // 重置打字状态
+        isTyping = false;
+
+        // OnDisable 时不强制隐藏 DialogPanel
+        // 让 HideDialogUI() 方法来负责隐藏
     }
 
     private void Update()
@@ -92,7 +98,7 @@ public class UI_DialogView : MonoBehaviour
     public void ShowDialogUI()
     {
         Debug.Log("UI_DialogView.ShowDialogUI 被调用");
-        
+
         if (dialogContainer != null)
         {
             // 确保Canvas和所有UI组件都正确设置
@@ -102,16 +108,9 @@ public class UI_DialogView : MonoBehaviour
                 canvas.enabled = true;
                 canvas.sortingOrder = 1000; // 确保在最上层显示
             }
-            
+
             dialogContainer.SetActive(true);
             Debug.Log("UI_DialogView: 对话界面已显示");
-            
-            // 确保所有UI组件都激活
-            if (backgroundImage != null) backgroundImage.gameObject.SetActive(true);
-            if (leftSpeakerNameText != null) leftSpeakerNameText.gameObject.SetActive(true);
-            if (rightSpeakerNameText != null) rightSpeakerNameText.gameObject.SetActive(true);
-            if (dialogueText != null) dialogueText.gameObject.SetActive(true);
-            if (continueButton != null) continueButton.gameObject.SetActive(true);
         }
         else
         {
@@ -132,17 +131,17 @@ public class UI_DialogView : MonoBehaviour
     public void HideDialogUI()
     {
         Debug.Log("UI_DialogView.HideDialogUI 被调用");
-        
+
         // 停止打字动画协程
         if (typingCoroutine != null)
         {
             StopCoroutine(typingCoroutine);
             typingCoroutine = null;
         }
-        
+
         // 重置打字状态
         isTyping = false;
-        
+
         if (dialogContainer != null)
         {
             // 禁用Canvas组件
@@ -151,31 +150,15 @@ public class UI_DialogView : MonoBehaviour
             {
                 canvas.enabled = false;
             }
-            
+
             // 禁用游戏对象
             dialogContainer.SetActive(false);
-            
-            // 隐藏所有UI组件
-            if (backgroundImage != null) backgroundImage.gameObject.SetActive(false);
-            if (leftSpeakerNameText != null) leftSpeakerNameText.gameObject.SetActive(false);
-            if (rightSpeakerNameText != null) rightSpeakerNameText.gameObject.SetActive(false);
-            if (dialogueText != null) dialogueText.gameObject.SetActive(false);
-            if (continueButton != null) continueButton.gameObject.SetActive(false);
-            if (leftPortraitImage != null) leftPortraitImage.gameObject.SetActive(false);
-            if (rightPortraitImage != null) rightPortraitImage.gameObject.SetActive(false);
-            
-            Debug.Log("UI_DialogView: 对话界面已完全隐藏");
+
+            Debug.Log("UI_DialogView: 对话界面已隐藏");
         }
         else
         {
             Debug.LogError("UI_DialogView: dialogContainer引用为空，无法隐藏对话界面");
-            // 尝试查找对话容器
-            dialogContainer = GameObject.Find("DialogContainer") ?? GameObject.Find("DialogUI");
-            if (dialogContainer != null)
-            {
-                Debug.Log("UI_DialogView: 成功找到对话容器，重新隐藏");
-                HideDialogUI();
-            }
         }
     }
 

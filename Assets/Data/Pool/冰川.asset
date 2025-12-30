@@ -21,11 +21,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bafff11c01c1d324b89a89bf21c7285e, type: 2}
   - {fileID: 11400000, guid: 26d17a12a0cb17b4495fcd486dbfdf31, type: 2}
   - {fileID: 11400000, guid: 0aedc0a5ed98dae4eb0bbc1f2f7bb3c1, type: 2}
+  - {fileID: 11400000, guid: ddb74fb08a062f945a60893798efd3f8, type: 2}
   Spirits:
   - {fileID: 11400000, guid: fc573b11a0ab7d5498aee7440c2a071a, type: 2}
   - {fileID: 11400000, guid: 18ac3da2bc0f5ed43b2b7ea913076927, type: 2}
   - {fileID: 11400000, guid: 5d6d261b78ba125468142b69e95ca0dc, type: 2}
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
   - {fileID: 11400000, guid: 67365242c43227d46a2b19c1584efbbd, type: 2}
+  - {fileID: 11400000, guid: 82af54d61012e194795c86ebaa00ce7a, type: 2}
   UseWeights: 0
   Weights: 

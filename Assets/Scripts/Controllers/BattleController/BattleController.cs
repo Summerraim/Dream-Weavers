@@ -203,6 +203,12 @@ public class BattleController : MonoBehaviour
                 );
             }
 
+            // 同步存活标记（以运行时 HP 为准，避免出现 HP=0 但标记仍为存活）
+            if (spiritRuntimeData.ContainsKey(spiritData))
+            {
+                spiritAliveStatus[spiritData] = spiritRuntimeData[spiritData].CurrentHP > 0;
+            }
+
             // 找到第一个存活的心兽（HP > 0）
             if (currentSpiritIndex == -1 && spiritRuntimeData.ContainsKey(spiritData))
             {
@@ -725,14 +731,26 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public bool IsSpiritAlive(int index)
     {
-        if (spiritAliveStatus == null || index < 0 || index >= spiritQueue.Count)
+        if (index < 0 || index >= spiritQueue.Count)
             return false;
 
         var spiritData = spiritQueue[index];
-        if (!spiritAliveStatus.ContainsKey(spiritData))
-            return false;
+        if (index == currentSpiritIndex && player != null)
+        {
+            return player.HP > 0;
+        }
 
-        return spiritAliveStatus[spiritData];
+        if (spiritRuntimeData != null && spiritRuntimeData.TryGetValue(spiritData, out var runtimeData))
+        {
+            return runtimeData.CurrentHP > 0;
+        }
+
+        if (spiritAliveStatus != null && spiritAliveStatus.TryGetValue(spiritData, out var alive))
+        {
+            return alive;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -890,6 +908,12 @@ public class BattleController : MonoBehaviour
         if (index == currentSpiritIndex && player != null)
         {
             player.SetRuntimeHPMP(newHP, newMP);
+        }
+
+        // 同步存活标记（以 HP 是否大于 0 为准）
+        if (spiritAliveStatus != null)
+        {
+            spiritAliveStatus[spiritData] = newHP > 0;
         }
     }
 
@@ -1389,6 +1413,11 @@ public class BattleController : MonoBehaviour
 
     private void UpdateBattleStateAfterAction()
     {
+        if (State == BattleState.Victory || State == BattleState.Defeat)
+        {
+            return;
+        }
+
         // 检查狩猎大师羁绊的诱捕条件（在敌人完全死亡前）
         if (player != null && enemy != null && !enemy.IsDead && model != null && combatRoom != null)
         {
@@ -1554,20 +1583,36 @@ public class BattleController : MonoBehaviour
 
         if (player != null && player.IsDead)
         {
-            // 标记当前Spirit为死亡
-            if (spiritAliveStatus != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
+            // 标记当前Spirit为死亡（并同步运行时数据，避免依赖下一帧 Update() 才写回）
+            if (currentSpiritIndex >= 0 && spiritQueue != null && currentSpiritIndex < spiritQueue.Count)
             {
                 var currentSpiritData = spiritQueue[currentSpiritIndex];
-                spiritAliveStatus[currentSpiritData] = false;
+
+                if (spiritAliveStatus != null)
+                {
+                    spiritAliveStatus[currentSpiritData] = false;
+                }
+
+                if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(currentSpiritData))
+                {
+                    var data = spiritRuntimeData[currentSpiritData];
+                    spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
+                    {
+                        CurrentHP = 0,
+                        MaxHP = data.MaxHP,
+                        CurrentMP = player.Mana,
+                        MaxMP = data.MaxMP
+                    };
+                }
             }
 
-            // 检查是否还有存活的Spirit
+            // 检查是否还有存活的Spirit（以运行时 HP 为准）
             bool hasAliveSpirit = false;
-            if (spiritAliveStatus != null)
+            if (spiritQueue != null)
             {
-                foreach (var status in spiritAliveStatus.Values)
+                for (int i = 0; i < spiritQueue.Count; i++)
                 {
-                    if (status)
+                    if (IsSpiritAlive(i))
                     {
                         hasAliveSpirit = true;
                         break;
@@ -1832,13 +1877,18 @@ public class BattleController : MonoBehaviour
                         MaxMP = player.MaxMana,
                     };
 
-                    // 检查当前精灵是否从死亡状态恢复
-                    if (
-                        player.HP > 0
-                        && spiritAliveStatus != null
+                    bool wasDead =
+                        spiritAliveStatus != null
                         && spiritAliveStatus.ContainsKey(currentSpiritData)
-                        && !spiritAliveStatus[currentSpiritData]
-                    )
+                        && !spiritAliveStatus[currentSpiritData];
+
+                    if (spiritAliveStatus != null)
+                    {
+                        spiritAliveStatus[currentSpiritData] = player.HP > 0;
+                    }
+
+                    // 检查当前精灵是否从死亡状态恢复
+                    if (player.HP > 0 && wasDead)
                     {
                         ReviveSpirit(currentSpiritIndex);
                     }
@@ -1853,6 +1903,16 @@ public class BattleController : MonoBehaviour
                 lastEnemyHP = enemy.HP;
                 lastEnemyMana = enemy.Mana;
                 changed = true;
+            }
+        }
+
+        if (changed && (State == BattleState.PlayerTurn || State == BattleState.EnemyTurn))
+        {
+            // 兜底：有些伤害来源不一定会走到 UpdateBattleStateAfterAction（例如某些道具/外部效果）
+            // 这里在侦测到 HP 变化后补一次胜负判定，避免出现“HP=0但不结算胜负”的卡死情况。
+            if ((enemy != null && enemy.HP <= 0) || (player != null && player.HP <= 0))
+            {
+                UpdateBattleStateAfterAction();
             }
         }
 
@@ -2093,6 +2153,10 @@ public class BattleController : MonoBehaviour
         Debug.Log(
             $"BattleController: Target HP after use: {(target != null ? target.HP + "/" + target.MaxHP : "N/A")}"
         );
+
+        // 道具可能直接造成击杀/死亡（尤其是对敌方的伤害道具），这里补一次胜负判定
+        model?.UpdateActiveSynergies();
+        UpdateBattleStateAfterAction();
 
         // 如果目标是非当前Spirit，保存使用后的数据
         // 注意：targetSpiritIndex 是 OwnedSpirits 的索引，需要转换为 spiritQueue 的索引

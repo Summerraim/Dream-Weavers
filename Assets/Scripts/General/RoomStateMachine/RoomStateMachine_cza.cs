@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DreamWeavers.Services;
 using UnityEngine;
 
 public class RoomStateMachine_cza : MonoBehaviour
@@ -58,6 +59,16 @@ public class RoomStateMachine_cza : MonoBehaviour
     [Header("启动配置")]
     [SerializeField] private bool autoInit = false; // 由 MapManager 负责初始化，避免重复
     [SerializeField] private int startFloor = 1;
+
+    [Header("首次进入房间对话")]
+    [SerializeField] private bool enableFirstEnterRoomDialogues = true;
+    [SerializeField] private DialogueData firstEnterRestRoomDialogue;
+    [SerializeField] private DialogueData firstEnterSkillRoomDialogue;
+    [SerializeField] private DialogueData firstEnterPropsRoomDialogue;
+
+    private bool hasTriggeredFirstRestRoomDialogue;
+    private bool hasTriggeredFirstSkillRoomDialogue;
+    private bool hasTriggeredFirstPropsRoomDialogue;
 
     private void Start()
     {
@@ -223,9 +234,12 @@ public class RoomStateMachine_cza : MonoBehaviour
         CurrentRoom = null;
         visitedRooms.Clear();
         visitedOrderDebug.Clear();
-        branchChoices.Clear();
-        awaitingChoice = false;
-        floorInitCounter = 0;
+	        branchChoices.Clear();
+	        awaitingChoice = false;
+	        floorInitCounter = 0;
+	        hasTriggeredFirstRestRoomDialogue = false;
+	        hasTriggeredFirstSkillRoomDialogue = false;
+	        hasTriggeredFirstPropsRoomDialogue = false;
         
         // 重置楼层（触发事件通知）
         int oldFloor = currentFloor;
@@ -239,6 +253,71 @@ public class RoomStateMachine_cza : MonoBehaviour
         EnemyPool.ClearDefeatedEnemies();
 
         Debug.Log($"<color=magenta>[FloorTracker] 状态重置完成 - CurrentFloor={currentFloor}, NextFloor={NextFloor}, StartFloor={StartFloor}</color>");
+    }
+
+    private bool TryPlayFirstEnterRoomDialogue(
+        RoomType_cza roomType,
+        DialogueData overrideDialogue,
+        Action onDialogueEnd
+    )
+    {
+        if (!enableFirstEnterRoomDialogues)
+        {
+            return false;
+        }
+
+        // 只处理用户关心的三种房间：Rest/Skill/Props
+        if (roomType == RoomType_cza.Rest)
+        {
+            if (hasTriggeredFirstRestRoomDialogue)
+                return false;
+            hasTriggeredFirstRestRoomDialogue = true;
+        }
+        else if (roomType == RoomType_cza.Skill)
+        {
+            if (hasTriggeredFirstSkillRoomDialogue)
+                return false;
+            hasTriggeredFirstSkillRoomDialogue = true;
+        }
+        else if (roomType == RoomType_cza.Props)
+        {
+            if (hasTriggeredFirstPropsRoomDialogue)
+                return false;
+            hasTriggeredFirstPropsRoomDialogue = true;
+        }
+        else
+        {
+            return false;
+        }
+
+        DialogueData dialogueData = overrideDialogue;
+        if (dialogueData == null && DialogControllerService.Instance != null)
+        {
+            dialogueData = DialogControllerService.Instance.GetDialogueForRoom(roomType);
+        }
+
+        if (dialogueData == null)
+        {
+            return false;
+        }
+
+        DialogController dialogController = UnityEngine.Object.FindObjectOfType<DialogController>(true);
+        if (dialogController == null)
+        {
+            Debug.LogWarning("[RoomState] DialogController not found, skip first-enter dialogue");
+            return false;
+        }
+
+        Action handler = null;
+        handler = () =>
+        {
+            dialogController.OnDialogueEnd -= handler;
+            onDialogueEnd?.Invoke();
+        };
+        dialogController.OnDialogueEnd += handler;
+
+        dialogController.StartDialogue(dialogueData);
+        return true;
     }
 
     /// <summary>
@@ -516,6 +595,16 @@ public class RoomStateMachine_cza : MonoBehaviour
                 if (rest != null)
                 {
                     Debug.Log("[RoomState] Enter RestRoom -> calling EnterRoom()");
+                    if (
+                        TryPlayFirstEnterRoomDialogue(
+                            RoomType_cza.Rest,
+                            firstEnterRestRoomDialogue,
+                            rest.EnterRoom
+                        )
+                    )
+                    {
+                        break;
+                    }
                     rest.EnterRoom();
                 }
                 else
@@ -539,6 +628,16 @@ public class RoomStateMachine_cza : MonoBehaviour
                 if (props != null)
                 {
                     Debug.Log("[RoomState] Enter PropsRoom -> calling EnterRoom()");
+                    if (
+                        TryPlayFirstEnterRoomDialogue(
+                            RoomType_cza.Props,
+                            firstEnterPropsRoomDialogue,
+                            props.EnterRoom
+                        )
+                    )
+                    {
+                        break;
+                    }
                     props.EnterRoom();
                 }
                 else
@@ -563,6 +662,16 @@ public class RoomStateMachine_cza : MonoBehaviour
                 if (skill != null)
                 {
                     Debug.Log("[RoomState] Enter SkillRoom -> calling EnterRoom()");
+                    if (
+                        TryPlayFirstEnterRoomDialogue(
+                            RoomType_cza.Skill,
+                            firstEnterSkillRoomDialogue,
+                            skill.EnterRoom
+                        )
+                    )
+                    {
+                        break;
+                    }
                     skill.EnterRoom();
                 }
                 else

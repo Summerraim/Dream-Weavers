@@ -70,6 +70,23 @@ public class BossDefeatedCGSequence : MonoBehaviour
     [Tooltip("结尾动画的Animation Clip名称")]
     private string animation5Name = "Ending";
 
+    [Header("备用方案：按时间等待")]
+    [SerializeField]
+    [Tooltip("如果Animator配置有问题，可以启用此选项，按固定时间等待动画")]
+    private bool useFixedDuration = false;
+
+    [SerializeField]
+    [Tooltip("开场动画持续时间（秒）")]
+    private float animation1Duration = 3f;
+
+    [SerializeField]
+    [Tooltip("剧情CG动画持续时间（秒）")]
+    private float animation2Duration = 5f;
+
+    [SerializeField]
+    [Tooltip("结尾动画持续时间（秒）")]
+    private float animation5Duration = 3f;
+
     [Header("CG容器")]
     [SerializeField]
     [Tooltip("整个CG序列的容器Panel，初始应设为隐藏")]
@@ -98,6 +115,23 @@ public class BossDefeatedCGSequence : MonoBehaviour
     {
         // 确保所有CG物体初始状态为隐藏
         InitializeCGObjects();
+
+        // 设置所有Animator使用Unscaled Time，这样CG播放不受Time.timeScale影响
+        SetAnimatorsToUnscaledTime();
+    }
+
+    /// <summary>
+    /// 设置所有Animator使用Unscaled Time，确保CG播放不受游戏暂停影响
+    /// </summary>
+    private void SetAnimatorsToUnscaledTime()
+    {
+        if (animator1 != null) animator1.updateMode = AnimatorUpdateMode.UnscaledTime;
+        if (animator2 != null) animator2.updateMode = AnimatorUpdateMode.UnscaledTime;
+        if (animator3 != null) animator3.updateMode = AnimatorUpdateMode.UnscaledTime;
+        if (animator4 != null) animator4.updateMode = AnimatorUpdateMode.UnscaledTime;
+        if (animator5 != null) animator5.updateMode = AnimatorUpdateMode.UnscaledTime;
+
+        Debug.Log("[BossDefeatedCGSequence] 已将所有Animator设置为UnscaledTime模式");
     }
 
     private void OnEnable()
@@ -164,6 +198,9 @@ public class BossDefeatedCGSequence : MonoBehaviour
             return;
         }
 
+        // 确保Animator使用UnscaledTime（以防Start()未执行）
+        SetAnimatorsToUnscaledTime();
+
         Debug.Log("[BossDefeatedCGSequence] 开始播放Boss击败CG序列");
         StartCoroutine(PlayCGSequenceCoroutine());
     }
@@ -226,6 +263,10 @@ public class BossDefeatedCGSequence : MonoBehaviour
             Debug.Log("[BossDefeatedCGSequence] ✅ 显示CG Panel");
         }
 
+        // 输出当前Time.timeScale状态（用于诊断）
+        Debug.Log($"[BossDefeatedCGSequence] 当前Time.timeScale = {Time.timeScale}");
+        Debug.Log($"[BossDefeatedCGSequence] Animator更新模式: animator1={animator1?.updateMode}, animator2={animator2?.updateMode}");
+
         // 等待一帧，确保Panel完全激活
         yield return null;
 
@@ -250,10 +291,21 @@ public class BossDefeatedCGSequence : MonoBehaviour
 
             // 等待动画1播放完成
             Debug.Log($"[BossDefeatedCGSequence] 等待动画 {animation1Name} 播放完成...");
-            yield return StartCoroutine(WaitForAnimationComplete(animator1, animation1Name));
+            if (useFixedDuration)
+            {
+                Debug.Log($"[BossDefeatedCGSequence] 使用固定时长模式: {animation1Duration}秒");
+                yield return new WaitForSeconds(animation1Duration);
+            }
+            else
+            {
+                yield return StartCoroutine(WaitForAnimationComplete(animator1, animation1Name));
+            }
 
             cgObject1.SetActive(false);
             Debug.Log("[BossDefeatedCGSequence] ✅ 开场动画播放完成");
+
+            // 动画切换缓冲时间
+            yield return new WaitForSeconds(0.2f);
         }
         else
         {
@@ -301,19 +353,29 @@ public class BossDefeatedCGSequence : MonoBehaviour
         {
             Debug.Log($"[BossDefeatedCGSequence] 已启动 {activeCount} 个剧情CG动画，等待播放完成...");
 
-            // 等待所有剧情动画播放完成（以第一个有效的animator为基准，假设三个动画时长相同）
-            if (animator2 != null)
+            // 等待所有剧情动画播放完成
+            if (useFixedDuration)
             {
-                yield return StartCoroutine(WaitForAnimationComplete(animator2, animation2Name));
-                Debug.Log("[BossDefeatedCGSequence] ✅ 剧情CG播放完成");
+                Debug.Log($"[BossDefeatedCGSequence] 使用固定时长模式: {animation2Duration}秒");
+                yield return new WaitForSeconds(animation2Duration);
+                Debug.Log("[BossDefeatedCGSequence] ✅ 剧情CG播放完成（固定时长）");
             }
-            else if (animator3 != null)
+            else
             {
-                yield return StartCoroutine(WaitForAnimationComplete(animator3, animation3Name));
-            }
-            else if (animator4 != null)
-            {
-                yield return StartCoroutine(WaitForAnimationComplete(animator4, animation4Name));
+                // 以第一个有效的animator为基准，假设三个动画时长相同
+                if (animator2 != null)
+                {
+                    yield return StartCoroutine(WaitForAnimationComplete(animator2, animation2Name));
+                    Debug.Log("[BossDefeatedCGSequence] ✅ 剧情CG播放完成");
+                }
+                else if (animator3 != null)
+                {
+                    yield return StartCoroutine(WaitForAnimationComplete(animator3, animation3Name));
+                }
+                else if (animator4 != null)
+                {
+                    yield return StartCoroutine(WaitForAnimationComplete(animator4, animation4Name));
+                }
             }
         }
 
@@ -321,6 +383,9 @@ public class BossDefeatedCGSequence : MonoBehaviour
         if (cgObject2 != null) cgObject2.SetActive(false);
         if (cgObject3 != null) cgObject3.SetActive(false);
         if (cgObject4 != null) cgObject4.SetActive(false);
+
+        // 动画切换缓冲时间
+        yield return new WaitForSeconds(0.2f);
 
         // ===== 阶段3: 播放结尾动画 =====
         Debug.Log("[BossDefeatedCGSequence] === 阶段3：播放结尾动画 ===");
@@ -336,7 +401,15 @@ public class BossDefeatedCGSequence : MonoBehaviour
 
             // 等待结尾动画播放完成
             Debug.Log($"[BossDefeatedCGSequence] 等待结尾动画 {animation5Name} 播放完成...");
-            yield return StartCoroutine(WaitForAnimationComplete(animator5, animation5Name));
+            if (useFixedDuration)
+            {
+                Debug.Log($"[BossDefeatedCGSequence] 使用固定时长模式: {animation5Duration}秒");
+                yield return new WaitForSeconds(animation5Duration);
+            }
+            else
+            {
+                yield return StartCoroutine(WaitForAnimationComplete(animator5, animation5Name));
+            }
 
             cgObject5.SetActive(false);
             Debug.Log("[BossDefeatedCGSequence] ✅ 结尾动画播放完成");
@@ -378,7 +451,8 @@ public class BossDefeatedCGSequence : MonoBehaviour
             yield break;
         }
 
-        // 等待两帧，确保动画系统初始化完成
+        // 等待更多帧，确保动画系统完全初始化
+        yield return null;
         yield return null;
         yield return null;
 
@@ -410,18 +484,43 @@ public class BossDefeatedCGSequence : MonoBehaviour
         }
 
         Debug.Log($"[BossDefeatedCGSequence] ✅ 动画 {stateName} 已开始播放，等待完成...");
+        Debug.Log($"[BossDefeatedCGSequence] 当前Time.timeScale = {Time.timeScale}, Animator.updateMode = {animator.updateMode}");
 
         // 持续检查动画是否播放完成
+        // 使用 0.95f 而不是 1.0f，因为 normalizedTime 可能不会精确达到 1.0
         int checkCount = 0;
-        while (stateInfo.IsName(stateName) && stateInfo.normalizedTime < 1.0f)
+        bool timedOut = false;
+        float lastNormalizedTime = stateInfo.normalizedTime;
+        int stuckFrames = 0; // 记录normalizedTime卡住不动的帧数
+
+        while (stateInfo.IsName(stateName) && stateInfo.normalizedTime < 0.95f)
         {
             yield return null;
             stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
+            // 检测动画是否卡住（normalizedTime不再增长）
+            if (Mathf.Abs(stateInfo.normalizedTime - lastNormalizedTime) < 0.001f)
+            {
+                stuckFrames++;
+
+                // 如果连续60帧（约1秒）normalizedTime没有变化，且已播放超过80%
+                if (stuckFrames > 60 && stateInfo.normalizedTime > 0.8f)
+                {
+                    Debug.LogWarning($"[BossDefeatedCGSequence] ⚠️ 检测到动画卡在{stateInfo.normalizedTime * 100:F1}%处不动（连续{stuckFrames}帧），强制完成");
+                    Debug.LogWarning($"[BossDefeatedCGSequence] 可能原因: Animator Controller的Transition Exit Time设置为{stateInfo.normalizedTime:F3}，应改为1.0");
+                    break;
+                }
+            }
+            else
+            {
+                stuckFrames = 0; // 重置计数器
+                lastNormalizedTime = stateInfo.normalizedTime;
+            }
+
             // 每30帧打印一次进度（约0.5秒）
             if (checkCount % 30 == 0)
             {
-                Debug.Log($"[BossDefeatedCGSequence] 动画播放进度: {stateInfo.normalizedTime * 100:F1}%");
+                Debug.Log($"[BossDefeatedCGSequence] 动画播放进度: {stateInfo.normalizedTime * 100:F1}%, IsName({stateName})={stateInfo.IsName(stateName)}, CurrentState={stateInfo.fullPathHash}");
             }
             checkCount++;
 
@@ -429,9 +528,45 @@ public class BossDefeatedCGSequence : MonoBehaviour
             if (checkCount > 600)
             {
                 Debug.LogWarning($"[BossDefeatedCGSequence] ⚠️ 动画播放超时（10秒），强制结束");
+                timedOut = true;
                 break;
             }
         }
+
+        // 诊断：输出循环退出原因
+        if (timedOut)
+        {
+            Debug.LogError($"[BossDefeatedCGSequence] ❌ 动画播放超时退出！stateName={stateName}, normalizedTime={stateInfo.normalizedTime:F3}");
+            Debug.LogError($"[BossDefeatedCGSequence] 诊断信息: Time.timeScale={Time.timeScale}, Animator.updateMode={animator.updateMode}, Animator.speed={animator.speed}");
+            Debug.LogError($"[BossDefeatedCGSequence] 可能原因: 1) Time.timeScale=0导致动画暂停 2) Animator.speed=0 3) 动画Clip过长");
+        }
+        else if (!stateInfo.IsName(stateName))
+        {
+            Debug.LogError($"[BossDefeatedCGSequence] ❌ 动画状态提前切换！期望状态='{stateName}', 当前normalizedTime={stateInfo.normalizedTime:F3}, 当前StateHash={stateInfo.fullPathHash}");
+            Debug.LogError($"[BossDefeatedCGSequence] ⚠️ 可能原因：");
+            Debug.LogError($"[BossDefeatedCGSequence]   1. Animator Controller中配置了自动转换（Has Exit Time或Transition条件）");
+            Debug.LogError($"[BossDefeatedCGSequence]   2. 动画状态名称'{stateName}'不匹配（应为Animator State名称，不是Clip名称）");
+            Debug.LogError($"[BossDefeatedCGSequence]   3. 动画Clip设置了Loop，导致状态在循环后自动切换");
+        }
+        else
+        {
+            Debug.Log($"[BossDefeatedCGSequence] ✅ 动画正常播放到95%，准备完成");
+        }
+
+        // 动画播放到接近结束，继续等待确保完全播放完毕
+        Debug.Log($"[BossDefeatedCGSequence] 动画接近完成，等待最后阶段... (normalizedTime: {stateInfo.normalizedTime:F3}, IsName={stateInfo.IsName(stateName)})");
+
+        // 额外等待以确保动画真正完全播放完毕
+        int finalWaitFrames = 0;
+        while (stateInfo.IsName(stateName) && finalWaitFrames < 10) // 最多等待10帧（约0.16秒）
+        {
+            yield return null;
+            stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            finalWaitFrames++;
+        }
+
+        // 添加额外的缓冲时间，确保动画切换平滑
+        yield return new WaitForSeconds(0.1f);
 
         Debug.Log($"[BossDefeatedCGSequence] ✅ 动画 {stateName} 播放完成 (normalizedTime: {stateInfo.normalizedTime:F3})");
     }

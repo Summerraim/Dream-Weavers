@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6024180d268a474a86eb083ebf70c32, type: 3}
-  m_Name: DialogData4
+  m_Name: "\u773C\u7403\u53F2\u83B1\u59C6"
   m_EditorClassIdentifier: 
-  dialogueId: Skill Dialog
+  dialogueId: Combat Dialog
   dialogueEntries:
   - speakerName: "\u7D22\u62C9"
-    dialogueText: "\u8FD9\u53C8\u662F\u54EA\u91CC\uFF1F"
+    dialogueText: "\u8FD9\u4EC0\u4E48\u4E1C\u897F\uFF0C\u597D\u6076\u5FC3\uFF01"
     portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
     portraitPosition: 0
   - speakerName: "\u5FB7\u82AC\u65AF"
-    dialogueText: "\u563F\uFF01\u5728\u8FD9\u91CC\u6211\u4EEC\u53EF\u4EE5\u83B7\u5F97\u5F3A\u529B\u7684\u6280\u80FD"
+    dialogueText: "\u865A\u7A7A\u7684\u529B\u91CF\u5417\uFF1F\u6CA1\u60F3\u5230\u53F2\u83B1\u59C6\u4E5F\u80FD\u53D8\u6210\u8FD9\u4E2A\u6837\u5B50\u2026\u2026"
     portrait: {fileID: -559600819, guid: 3170f8c249c67794fb396610b0ce89dc, type: 3}
     portraitPosition: 1
-  associatedEnemy: {fileID: 0}
-  enemyNameFilter: 
+  associatedEnemy: {fileID: 11400000, guid: 70c9cf13587272c449cc95e5980b4a0f, type: 2}
+  enemyNameFilter: "\u773C\u7403\u53F2\u83B1\u59C6"

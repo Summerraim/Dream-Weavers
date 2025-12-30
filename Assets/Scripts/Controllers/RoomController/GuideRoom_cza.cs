@@ -54,6 +54,7 @@ namespace DreamWeavers.Rooms
 		private bool battleVictory;
 		private int chosenIndex = -1;
 		private SpiritData chosenSpiritPending;
+		private SpiritData unchosenSpirit; // 未被选择的Spirit，战斗胜利后也会添加到玩家背包
 		private EnemyData enemyPending;
 
 		private void Awake()
@@ -212,6 +213,7 @@ namespace DreamWeavers.Rooms
 
 			chosenIndex = index;
 			chosenSpiritPending = chosenSpirit;
+			unchosenSpirit = candidateSpirits[1 - index]; // 保存未选择的Spirit
 			enemyPending = enemyData;
 
 			// 先将两个按钮都恢复为可交互状态
@@ -262,6 +264,31 @@ namespace DreamWeavers.Rooms
 			{
 				playerData.OwnedSpirits = new[] { spirit };
 				playerData.DeployedSpirits = new[] { spirit };
+			}
+		}
+
+		/// <summary>
+		/// 将未选择的Spirit添加到玩家背包，但不部署
+		/// </summary>
+		private void AddUnchosenSpiritToPlayer(SpiritData spirit)
+		{
+			// 更新运行时 PlayerManager
+			if (PlayerManager.Instance != null)
+			{
+				PlayerManager.Instance.CaptureSpirit(spirit);
+				// 注意：这里不调用 DeploySpirit，只添加到背包
+			}
+
+			// 同步到 PlayerData：将两个Spirit都添加到 OwnedSpirits
+			if (playerData != null)
+			{
+				var currentOwned = playerData.GetOwnedSpirits();
+				var ownedList = new List<SpiritData>(currentOwned);
+				if (!ownedList.Contains(spirit))
+				{
+					ownedList.Add(spirit);
+					playerData.OwnedSpirits = ownedList.ToArray();
+				}
 			}
 		}
 
@@ -323,13 +350,20 @@ namespace DreamWeavers.Rooms
 				return;
 			}
 
-			// 1) 胜利后：恢复玩家所有 OwnedSpirit 的HP/MP
+			// 1) 胜利后：将未选择的Spirit也添加到玩家背包
+			if (unchosenSpirit != null)
+			{
+				Debug.Log($"[GuideRoom] 战斗胜利，将未选择的Spirit {unchosenSpirit.DisplayName} 添加到玩家背包");
+				AddUnchosenSpiritToPlayer(unchosenSpirit);
+			}
+
+			// 2) 胜利后：恢复玩家所有 OwnedSpirit 的HP/MP
 			RestoreAllOwnedSpiritsToFull();
 
-			// 2) 胜利后：发放技能（参考 SkillRoom 的做法，直接追加到 SpiritData.Skills）
+			// 3) 胜利后：发放技能（参考 SkillRoom 的做法，直接追加到 SpiritData.Skills）
 			GrantVictorySkillToConfiguredSpirits();
 
-			// 3) 胜利后：准备正式楼层，但不自动进入任意房间（改为进入路线选择）
+			// 4) 胜利后：准备正式楼层，但不自动进入任意房间（改为进入路线选择）
 			PrepareMainFloorForRouteSelection();
 
 			// 通知 MapManager：引导已完成（让其继续后续流程，如切换敌人池等）

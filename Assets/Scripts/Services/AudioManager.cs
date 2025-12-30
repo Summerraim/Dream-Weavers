@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AudioManager : MonoBehaviour
 {
@@ -11,25 +12,34 @@ public class AudioManager : MonoBehaviour
     
     [Header("主菜单音乐")]
     [SerializeField] private AudioClip menuMusic; // 主菜单音乐
+
+    private void Awake()
+    {
+        EnsureAudioSource();
+    }
+
+    private void EnsureAudioSource()
+    {
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+        audioSource.loop = true;
+    }
     
     // Start is called before the first frame update
     void Start()
     {
         Debug.Log("AudioManager: Start方法开始执行");
-        
-        // 获取AudioSource组件
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            Debug.Log("AudioManager: 创建新的AudioSource组件");
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.loop = true; // 设置循环播放
-            audioSource.volume = 1.0f; // 设置默认音量
-        }
-        else
-        {
-            Debug.Log($"AudioManager: 找到现有AudioSource组件，音量: {audioSource.volume}");
-        }
+
+        EnsureAudioSource();
         
         // 检查音乐列表配置
         if (backgroundMusic == null || backgroundMusic.Length == 0)
@@ -62,7 +72,15 @@ public class AudioManager : MonoBehaviour
         Debug.Log("AudioManager: 已订阅楼层变化事件");
         
         // 播放初始楼层音乐
-        PlayFloorMusic(RoomStateMachine_cza.Instance.CurrentFloor);
+        var sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName.Contains("Menu") || sceneName.Contains("MainMenu"))
+        {
+            Debug.Log("AudioManager: 当前为主菜单场景，跳过楼层背景音乐自动播放");
+        }
+        else
+        {
+            PlayFloorMusic(RoomStateMachine_cza.Instance.CurrentFloor);
+        }
     }
     
     /// <summary>
@@ -70,6 +88,12 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     private void OnCurrentFloorChanged(int oldFloor, int newFloor)
     {
+        var sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName.Contains("Menu") || sceneName.Contains("MainMenu"))
+        {
+            return;
+        }
+
         Debug.Log($"AudioManager: 楼层发生变化 - 从 {oldFloor} 层到 {newFloor} 层");
         PlayFloorMusic(newFloor);
     }
@@ -80,6 +104,8 @@ public class AudioManager : MonoBehaviour
     private void PlayFloorMusic(int floor)
     {
         Debug.Log($"AudioManager: PlayFloorMusic被调用，楼层: {floor}");
+
+        EnsureAudioSource();
         
         if (backgroundMusic == null || backgroundMusic.Length == 0)
         {
@@ -113,16 +139,9 @@ public class AudioManager : MonoBehaviour
         }
         
         // 如果正在播放相同的音乐，则不重复播放
-        if (audioSource.clip == musicToPlay && audioSource.isPlaying)
+        if (audioSource != null && audioSource.clip == musicToPlay && audioSource.isPlaying)
         {
             Debug.Log($"AudioManager: 楼层 {floor} 的音乐已在播放，跳过切换");
-            return;
-        }
-        
-        // 检查AudioSource是否有效
-        if (audioSource == null)
-        {
-            Debug.LogError("AudioManager: AudioSource为null，无法播放音乐");
             return;
         }
         
@@ -153,12 +172,8 @@ public class AudioManager : MonoBehaviour
             Debug.LogWarning("AudioManager: 主菜单音乐未配置");
             return;
         }
-        
-        if (audioSource == null)
-        {
-            Debug.LogError("AudioManager: AudioSource为null，无法播放音乐");
-            return;
-        }
+
+        EnsureAudioSource();
         
         // 如果正在播放相同的音乐，则不重复播放
         if (audioSource.clip == menuMusic && audioSource.isPlaying)

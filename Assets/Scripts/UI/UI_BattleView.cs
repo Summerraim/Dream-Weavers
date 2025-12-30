@@ -2052,6 +2052,38 @@ public class UI_BattleView : MonoBehaviour
     {
         Debug.Log("[UI_BattleView] 重试按钮被点击");
 
+        // 启动协程处理淡入和延迟
+        StartCoroutine(RetryWithFadeEffect());
+    }
+
+    /// <summary>
+    /// 重试协程：先将LosePanel淡入到不透明，等待1秒，然后执行重试逻辑
+    /// </summary>
+    private System.Collections.IEnumerator RetryWithFadeEffect()
+    {
+        Debug.Log("[UI_BattleView] 开始重试淡入效果");
+
+        // 获取LosePanel的CanvasGroup组件（用于控制透明度）
+        CanvasGroup losePanelCanvasGroup = null;
+        if (losePanel != null)
+        {
+            losePanelCanvasGroup = losePanel.GetComponent<CanvasGroup>();
+            if (losePanelCanvasGroup == null)
+            {
+                // 如果没有CanvasGroup，添加一个
+                losePanelCanvasGroup = losePanel.AddComponent<CanvasGroup>();
+                Debug.Log("[UI_BattleView] 为LosePanel添加CanvasGroup组件");
+            }
+
+            // 将透明度设置为完全不透明（alpha = 1）
+            losePanelCanvasGroup.alpha = 1f;
+            Debug.Log("[UI_BattleView] LosePanel透明度已设置为255（完全不透明）");
+        }
+
+        // 等待1秒
+        yield return new WaitForSeconds(1f);
+        Debug.Log("[UI_BattleView] 等待1秒完成，开始执行重试逻辑");
+
         // 隐藏失败面板
         HideLosePanel();
 
@@ -2160,8 +2192,8 @@ public class UI_BattleView : MonoBehaviour
         }
         if (displayName == "阿斯蒙蒂斯")
         {
-            rectTransform.sizeDelta = new Vector2(160, 160);
-            Debug.Log($"[UI_BattleView] 调整阿斯蒙蒂斯图片大小为160x160");
+            rectTransform.sizeDelta = new Vector2(165, 165);
+            Debug.Log($"[UI_BattleView] 调整阿斯蒙蒂斯图片大小为165x165");
         }
         if (displayName == "森林蜥")
         {
@@ -2356,7 +2388,8 @@ public class UI_BattleView : MonoBehaviour
         Debug.Log($"[UI_BattleView] asmontisCGSequence 是否为null: {asmontisCGSequence == null}");
 
         // 检查是否为阿斯蒙蒂斯
-        if (bossName == "阿斯蒙蒂斯")
+        string normalizedBossName = bossName?.Trim();
+        if (string.Equals(normalizedBossName, "阿斯蒙蒂斯", System.StringComparison.Ordinal))
         {
             Debug.Log($"[UI_BattleView] ✅ Boss名称匹配'阿斯蒙蒂斯'");
 
@@ -2395,15 +2428,21 @@ public class UI_BattleView : MonoBehaviour
 
             // 打印字符对比
             string expected = "阿斯蒙蒂斯";
-            if (!string.IsNullOrEmpty(bossName) && bossName != expected)
+            if (!string.IsNullOrEmpty(normalizedBossName) && normalizedBossName != expected)
             {
                 Debug.Log($"[UI_BattleView] 字符对比分析:");
                 Debug.Log($"[UI_BattleView] 期望字符: {string.Join(" ", expected.Select(c => $"[{c}({(int)c})]"))}");
-                Debug.Log($"[UI_BattleView] 实际字符: {string.Join(" ", bossName.Select(c => $"[{c}({(int)c})]"))}");
+                Debug.Log($"[UI_BattleView] 实际字符: {string.Join(" ", normalizedBossName.Select(c => $"[{c}({(int)c})]"))}");
             }
         }
 
         // 其他Boss返回false，使用普通死亡面板
         return false;
+    }
+
+    [ContextMenu("Play Asmontis CG (Test)")]
+    public void PlayAsmontisCGForTest()
+    {
+        ShowSpecialBossCG("阿斯蒙蒂斯", null);
     }
 }

@@ -17,4 +17,4 @@ MonoBehaviour:
   description: 
   image: {fileID: 0}
   triggerCounts: 03000000
-  noCooldownChance: 0.2
+  noCooldownChance: 0.3

@@ -15,7 +15,7 @@ MonoBehaviour:
   displayName: 
   description: 
   image: {fileID: 0}
-  initDamage: 30
+  initDamage: 25
   missingHealthScaling: 0.1
   executeThreshold: 0.75
   executeMultiplier: 1.5
