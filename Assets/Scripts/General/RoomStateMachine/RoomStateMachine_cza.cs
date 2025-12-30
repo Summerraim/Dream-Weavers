@@ -20,11 +20,19 @@ public class RoomStateMachine_cza : MonoBehaviour
     public event Action<int> OnFloorInitialized;
     // 新增：楼层已生成但尚未进入首个房间（用于外部提前准备，例如切换CombatRoom的EnemyPool）
     public event Action<int> OnFloorPreparing;
+    // 新增：当前楼层变化事件（参数：旧楼层, 新楼层）
+    public event Action<int, int> OnCurrentFloorChanged;
 
     // 新增：是否处于“等待玩家选择分支”的状态
     private bool awaitingChoice;
     public bool IsAwaitingChoice => awaitingChoice;
-
+    // 当前楼层索引（类级别变量，便于外部监听）
+    private int currentFloor;
+    public int CurrentFloor => currentFloor;
+    // 下一楼层索引（基于当前楼层计算）
+    public int NextFloor => currentFloor + 1;
+    // 起始楼层（公开只读访问）
+    public int StartFloor => startFloor;
     private HashSet<int> visitedRooms = new HashSet<int>();
     private List<int> branchChoices = new List<int>();
     // 调试：持久记录本楼层内访问过的房间顺序，用于确认是否被意外清空
@@ -76,6 +84,17 @@ public class RoomStateMachine_cza : MonoBehaviour
         var rng = SeedManager_cza.Instance != null ? SeedManager_cza.Instance.RNG : null;
         Debug.Log($"[RoomState] InitFloor({floor}) 调用，floorInitCounter={floorInitCounter} -> {floorInitCounter + 1}; SeedManager={(SeedManager_cza.Instance!=null)} RNG={(rng!=null)}");
         floorInitCounter++;
+        
+        // 更新当前楼层并触发事件
+        int oldFloor = currentFloor;
+        currentFloor = floor;
+        if (oldFloor != currentFloor)
+        {
+            Debug.Log($"[RoomState] 楼层变化: {oldFloor} -> {currentFloor}");
+            try { OnCurrentFloorChanged?.Invoke(oldFloor, currentFloor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnCurrentFloorChanged 异常: {ex}"); }
+        }
+        Debug.Log($"<color=cyan>[FloorTracker] InitFloor 完成 - CurrentFloor={currentFloor}, NextFloor={NextFloor}, StartFloor={StartFloor}</color>");
+        
         Debug.Log($"[RoomState] 清空访问集，之前数量={visitedRooms.Count} 内容=[{string.Join(",", visitedRooms)}]");
         visitedRooms.Clear();
         visitedOrderDebug.Clear();
@@ -207,11 +226,19 @@ public class RoomStateMachine_cza : MonoBehaviour
         branchChoices.Clear();
         awaitingChoice = false;
         floorInitCounter = 0;
+        
+        // 重置楼层（触发事件通知）
+        int oldFloor = currentFloor;
+        currentFloor = 0;
+        if (oldFloor != currentFloor)
+        {
+            try { OnCurrentFloorChanged?.Invoke(oldFloor, currentFloor); } catch (Exception ex) { Debug.LogError($"[RoomState] OnCurrentFloorChanged 异常: {ex}"); }
+        }
 
         // 清空敌人池
         EnemyPool.ClearDefeatedEnemies();
 
-        Debug.Log("[RoomState] 状态重置完成");
+        Debug.Log($"<color=magenta>[FloorTracker] 状态重置完成 - CurrentFloor={currentFloor}, NextFloor={NextFloor}, StartFloor={StartFloor}</color>");
     }
 
     /// <summary>
@@ -271,6 +298,7 @@ public class RoomStateMachine_cza : MonoBehaviour
         branchChoices.Clear();
         
         Debug.Log($"[Room] 进入房间 Id={roomId} Type={CurrentRoom.Type} (CurrentMap.FloorIndex={CurrentMap.FloorIndex})");
+        Debug.Log($"<color=green>[FloorTracker] EnterRoom - CurrentFloor={currentFloor}, NextFloor={NextFloor}</color>");
         
         var beforeInvokeRoom = CurrentRoom;
         Debug.Log($"[Room] 即将调用 HandleRoomEnter, CurrentRoom.Type={CurrentRoom.Type}");
@@ -306,8 +334,9 @@ public class RoomStateMachine_cza : MonoBehaviour
         if (CurrentRoom.Type == RoomType_cza.Boss)
         {
             awaitingChoice = false;
-            int nextFloor = (CurrentMap?.FloorIndex ?? 0) + 1;
-            InitFloor(nextFloor);
+            Debug.Log($"<color=yellow>[FloorTracker] Boss房完成! 当前CurrentFloor={currentFloor}, 即将进入NextFloor={NextFloor}</color>");
+            // 使用类级别的 NextFloor 属性（基于 currentFloor 计算）
+            InitFloor(NextFloor);
             return;
         }
 
