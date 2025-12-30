@@ -3603,6 +3603,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2070e43bc0c86904bae25ccc951527a1, type: 2}
   - {fileID: 11400000, guid: 5c753bfbec149384d9038ca46419d18f, type: 2}
   - {fileID: 11400000, guid: 75b4aa71ca61ed94da4ca59b13f18d35, type: 2}
+  - {fileID: 11400000, guid: 420e9c0c4340dac4d86251dad224f715, type: 2}
+  - {fileID: 11400000, guid: 8927f09ebff7b9e4db73dc5f27c05a9f, type: 2}
+  - {fileID: 11400000, guid: ae98a9386768e0445a56cd25c31d1555, type: 2}
 --- !u!1 &297618131
 GameObject:
   m_ObjectHideFlags: 0
@@ -10923,7 +10926,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.9607843}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.2784314}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -23123,43 +23126,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2075337097}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dd71d7ddd128914bb0e30d2c9c5c87a, type: 3}
+  m_Script: {fileID: 11500000, guid: ee918f3a534ee8e43b6b6d59381f34b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioMixer: {fileID: 24100000, guid: c1fc41f95eacae84fb481d48181544fd, type: 2}
-  masterVolumeParam: MasterVolume
-  bgmVolumeParam: BGMVolume
-  sfxVolumeParam: SFXVolume
-  uiVolumeParam: UIVolume
-  bgmSource: {fileID: 0}
-  bgmCrossfadeSource: {fileID: 0}
-  crossfadeDuration: 1.5
-  sfxPoolSize: 20
-  sfxPrefab: {fileID: 0}
-  sfxPoolParent: {fileID: 0}
-  uiSfxSource: {fileID: 0}
-  defaultBGM: {fileID: 8300000, guid: 25308605164211f43a00c5b5cffb0cd0, type: 3}
-  menuBGM: {fileID: 0}
-  gameplayBGM: {fileID: 0}
-  battleBGM: {fileID: 8300000, guid: 13600e9a8d9b5e74194560b0cbf718dd, type: 3}
-  level1BGM: {fileID: 8300000, guid: ec2c4b91518786644be0ca5e5fcd8522, type: 3}
-  level2BGM: {fileID: 8300000, guid: 2d0fb056c942aeb4e9a4d64e61bd31a2, type: 3}
-  level3BGM: {fileID: 8300000, guid: fd3aa5304d13bf04f872bb467dbd4b4d, type: 3}
-  level4BGM: {fileID: 8300000, guid: 45fe740c565a9ba45bb369e079667bfe, type: 3}
-  enableSceneMusicAutoSwitch: 1
-  buttonClickSFX: {fileID: 0}
-  buttonHoverSFX: {fileID: 0}
-  notificationSFX: {fileID: 0}
-  victorySFX: {fileID: 0}
-  defeatSFX: {fileID: 0}
-  levelUpSFX: {fileID: 0}
-  masterVolume: 1
-  bgmVolume: 1
-  sfxVolume: 1
-  uiVolume: 1
-  isMuted: 0
-  isPaused: 0
-  enableCrossfade: 1
+  backgroundMusic:
+  - {fileID: 8300000, guid: ec2c4b91518786644be0ca5e5fcd8522, type: 3}
+  - {fileID: 8300000, guid: 2d0fb056c942aeb4e9a4d64e61bd31a2, type: 3}
+  - {fileID: 8300000, guid: fd3aa5304d13bf04f872bb467dbd4b4d, type: 3}
+  - {fileID: 8300000, guid: 45fe740c565a9ba45bb369e079667bfe, type: 3}
+  menuMusic: {fileID: 8300000, guid: 25308605164211f43a00c5b5cffb0cd0, type: 3}
 --- !u!1 &2082164761
 GameObject:
   m_ObjectHideFlags: 0
