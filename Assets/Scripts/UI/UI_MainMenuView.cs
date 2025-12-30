@@ -64,7 +64,7 @@ public class UI_MainMenuView : MonoBehaviour
 
     [Header("音频管理器引用")]
     [SerializeField]
-    private AudioManagerService audioManager;
+    private AudioManager audioManager; // 使用新的AudioManager
 
     [Header("场景持久化")]
     [SerializeField]
@@ -80,7 +80,7 @@ public class UI_MainMenuView : MonoBehaviour
         // 确保音频管理器存在
         if (audioManager == null)
         {
-            audioManager = FindObjectOfType<AudioManagerService>();
+            audioManager = FindObjectOfType<AudioManager>();
         }
 
         // 初始化面板状态
@@ -152,7 +152,7 @@ public class UI_MainMenuView : MonoBehaviour
         if (audioManager != null)
         {
             // 调用音频管理器播放主菜单音乐
-            // audioManager.PlayMenuMusic();
+            audioManager.PlayMenuMusic();
         }
     }
 
@@ -241,8 +241,7 @@ public class UI_MainMenuView : MonoBehaviour
         // 保存当前音量到临时变量
         if (audioManager != null)
         {
-            // 尝试调用 getter（如果 AudioManagerService 支持）
-            // 如果不支持，则从 PlayerPrefs 读取或使用滑块当前值
+            // 从PlayerPrefs读取保存的音量设置
             tempMasterVolume = PlayerPrefs.GetFloat("MasterVolume", masterVolumeSlider.value);
             tempMusicVolume = PlayerPrefs.GetFloat("MusicVolume", musicVolumeSlider.value);
             tempSfxVolume = PlayerPrefs.GetFloat("SFXVolume", sfxVolumeSlider.value);
@@ -359,7 +358,9 @@ public class UI_MainMenuView : MonoBehaviour
     {
         if (audioManager != null)
         {
-            // audioManager.PlaySFX("ButtonClick");
+            // 这里可以添加按钮点击音效
+            // 需要先配置音效文件，然后调用 audioManager.PlaySFX(buttonClickSound);
+            Debug.Log("播放按钮点击音效");
         }
     }
 
