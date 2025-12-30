@@ -130,6 +130,7 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
     Count: 1
+<<<<<<< HEAD
   - Item: {fileID: 11400000, guid: 3f05a6edb40992c4f820de80e247a91e, type: 2}
     Count: 1
   - Item: {fileID: 11400000, guid: 3f05a6edb40992c4f820de80e247a91e, type: 2}
@@ -222,12 +223,18 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
     Count: 1
+=======
+>>>>>>> 6f75b289524ea858fa902bfca956091c7fb59c3f
   initialOwnedSpirits:
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
   initialDeployedSpirits:
   - {fileID: 0}
   OwnedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
+<<<<<<< HEAD
+=======
+  - {fileID: 11400000, guid: e36bfdcfef0603d41a4a7222b0b094fd, type: 2}
+>>>>>>> 6f75b289524ea858fa902bfca956091c7fb59c3f
   DeployedSpirits:
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
   - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}

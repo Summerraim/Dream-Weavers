@@ -484,6 +484,7 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
     Count: 1
+<<<<<<< HEAD
   - Item: {fileID: 11400000, guid: 03d8d8696f972b34ba0645cb7513997c, type: 2}
     Count: 1
   - Item: {fileID: 11400000, guid: 03d8d8696f972b34ba0645cb7513997c, type: 2}
@@ -718,6 +719,8 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: f78b33dbe01021144b584a91a4c4f115, type: 2}
     Count: 1
+=======
+>>>>>>> 6f75b289524ea858fa902bfca956091c7fb59c3f
   initialOwnedSpirits:
   - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
   initialDeployedSpirits:
