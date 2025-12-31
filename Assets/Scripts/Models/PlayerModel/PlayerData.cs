@@ -53,19 +53,25 @@ public class PlayerData : ScriptableObject
     /// </summary>
     public void ResetToInitialState()
     {
-        // 重置拥有的精灵（只有配置了初始值才重置）
+        // 重置拥有的精灵：如果配置了初始值则使用，否则清空为默认空数组
         if (initialOwnedSpirits != null && initialOwnedSpirits.Length > 0)
         {
             OwnedSpirits = (SpiritData[])initialOwnedSpirits.Clone();
         }
-        // 如果 initialOwnedSpirits 为空，保持 OwnedSpirits 不变
+        else
+        {
+            OwnedSpirits = new SpiritData[0];
+        }
 
-        // 重置出场的精灵（只有配置了初始值才重置）
+        // 重置出场的精灵：如果配置了初始值则使用，否则清空为默认空数组
         if (initialDeployedSpirits != null && initialDeployedSpirits.Length > 0)
         {
             DeployedSpirits = (SpiritData[])initialDeployedSpirits.Clone();
         }
-        // 如果 initialDeployedSpirits 为空，保持 DeployedSpirits 不变
+        else
+        {
+            DeployedSpirits = new SpiritData[0];
+        }
 
         Debug.Log($"[PlayerData] {name} 已重置，拥有精灵数={OwnedSpirits?.Length ?? 0}，出场精灵数={DeployedSpirits?.Length ?? 0}");
     }

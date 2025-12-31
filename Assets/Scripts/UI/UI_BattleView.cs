@@ -2140,6 +2140,11 @@ public class UI_BattleView : MonoBehaviour
             rectTransform.sizeDelta = new Vector2(98, 112);
             Debug.Log($"[UI_BattleView] 调整维京熊图片大小为98x112");
         }
+        if (displayName == "蘑菇盾兵")
+        {
+            rectTransform.sizeDelta = new Vector2(95, 95);
+            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为95x95");
+        }
         if (displayName == "派对熊")
         {
             rectTransform.sizeDelta = new Vector2(90, 103);

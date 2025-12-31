@@ -74,6 +74,11 @@ public class RoomUIActions_cza : MonoBehaviour
     private Button prefabRouteBtn1;
     private Button prefabRouteBtn2;
     private Button prefabRouteBtn3;
+    
+    // 缓存预制体中的房间类型文本，用于显示各路线对应的房间类型
+    private TextMeshProUGUI prefabRouteTypeText1;
+    private TextMeshProUGUI prefabRouteTypeText2;
+    private TextMeshProUGUI prefabRouteTypeText3;
 
     [Header("技能房 UI")]
     [Tooltip("显示技能信息的文本（技能名字、法力消耗、描述）")]
@@ -217,19 +222,26 @@ public class RoomUIActions_cza : MonoBehaviour
     }
 
     /// <summary>
-    /// 从预制体中查找并绑定路线选择按钮（按名称包含 Next1/Next2/Next3 或 Choice1/Choice2/Choice3）
+    /// 从预制体中查找并绑定路线选择按钮和房间类型文本
+    /// 按钮名称匹配: Next1/Next2/Next3 或 Choice1/Choice2/Choice3 或 Route1/Route2/Route3
+    /// 类型文本名称匹配: Type1/Type2/Type3 或 RoomType1/RoomType2/RoomType3
     /// </summary>
     private void BindChoosePrefabButtons(GameObject prefabInstance)
     {
-        // 清空旧缓存
+        // 清空旧缓存 - 按钮
         prefabRouteBtn1 = null;
         prefabRouteBtn2 = null;
         prefabRouteBtn3 = null;
         
+        // 清空旧缓存 - 类型文本
+        prefabRouteTypeText1 = null;
+        prefabRouteTypeText2 = null;
+        prefabRouteTypeText3 = null;
+        
         if (prefabInstance == null) return;
 
+        // 查找按钮
         var buttons = prefabInstance.GetComponentsInChildren<Button>(true);
-
         foreach (var btn in buttons)
         {
             var btnName = btn.gameObject.name;
@@ -246,6 +258,27 @@ public class RoomUIActions_cza : MonoBehaviour
                 prefabRouteBtn3 = btn;
             }
         }
+        
+        // 查找房间类型文本
+        var texts = prefabInstance.GetComponentsInChildren<TextMeshProUGUI>(true);
+        foreach (var txt in texts)
+        {
+            var txtName = txt.gameObject.name;
+            if (prefabRouteTypeText1 == null && ContainsAny(txtName, "Type1", "Type01", "Type_1", "RoomType1", "RoomType01", "RoomType_1"))
+            {
+                prefabRouteTypeText1 = txt;
+            }
+            else if (prefabRouteTypeText2 == null && ContainsAny(txtName, "Type2", "Type02", "Type_2", "RoomType2", "RoomType02", "RoomType_2"))
+            {
+                prefabRouteTypeText2 = txt;
+            }
+            else if (prefabRouteTypeText3 == null && ContainsAny(txtName, "Type3", "Type03", "Type_3", "RoomType3", "RoomType03", "RoomType_3"))
+            {
+                prefabRouteTypeText3 = txt;
+            }
+        }
+        
+        Debug.Log($"[RoomUI] 绑定类型文本: Type1={prefabRouteTypeText1?.gameObject.name ?? "null"}, Type2={prefabRouteTypeText2?.gameObject.name ?? "null"}, Type3={prefabRouteTypeText3?.gameObject.name ?? "null"}");
 
         // 绑定事件（移除旧监听，添加新监听）
         if (prefabRouteBtn1 != null)
@@ -415,11 +448,20 @@ public class RoomUIActions_cza : MonoBehaviour
 
     private string FormatRouteLabel(int index, int roomId)
     {
-        string typeName = TryGetRoomNode(roomId, out var node) && node != null
-            ? node.Type.ToString()
-            : "未知";
-        Debug.Log($"[RoomUI] FormatRouteLabel: 按钮{index + 1} -> roomId={roomId}, type={typeName}");
-        return $"路线{index + 1}:{typeName}";
+        Debug.Log($"[RoomUI] FormatRouteLabel: 按钮{index + 1} -> roomId={roomId}");
+        return $"路线{index + 1}";
+    }
+
+    /// <summary>
+    /// 获取房间类型名称（用于单独的类型文本显示）
+    /// </summary>
+    private string GetRoomTypeName(int roomId)
+    {
+        if (TryGetRoomNode(roomId, out var node) && node != null)
+        {
+            return node.Type.ToString();
+        }
+        return "未知";
     }
 
     private bool TryGetRoomNode(int roomId, out RoomNode_cza node)
@@ -464,6 +506,62 @@ public class RoomUIActions_cza : MonoBehaviour
         UpdateChoiceButtonLabel(prefabRouteBtn1, choices, 0);
         UpdateChoiceButtonLabel(prefabRouteBtn2, choices, 1);
         UpdateChoiceButtonLabel(prefabRouteBtn3, choices, 2);
+        
+        // 更新房间类型文本
+        UpdateRouteTypeTexts(choices, count);
+    }
+
+    /// <summary>
+    /// 更新预制体中三个房间类型文本的显示内容
+    /// </summary>
+    private void UpdateRouteTypeTexts(System.Collections.Generic.IReadOnlyList<int> choices, int count)
+    {
+        // 更新路线1的房间类型
+        if (prefabRouteTypeText1 != null)
+        {
+            if (choices != null && count >= 1)
+            {
+                prefabRouteTypeText1.text = GetRoomTypeName(choices[0]);
+                prefabRouteTypeText1.gameObject.SetActive(true);
+            }
+            else
+            {
+                prefabRouteTypeText1.text = "--";
+                prefabRouteTypeText1.gameObject.SetActive(false);
+            }
+        }
+        
+        // 更新路线2的房间类型
+        if (prefabRouteTypeText2 != null)
+        {
+            if (choices != null && count >= 2)
+            {
+                prefabRouteTypeText2.text = GetRoomTypeName(choices[1]);
+                prefabRouteTypeText2.gameObject.SetActive(true);
+            }
+            else
+            {
+                prefabRouteTypeText2.text = "--";
+                prefabRouteTypeText2.gameObject.SetActive(false);
+            }
+        }
+        
+        // 更新路线3的房间类型
+        if (prefabRouteTypeText3 != null)
+        {
+            if (choices != null && count >= 3)
+            {
+                prefabRouteTypeText3.text = GetRoomTypeName(choices[2]);
+                prefabRouteTypeText3.gameObject.SetActive(true);
+            }
+            else
+            {
+                prefabRouteTypeText3.text = "--";
+                prefabRouteTypeText3.gameObject.SetActive(false);
+            }
+        }
+        
+        Debug.Log($"[RoomUI] UpdateRouteTypeTexts: type1={prefabRouteTypeText1?.text ?? "null"}, type2={prefabRouteTypeText2?.text ?? "null"}, type3={prefabRouteTypeText3?.text ?? "null"}");
     }
 
     private void UpdateChoiceButtonLabel(Button button, System.Collections.Generic.IReadOnlyList<int> choices, int index)
