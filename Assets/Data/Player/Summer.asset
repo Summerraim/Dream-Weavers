@@ -14,20 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerName: Summer
   InitialItems: []
-  initialOwnedSpirits:
-  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
-  - {fileID: 11400000, guid: 2c0f2d660f7abdb41b853473b5dc5ed2, type: 2}
-  initialDeployedSpirits:
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
-  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
-  - {fileID: 11400000, guid: 2c0f2d660f7abdb41b853473b5dc5ed2, type: 2}
-  OwnedSpirits:
-  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
-  - {fileID: 11400000, guid: 2c0f2d660f7abdb41b853473b5dc5ed2, type: 2}
-  DeployedSpirits:
-  - {fileID: 11400000, guid: fc583c1e873370d41bf1b15e82ff5048, type: 2}
-  - {fileID: 11400000, guid: 81670b04a3d348d4dab65ae5af3818e2, type: 2}
-  - {fileID: 11400000, guid: 2c0f2d660f7abdb41b853473b5dc5ed2, type: 2}
+  initialOwnedSpirits: []
+  initialDeployedSpirits: []
+  OwnedSpirits: []
+  DeployedSpirits: []
   MaxDeployedSpirits: 6

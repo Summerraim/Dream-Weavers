@@ -15,7 +15,7 @@ MonoBehaviour:
   dialogueId: Props Dialog
   dialogueEntries:
   - speakerName: "\u7D22\u62C9"
-    dialogueText: "\u54C7\uFF01\u6709\u4E1C\u897F\u5728\u95EA\u95EA\u53D1\u5149\u6B38\uFF01"
+    dialogueText: "\u54C7\uFF01\u6709\u4E1C\u897F\u5728\u95EA\u95EA\u53D1\u5149\u8BF6\uFF01"
     portrait: {fileID: 1631304652, guid: a1134eb6c9cb555459dd5ee0f2b5a3eb, type: 3}
     portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"

@@ -17,7 +17,7 @@ MonoBehaviour:
   Image: {fileID: 2130746087, guid: 6e0f347aa65161643a8921ea883963d5, type: 3}
   MaxHP: 245
   MaxMana: 175
-  Damage: 65
+  Damage: 60
   Defense: 8
   Skills:
   - {fileID: 11400000, guid: 90ca809774424074d876052552d1486b, type: 2}

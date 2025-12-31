@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayNameOverride: "\u591A\u91CD\u51DD\u89C6"
   <Description>k__BackingField: "\u591A\u91CD\u51DD\u89C6"
-  <Mana>k__BackingField: 24
+  <Mana>k__BackingField: 22
   <CooldownTurns>k__BackingField: 3
   <MaxUsesPerBattle>k__BackingField: 0
   <Image>k__BackingField: {fileID: 0}
