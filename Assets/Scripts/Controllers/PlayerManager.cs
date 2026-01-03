@@ -41,6 +41,11 @@ public class PlayerManager : MonoBehaviour
     /// </summary>
     public Player CurrentPlayer => player;
 
+    /// <summary>
+    /// 获取当前PlayerData（ScriptableObject配置）
+    /// </summary>
+    public PlayerData CurrentPlayerData => playerData;
+
     private void Awake()
     {
         // 确保单例
@@ -293,6 +298,7 @@ public class PlayerManager : MonoBehaviour
     /// </summary>
     public void ResetToInitialState()
     {
+        SpiritRuntimeSkills.ClearAll();
         Debug.Log("[PlayerManager] 重置玩家状态到初始状态");
 
         // 关键：重置 PlayerData（否则 ScriptableObject 上的 OwnedSpirits/DeployedSpirits 会在“重启游戏”后继续沿用上一局）

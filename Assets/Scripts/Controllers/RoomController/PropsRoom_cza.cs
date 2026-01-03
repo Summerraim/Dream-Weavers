@@ -16,7 +16,8 @@ namespace DreamWeavers.Rooms
         [Min(1)] [SerializeField] private int quantity = 1;
 
         [Header("玩家与展示设置")]
-        [SerializeField] private PlayerData playerData; // 用于持久化玩家拥有的道具（沿用 PlayerData 作为运行时存储）
+        // PlayerData 现在从 PlayerManager 获取，无需手动赋予
+        // [SerializeField] private PlayerData playerData;
         [SerializeField] private Transform spawnPoint; // 展示位置（可选）
         [SerializeField] private GameObject pickupPrefab; // 展示用预制体（可选）
         [Tooltip("进入房间时自动将道具加入背包并写入玩家数据")]
@@ -28,7 +29,7 @@ namespace DreamWeavers.Rooms
         private void Awake()
         {
             Debug.Log("[PropsRoom] Awake: start binding GetProp button and validating references");
-            Debug.Log($"[PropsRoom] Refs -> itemPool={(itemPool!=null)}, playerData={(playerData!=null)}, spawnPoint={(spawnPoint!=null)}, pickupPrefab={(pickupPrefab!=null)}, autoGrantOnEnter={autoGrantOnEnter}");
+            Debug.Log($"[PropsRoom] Refs -> itemPool={(itemPool!=null)}, spawnPoint={(spawnPoint!=null)}, pickupPrefab={(pickupPrefab!=null)}, autoGrantOnEnter={autoGrantOnEnter}");
             // 自动绑定获取按钮（名称包含 GetProp）
             if (getPropButton == null)
             {
@@ -181,6 +182,20 @@ namespace DreamWeavers.Rooms
         }
 
         /// <summary>
+        /// 获取PlayerData（优先从PlayerManager，降级到本地引用）
+        /// </summary>
+        private PlayerData GetPlayerData()
+        {
+            if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+            {
+                return PlayerManager.Instance.CurrentPlayerData;
+            }
+
+            Debug.LogWarning("[PropsRoom] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+            return null;
+        }
+
+        /// <summary>
         /// 将抽取的道具添加到玩家数据与运行时背包
         /// </summary>
         public void GrantItemToPlayer()
@@ -212,6 +227,7 @@ namespace DreamWeavers.Rooms
             }
 
             // 2) 玩家数据：沿用 PlayerData 作为运行时存储（参考 CombatRoom_cza 更新 OwnedSpirits 的做法）
+            var playerData = GetPlayerData();
             if (playerData != null)
             {
                 var list = playerData.GetInitialItems(); // 复用初始道具数组作为当前持有的道具集合
@@ -224,7 +240,7 @@ namespace DreamWeavers.Rooms
             }
             else
             {
-                Debug.LogWarning("[PropsRoom] PlayerData 未配置，未写入玩家数据资产");
+                Debug.LogWarning("[PropsRoom] PlayerData 未获取（从 PlayerManager），未写入玩家数据资产");
             }
 
             granted = true;

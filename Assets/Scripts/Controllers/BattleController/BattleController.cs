@@ -22,9 +22,7 @@ public enum BattleInputState
 
 public class BattleController : MonoBehaviour
 {
-    [SerializeField]
-    private PlayerData playerData;
-
+    // PlayerData 现在从 PlayerManager 获取，无需手动赋予
     [SerializeField]
     private EnemyData enemyData;
 
@@ -65,8 +63,22 @@ public class BattleController : MonoBehaviour
 
     public BattleState State { get; private set; } = BattleState.None;
 
-    // 提供UI层读取序列化的PlayerData（只读）
-    public PlayerData PlayerData => playerData;
+    // 提供UI层读取PlayerData（从PlayerManager获取）
+    public PlayerData PlayerData => GetPlayerData();
+
+    /// <summary>
+    /// 获取PlayerData（优先从PlayerManager）
+    /// </summary>
+    private PlayerData GetPlayerData()
+    {
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+        {
+            return PlayerManager.Instance.CurrentPlayerData;
+        }
+
+        Debug.LogWarning("[BattleController] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+        return null;
+    }
 
     // 道具使用状态机
     private BattleInputState inputState = BattleInputState.Normal;
@@ -112,6 +124,8 @@ public class BattleController : MonoBehaviour
 
     public void InitializeBattle()
     {
+        var playerData = GetPlayerData();
+
         Debug.Log(
             $"BattleController: InitializeBattle starting - enemyData={(enemyData != null ? enemyData.name : "null")}, MaxHP={(enemyData != null ? enemyData.MaxHP.ToString() : "N/A")}"
         );
@@ -122,7 +136,7 @@ public class BattleController : MonoBehaviour
         // 从PlayerData获取出场的Spirit队列
         if (playerData == null)
         {
-            Debug.LogError("BattleController: PlayerData is null!");
+            Debug.LogError("BattleController: 无法从 PlayerManager 获取 PlayerData!");
             return;
         }
 
@@ -555,11 +569,20 @@ public class BattleController : MonoBehaviour
         // 重置之前的战斗状态
         ResetBattleState();
 
-        playerData = playerDataOverride;
+        // 验证传入的PlayerData与PlayerManager中的是否一致
+        var currentPlayerData = GetPlayerData();
+        if (currentPlayerData != null && currentPlayerData != playerDataOverride)
+        {
+            Debug.LogWarning(
+                $"BattleController: 传入的 PlayerData ({playerDataOverride.name}) 与 PlayerManager.CurrentPlayer ({currentPlayerData.name}) 不一致！"
+            );
+        }
+
+        // 只保存EnemyData（PlayerData从PlayerManager获取）
         enemyData = enemyDataOverride;
 
         Debug.Log(
-            $"BattleController: BeginBattleWith - PlayerData={playerData.name}, EnemyData={enemyData.name}, CombatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}, BossRoom={(bossRoom != null ? bossRoom.gameObject.name : "null")}"
+            $"BattleController: BeginBattleWith - PlayerData={playerDataOverride.name}, EnemyData={enemyData.name}, CombatRoom={(combatRoom != null ? combatRoom.gameObject.name : "null")}, BossRoom={(bossRoom != null ? bossRoom.gameObject.name : "null")}"
         );
 
         InitializeBattle();
@@ -835,9 +858,21 @@ public class BattleController : MonoBehaviour
             {
                 return spiritRuntimeData[spiritData];
             }
+
+            // 如果不在缓存中，但是spiritData存在，返回满血满蓝状态（尚未进入战斗的精灵）
+            if (spiritData != null)
+            {
+                return new SpiritRuntimeData
+                {
+                    CurrentHP = spiritData.MaxHP,
+                    MaxHP = spiritData.MaxHP,
+                    CurrentMP = spiritData.MaxMana,
+                    MaxMP = spiritData.MaxMana,
+                };
+            }
         }
 
-        // 如果没有数据，返回默认值
+        // 如果没有数据，返回默认值（0/0/0/0）
         return new SpiritRuntimeData();
     }
 
@@ -2163,6 +2198,7 @@ public class BattleController : MonoBehaviour
         if (targetSpiritIndex >= 0 && target is Spirit targetSpirit)
         {
             // 获取 OwnedSpirits 中对应的 SpiritData
+            var playerData = GetPlayerData();
             var ownedSpirits = PlayerManager.Instance != null
                 ? PlayerManager.Instance.GetOwnedSpirits()
                 : (playerData != null ? playerData.GetOwnedSpirits() : null);
@@ -2231,17 +2267,63 @@ public class BattleController : MonoBehaviour
 
         var newSpiritData = evo.TargetSpirit;
 
+        // ItemUseSlot 传入的是 OwnedSpirits 的索引，不是 spiritQueue 的索引
+        var playerData = GetPlayerData();
+        var ownedSpirits = PlayerManager.Instance != null
+            ? PlayerManager.Instance.GetOwnedSpirits()
+            : (playerData != null ? playerData.GetOwnedSpirits() : null);
+
+        SpiritData oldOwnedSpiritData = (ownedSpirits != null && targetSpiritIndex < ownedSpirits.Count)
+            ? ownedSpirits[targetSpiritIndex]
+            : null;
+
         // 更新PlayerManager拥有列表
         if (PlayerManager.Instance != null)
         {
             PlayerManager.Instance.ReplaceOwnedSpirit(targetSpiritIndex, newSpiritData);
         }
 
-        // 更新战斗内的部署列表/运行时数据
-        if (spiritQueue != null && targetSpiritIndex < spiritQueue.Count)
+        // 如果该精灵在“已部署列表”中，也同步替换（Player.ReplaceOwnedSpirit 不会自动更新 deployed 列表）
+        if (PlayerManager.Instance != null && oldOwnedSpiritData != null)
         {
-            var oldSpiritData = spiritQueue[targetSpiritIndex];
-            spiritQueue[targetSpiritIndex] = newSpiritData;
+            var deployedSpirits = PlayerManager.Instance.GetDeployedSpirits();
+            if (deployedSpirits != null && deployedSpirits.Contains(oldOwnedSpiritData))
+            {
+                PlayerManager.Instance.RecallSpirit(oldOwnedSpiritData);
+                PlayerManager.Instance.DeploySpirit(newSpiritData);
+            }
+        }
+
+        // 更新战斗内的部署列表/运行时数据
+        if (spiritQueue != null)
+        {
+            int queueIndex = oldOwnedSpiritData != null ? spiritQueue.IndexOf(oldOwnedSpiritData) : -1;
+            if (queueIndex < 0)
+                queueIndex = targetSpiritIndex;
+
+            if (queueIndex < 0 || queueIndex >= spiritQueue.Count)
+                goto AfterEvolutionReplacement;
+
+            var oldSpiritData = spiritQueue[queueIndex];
+
+            int carryHp = oldSpiritData != null ? oldSpiritData.MaxHP : 0;
+            int carryMp = oldSpiritData != null ? oldSpiritData.MaxMana : 0;
+
+            if (queueIndex == currentSpiritIndex && player != null && player.Data == oldSpiritData)
+            {
+                carryHp = player.HP;
+                carryMp = player.Mana;
+            }
+            else if (spiritRuntimeData != null && oldSpiritData != null && spiritRuntimeData.TryGetValue(oldSpiritData, out var oldRuntime))
+            {
+                carryHp = oldRuntime.CurrentHP;
+                carryMp = oldRuntime.CurrentMP;
+            }
+
+            int clampedHp = Mathf.Clamp(carryHp, 0, newSpiritData.MaxHP);
+            int clampedMp = Mathf.Clamp(carryMp, 0, newSpiritData.MaxMana);
+
+            spiritQueue[queueIndex] = newSpiritData;
 
             // 从旧精灵数据移除运行时数据，添加新精灵数据
             if (spiritRuntimeData != null)
@@ -2253,9 +2335,9 @@ public class BattleController : MonoBehaviour
 
                 spiritRuntimeData[newSpiritData] = new SpiritRuntimeData
                 {
-                    CurrentHP = newSpiritData.MaxHP,
+                    CurrentHP = clampedHp,
                     MaxHP = newSpiritData.MaxHP,
-                    CurrentMP = newSpiritData.MaxMana,
+                    CurrentMP = clampedMp,
                     MaxMP = newSpiritData.MaxMana,
                 };
             }
@@ -2267,16 +2349,29 @@ public class BattleController : MonoBehaviour
                     spiritAliveStatus.Remove(oldSpiritData);
                 }
 
-                spiritAliveStatus[newSpiritData] = true;
+                spiritAliveStatus[newSpiritData] = clampedHp > 0;
             }
 
             // 如果是当前上场精灵，立即切换实体
-            if (targetSpiritIndex == currentSpiritIndex)
+            if (queueIndex == currentSpiritIndex)
             {
-                player = new Spirit(newSpiritData);
-                model.UpdatePlayer(player);
+                Spirit newPlayerSpirit = null;
+                if (model != null && model.PlayerUnit is Spirit modelSpirit && modelSpirit.Data == newSpiritData)
+                {
+                    newPlayerSpirit = modelSpirit;
+                }
+                else
+                {
+                    newPlayerSpirit = new Spirit(newSpiritData);
+                    model?.UpdatePlayer(newPlayerSpirit);
+                }
+
+                newPlayerSpirit.SetRuntimeHPMP(clampedHp, clampedMp);
+                player = newPlayerSpirit;
             }
         }
+
+    AfterEvolutionReplacement:
 
         // 刷新UI槽位显示
         if (battleView != null)
@@ -2295,6 +2390,7 @@ public class BattleController : MonoBehaviour
     private IBattleUnit GetSpiritAsTarget(int spiritIndex)
     {
         // 获取所有拥有的精灵（与 ItemUseSlot 显示的一致）
+        var playerData = GetPlayerData();
         var ownedSpirits = PlayerManager.Instance != null
             ? PlayerManager.Instance.GetOwnedSpirits()
             : (playerData != null ? playerData.GetOwnedSpirits() : null);

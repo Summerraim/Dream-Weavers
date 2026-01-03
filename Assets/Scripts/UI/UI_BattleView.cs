@@ -1175,12 +1175,41 @@ public class UI_BattleView : MonoBehaviour
 
         int currentIndex = controller.GetCurrentSpiritIndex();
 
+        // 获取最新的部署精灵列表
+        List<SpiritData> deployedSpirits = null;
+        if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayer != null)
+        {
+            deployedSpirits = PlayerManager.Instance.GetDeployedSpirits();
+        }
+        else
+        {
+            deployedSpirits = controller.GetDeployedSpirits();
+        }
+
+        if (deployedSpirits == null)
+        {
+            deployedSpirits = new List<SpiritData>();
+        }
+
         for (int i = 0; i < spiritSlots.Length; i++)
         {
             if (spiritSlots[i] != null)
             {
+                // 获取当前槽位应该显示的SpiritData
+                SpiritData expectedSpirit = i < deployedSpirits.Count ? deployedSpirits[i] : null;
+                SpiritData currentSpirit = spiritSlots[i].GetSpiritData();
+
+                // 如果SpiritData发生了变化，重新Initialize槽位
+                if (currentSpirit != expectedSpirit)
+                {
+                    Debug.Log($"[UI_BattleView] RefreshSpiritSlots: 槽位[{i}]的SpiritData变化，重新初始化（{currentSpirit?.DisplayName ?? "null"} -> {expectedSpirit?.DisplayName ?? "null"}）");
+                    spiritSlots[i].Initialize(i, expectedSpirit, OnSpiritSlotClicked);
+                }
+
+                // 设置选中状态
                 spiritSlots[i].SetSelected(i == currentIndex);
 
+                // 更新HP/MP状态
                 bool isAlive = controller.IsSpiritAlive(i);
                 var runtimeData = controller.GetSpiritRuntimeData(i);
 
@@ -1527,8 +1556,30 @@ public class UI_BattleView : MonoBehaviour
 
             if (spiritData != null)
             {
-                maxHp = hp = spiritData.MaxHP;
-                maxMp = mp = spiritData.MaxMana;
+                // 如果该 Spirit 已部署在本场战斗中，使用运行时 HP/MP（随战斗变化）
+                int queueIndex = -1;
+                var deployed = controller.GetDeployedSpirits();
+                if (deployed != null)
+                {
+                    queueIndex = deployed.IndexOf(spiritData);
+                }
+
+                if (queueIndex >= 0)
+                {
+                    var runtime = controller.GetSpiritRuntimeData(queueIndex);
+                    hp = runtime.CurrentHP;
+                    maxHp = runtime.MaxHP;
+                    mp = runtime.CurrentMP;
+                    maxMp = runtime.MaxMP;
+                    alive = controller.IsSpiritAlive(queueIndex);
+                }
+                else
+                {
+                    // 未部署：显示配置上的满血满蓝
+                    maxHp = hp = spiritData.MaxHP;
+                    maxMp = mp = spiritData.MaxMana;
+                    alive = true;
+                }
             }
 
             slot.UpdateStatus(hp, maxHp, mp, maxMp, alive);

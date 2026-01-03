@@ -135,16 +135,17 @@ public class UI_SpiritDetailPanel : MonoBehaviour
         }
 
         // 检查Spirit是否有技能
-        if (spirit.Skills == null || spirit.Skills.Length == 0)
+        var allSkillObjects = SpiritRuntimeSkills.GetAllSkillObjects(spirit);
+        if (allSkillObjects == null || allSkillObjects.Count == 0)
         {
             CreateSkillItem("无技能", "此Spirit暂无技能");
             return;
         }
 
         // 创建技能项
-        for (int i = 0; i < spirit.Skills.Length; i++)
+        for (int i = 0; i < allSkillObjects.Count; i++)
         {
-            var skillObj = spirit.Skills[i];
+            var skillObj = allSkillObjects[i];
             if (skillObj == null)
             {
                 Debug.LogWarning($"[UI_SpiritDetailPanel] Skill[{i}] is null!");
@@ -186,7 +187,7 @@ public class UI_SpiritDetailPanel : MonoBehaviour
             }
         }
 
-        Debug.Log($"[UI_SpiritDetailPanel] 显示 {spirit.Skills.Length} 个技能");
+        Debug.Log($"[UI_SpiritDetailPanel] 显示 {allSkillObjects.Count} 个技能");
     }
 
     /// <summary>

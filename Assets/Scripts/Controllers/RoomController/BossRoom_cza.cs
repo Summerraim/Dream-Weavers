@@ -23,7 +23,8 @@ namespace DreamWeavers.Rooms
         [SerializeField] private SpiritData floor4SpiritData; // 第4层Boss对应的精灵
         
         [Header("玩家数据")]
-        [SerializeField] private PlayerData playerData; // 当前玩家数据（用于传递到战斗）
+        // PlayerData 现在从 PlayerManager 获取，无需手动赋予
+        // [SerializeField] private PlayerData playerData;
 
         [Header("掉落设置")]
         [SerializeField] private ItemPool itemPool; // 击败Boss后从此池随机掉落一个道具（可选）
@@ -184,6 +185,20 @@ namespace DreamWeavers.Rooms
         }
 
         /// <summary>
+        /// 获取PlayerData（优先从PlayerManager，降级到本地引用）
+        /// </summary>
+        private PlayerData GetPlayerData()
+        {
+            if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+            {
+                return PlayerManager.Instance.CurrentPlayerData;
+            }
+
+            Debug.LogWarning("[BossRoom] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+            return null;
+        }
+
+        /// <summary>
         /// 激活 BattleController 并开始战斗
         /// </summary>
         private void StartBattle()
@@ -217,9 +232,10 @@ namespace DreamWeavers.Rooms
             Debug.Log($"[BossRoom] 找到 BattleController: {bc.gameObject.name}, active={bc.gameObject.activeInHierarchy}");
 
             // 检查必要数据
+            var playerData = GetPlayerData();
             if (playerData == null)
             {
-                Debug.LogError("[BossRoom] PlayerData 未配置！请在 Inspector 中配置 PlayerData");
+                Debug.LogError("[BossRoom] PlayerData 未获取（从 PlayerManager）！");
                 return;
             }
             if (selectedEnemy == null)
@@ -329,6 +345,7 @@ namespace DreamWeavers.Rooms
         /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
         public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
         {
+            var playerData = GetPlayerData();
             Debug.Log($"[BossRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, spiritCaptured={spiritCaptured}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
 
             // 检查是否已经捕捉过，避免重复捕捉
@@ -403,10 +420,11 @@ namespace DreamWeavers.Rooms
 
         public override void ExitRoom()
         {
+            var playerData = GetPlayerData();
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
             if (playerData == null)
             {
-                Debug.LogWarning("[BossRoom] PlayerData 未配置，无法捕捉精灵");
+                Debug.LogWarning("[BossRoom] PlayerData 未获取（从 PlayerManager），无法捕捉精灵");
                 return;
             }
 
@@ -496,6 +514,7 @@ namespace DreamWeavers.Rooms
             }
 
             // 2) 玩家数据：写入 InitialItems 以持久化当前拥有
+            var playerData = GetPlayerData();
             if (playerData != null)
             {
                 var list = playerData.GetInitialItems();
@@ -508,7 +527,7 @@ namespace DreamWeavers.Rooms
             }
             else
             {
-                Debug.LogWarning("[BossRoom] PlayerData 未配置，掉落未写入玩家数据资产");
+                Debug.LogWarning("[BossRoom] PlayerData 未获取（从 PlayerManager），掉落未写入玩家数据资产");
             }
 
             // 3) 可选：在房间中生成一个展示预制体

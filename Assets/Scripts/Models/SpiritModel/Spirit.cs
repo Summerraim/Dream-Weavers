@@ -85,8 +85,9 @@ public class Spirit : IBattleUnit
             return;
         }
 
-        // 否则，随机选择技能
-        if (data == null || data.Skills == null || data.Skills.Length == 0)
+        // 否则，随机选择技能（包含本局运行时追加的技能）
+        var skillObjects = SpiritRuntimeSkills.GetAllSkillObjects(data);
+        if (data == null || skillObjects.Count == 0)
         {
             UnityEngine.Debug.LogWarning($"Spirit {DisplayName}: No skills available");
             return;
@@ -94,9 +95,9 @@ public class Spirit : IBattleUnit
 
         // 收集所有有效技能
         var allSkills = new List<ISkill>();
-        for (int i = 0; i < data.Skills.Length; i++)
+        for (int i = 0; i < skillObjects.Count; i++)
         {
-            var skillObj = data.Skills[i];
+            var skillObj = skillObjects[i];
             if (skillObj == null)
                 continue;
 

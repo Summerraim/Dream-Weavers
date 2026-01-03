@@ -116,11 +116,7 @@ public class UI_MainMenuView : MonoBehaviour
         });
 
         // 设置面板事件
-        settingsCloseButton.onClick.AddListener(() =>
-        {
-            Debug.Log("[UI_MainMenuView] 关闭设置面板");
-            settingsPanel.SetActive(false);
-        });
+        settingsCloseButton.onClick.AddListener(OnSettingsClose);
         settingsSaveButton.onClick.AddListener(OnSettingsSave);
 
         // 音量滑块事件（实时预览）
@@ -259,6 +255,44 @@ public class UI_MainMenuView : MonoBehaviour
         sfxVolumeSlider.value = tempSfxVolume;
     }
 
+    private void RestoreVolumeFromTemp()
+    {
+        // 恢复之前保存的音量
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.value = tempMasterVolume;
+            if (audioManager != null)
+                audioManager.SetMasterVolume(tempMasterVolume);
+        }
+
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.value = tempMusicVolume;
+            if (audioManager != null)
+                audioManager.SetBGMVolume(tempMusicVolume);
+        }
+
+        if (sfxVolumeSlider != null)
+        {
+            sfxVolumeSlider.value = tempSfxVolume;
+            if (audioManager != null)
+                audioManager.SetSFXVolume(tempSfxVolume);
+        }
+
+        Debug.Log("[UI_MainMenuView] 已恢复到保存前的音量设置");
+    }
+
+    private void OnSettingsClose()
+    {
+        PlayButtonClickSound();
+
+        // 不保存，恢复之前的音量设置
+        RestoreVolumeFromTemp();
+
+        Debug.Log("[UI_MainMenuView] 关闭设置面板（未保存）");
+        settingsPanel.SetActive(false);
+    }
+
     private void OnSettingsSave()
     {
         PlayButtonClickSound();
@@ -267,37 +301,31 @@ public class UI_MainMenuView : MonoBehaviour
         SaveVolumeSettings();
 
         // 提示保存成功（可选）
-        Debug.Log("设置已保存");
+        Debug.Log("[UI_MainMenuView] 设置已保存");
+
+        // 关闭面板
+        settingsPanel.SetActive(false);
     }
 
     private void OnMasterVolumeChanged(float value)
     {
-        // 实时应用音量到音频管理器
+        // 实时应用音量到音频管理器（仅预览，不保存）
         if (audioManager != null)
             audioManager.SetMasterVolume(value);
-
-        // 同时保存到 PlayerPrefs
-        PlayerPrefs.SetFloat("MasterVolume", value);
     }
 
     private void OnMusicVolumeChanged(float value)
     {
-        // 实时应用音量到音频管理器
+        // 实时应用音量到音频管理器（仅预览，不保存）
         if (audioManager != null)
             audioManager.SetBGMVolume(value);
-
-        // 同时保存到 PlayerPrefs
-        PlayerPrefs.SetFloat("MusicVolume", value);
     }
 
     private void OnSFXVolumeChanged(float value)
     {
-        // 实时应用音量到音频管理器
+        // 实时应用音量到音频管理器（仅预览，不保存）
         if (audioManager != null)
             audioManager.SetSFXVolume(value);
-
-        // 同时保存到 PlayerPrefs
-        PlayerPrefs.SetFloat("SFXVolume", value);
     }
 
     #endregion
