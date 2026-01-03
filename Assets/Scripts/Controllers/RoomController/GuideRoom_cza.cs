@@ -15,7 +15,7 @@ namespace DreamWeavers.Rooms
 	public class GuideRoom_cza : RoomBase_cza
 	{
 		[Header("玩家与战斗引用")]
-		[SerializeField] private PlayerData playerData;
+		// PlayerData 现在从 PlayerManager 获取，无需手动赋予
 		[SerializeField] private BattleController battleController;
 		[SerializeField] private UI_BattleView battleView;
 
@@ -250,6 +250,20 @@ namespace DreamWeavers.Rooms
 			enemyPending = null;
 		}
 
+		/// <summary>
+		/// 获取PlayerData（优先从PlayerManager，降级到本地引用）
+		/// </summary>
+		private PlayerData GetPlayerData()
+		{
+			if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+			{
+				return PlayerManager.Instance.CurrentPlayerData;
+			}
+
+			Debug.LogWarning("[GuideRoom] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+			return null;
+		}
+
 		private void AddSpiritToPlayer(SpiritData spirit)
 		{
 			// 更新运行时 PlayerManager
@@ -260,6 +274,7 @@ namespace DreamWeavers.Rooms
 			}
 
 			// 同步到 PlayerData（Owned 与 Deployed 只保留该引导精灵）
+			var playerData = GetPlayerData();
 			if (playerData != null)
 			{
 				playerData.OwnedSpirits = new[] { spirit };
@@ -280,6 +295,7 @@ namespace DreamWeavers.Rooms
 			}
 
 			// 同步到 PlayerData：将两个Spirit都添加到 OwnedSpirits
+			var playerData = GetPlayerData();
 			if (playerData != null)
 			{
 				var currentOwned = playerData.GetOwnedSpirits();
@@ -305,9 +321,10 @@ namespace DreamWeavers.Rooms
 				return;
 			}
 
+			var playerData = GetPlayerData();
 			if (playerData == null)
 			{
-				Debug.LogError("[GuideRoom] PlayerData 未配置，无法开始引导战斗");
+				Debug.LogError("[GuideRoom] 无法从 PlayerManager 获取 PlayerData，无法开始引导战斗");
 				return;
 			}
 
@@ -484,6 +501,7 @@ namespace DreamWeavers.Rooms
 		{
 			var uniq = new HashSet<SpiritData>();
 
+			var playerData = GetPlayerData();
 			if (playerData != null)
 			{
 				var ownedFromData = playerData.GetOwnedSpirits();
@@ -520,30 +538,16 @@ namespace DreamWeavers.Rooms
 				return false;
 			}
 
-			var currentSkills = spiritData.Skills;
-			if (currentSkills != null)
+			var allSkills = SpiritRuntimeSkills.GetAllSkillObjects(spiritData);
+			for (int i = 0; i < allSkills.Count; i++)
 			{
-				for (int i = 0; i < currentSkills.Length; i++)
+				if (allSkills[i] == skillData)
 				{
-					if (currentSkills[i] == skillData)
-					{
-						return true; // 已存在，视为成功
-					}
+					return true;
 				}
 			}
 
-			int newLength = (currentSkills?.Length ?? 0) + 1;
-			var newSkills = new ScriptableObject[newLength];
-			if (currentSkills != null)
-			{
-				for (int i = 0; i < currentSkills.Length; i++)
-				{
-					newSkills[i] = currentSkills[i];
-				}
-			}
-			newSkills[newLength - 1] = skillData;
-			spiritData.Skills = newSkills;
-			return true;
+			return SpiritRuntimeSkills.EnsureSkill(spiritData, skillData);
 		}
 
 		private void PrepareMainFloorForRouteSelection()

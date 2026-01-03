@@ -22,9 +22,8 @@ namespace DreamWeavers.Rooms
         private bool useWeightedRandom = false;
 
         [Header("玩家数据")]
-        [Tooltip("玩家数据引用，用于获取玩家拥有的精灵")]
-        [SerializeField]
-        private PlayerData playerData;
+        // PlayerData 现在从 PlayerManager 获取，无需手动赋予
+        // [SerializeField] private PlayerData playerData;
 
         [Header("展示设置")]
         [Tooltip("技能展示生成位置（可选）")]
@@ -53,6 +52,8 @@ namespace DreamWeavers.Rooms
         private Text legacyGetSkillButtonLabel;
         private Text legacyAcquiredSkillNameText;
         // 备份原始技能列表，运行结束时还原
+        // Runtime-only: do not modify SpiritData(ScriptableObject) assets during play.
+        // (Legacy backup map kept only to avoid breaking older code paths; it remains unused now.)
         private readonly Dictionary<SpiritData, ScriptableObject[]> originalSkillsBackup = new Dictionary<SpiritData, ScriptableObject[]>();
 
         private void Awake()
@@ -142,10 +143,7 @@ namespace DreamWeavers.Rooms
             }
         }
 
-        private void OnDestroy()
-        {
-            RestoreOriginalSkills();
-        }
+        private void OnDestroy() { }
 
         /// <summary>
         /// 从技能池中随机抽取一个技能，并根据精灵名称映射匹配玩家拥有的精灵
@@ -263,11 +261,26 @@ namespace DreamWeavers.Rooms
         }
 
         /// <summary>
+        /// 获取PlayerData（优先从PlayerManager，降级到本地引用）
+        /// </summary>
+        private PlayerData GetPlayerData()
+        {
+            if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+            {
+                return PlayerManager.Instance.CurrentPlayerData;
+            }
+
+            Debug.LogWarning("[SkillRoom] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+            return null;
+        }
+
+        /// <summary>
         /// 获取玩家拥有的所有精灵
         /// </summary>
         private List<SpiritData> GetPlayerOwnedSpirits()
         {
             // 从 PlayerData 获取
+            var playerData = GetPlayerData();
             if (playerData != null)
             {
                 var spirits = playerData.GetOwnedSpirits();
@@ -376,8 +389,6 @@ namespace DreamWeavers.Rooms
             if (matchedSpirit != null)
             {
                 // 首次修改前备份原始技能，方便退出时还原
-                BackupSkillsIfNeeded(matchedSpirit);
-
                 // 将技能添加到匹配的精灵的 Skills 数组（直接作用于原始 ScriptableObject）
                 bool success = AddSkillToSpiritData(matchedSpirit, selectedSkillData);
                 if (success)
@@ -454,7 +465,7 @@ namespace DreamWeavers.Rooms
                 newSkills[newLength - 1] = skillData;
 
                 // 更新精灵的技能数组
-                spiritData.Skills = newSkills;
+                SpiritRuntimeSkills.EnsureSkill(spiritData, skillData);
 
                 string spiritName = string.IsNullOrWhiteSpace(spiritData.DisplayName)
                     ? spiritData.name
@@ -615,11 +626,7 @@ namespace DreamWeavers.Rooms
         {
             if (spirit == null)
                 return;
-            if (originalSkillsBackup.ContainsKey(spirit))
-                return;
-
             var backup = spirit.Skills != null ? (ScriptableObject[])spirit.Skills.Clone() : null;
-            originalSkillsBackup[spirit] = backup;
             Debug.Log($"[SkillRoom] 备份技能列表: Spirit={spirit.name} 原始技能={FormatSkills(backup)}");
         }
 
@@ -633,7 +640,7 @@ namespace DreamWeavers.Rooms
             {
                 var spirit = kv.Key;
                 var backup = kv.Value;
-                spirit.Skills = backup;
+                // spirit.Skills = backup;
                 Debug.Log($"[SkillRoom] 恢复技能列表: Spirit={spirit.name} -> {FormatSkills(backup)}");
             }
 
@@ -667,6 +674,8 @@ namespace DreamWeavers.Rooms
                 label = selectedSkillData.name;
             }
 
+            // 进入房间时显示技能名称（在SkillName文本上）
+            // 按钮保持默认文本"获取并离开"
             UpdateAcquiredSkillNameText(label);
         }
     }

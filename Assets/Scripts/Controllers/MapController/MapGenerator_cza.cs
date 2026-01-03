@@ -66,6 +66,38 @@ public static class MapGenerator_cza
                 Debug.Log($"[MapGen] 没有生成 Rest，强制将房间 {forcedId} 从 {oldType} 改为 Rest 以满足最少1个要求");
         }
 
+        // 保证至少1个 Skill（统计并强制生成）
+        int skillCount = 0;
+        foreach (var kv in map.Rooms)
+        {
+            if (kv.Value.Type == RoomType_cza.Skill)
+                skillCount++;
+        }
+
+        if (skillCount == 0)
+        {
+            // 选一个非 Boss 且非 Rest 的房间强制改为 Skill
+            List<int> candidates = new List<int>();
+            for (int i = 1; i < totalRooms; i++) // 排除Boss房间
+            {
+                if (map.Rooms[i].Type != RoomType_cza.Rest) // 保留Rest房间
+                    candidates.Add(i);
+            }
+
+            if (candidates.Count > 0)
+            {
+                int forcedId = candidates[rng.NextInt(0, candidates.Count)];
+                var node = map.Rooms[forcedId];
+                // 若原来是 Props 需要回退 propsCount
+                if (node.Type == RoomType_cza.Props) propsCount = Mathf.Max(0, propsCount - 1);
+                var oldType = node.Type;
+                node.Type = RoomType_cza.Skill;
+                skillCount = 1;
+                if (DebugEnabled)
+                    Debug.Log($"[MapGen] 没有生成 Skill，强制将房间 {forcedId} 从 {oldType} 改为 Skill 以满足最少1个要求");
+            }
+        }
+
             // 精简：不输出限制统计
         // 路线生成 (恢复原逻辑)
         for (int i = 1; i <= totalRooms; i++)

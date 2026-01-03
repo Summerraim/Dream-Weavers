@@ -346,21 +346,27 @@ public class UI_SpiritPanel : MonoBehaviour
             {
                 // 更新槽位数据
                 SpiritData spiritData = i < deployedSpirits.Count ? deployedSpirits[i] : null;
+                SpiritData currentData = deployedSlots[i].GetSpiritData();
 
-                // 如果数据变化了，重新初始化槽位
-                if (deployedSlots[i].GetSpiritData() != spiritData)
+                // 如果数据变化了（包括null变化），重新初始化槽位
+                if (currentData != spiritData)
                 {
+                    Debug.Log($"[UI_SpiritPanel] RefreshDeployedSlots: 槽位[{i}]数据变化，重新初始化（{currentData?.DisplayName ?? "null"} -> {spiritData?.DisplayName ?? "null"}）");
                     deployedSlots[i].Initialize(i, spiritData, OnDeployedSlotClicked);
                 }
 
-                // 更新运行时HP/MP数据
+                // 更新运行时HP/MP数据（即使数据没变化也要更新，确保显示最新状态）
                 if (spiritData != null)
                 {
                     UpdateSlotRuntimeData(deployedSlots[i], i);
                 }
+                else
+                {
+                    // 如果是空槽位，确保更新显示
+                    deployedSlots[i].UpdateDisplay();
+                }
 
                 deployedSlots[i].SetSelected(i == selectedDeployedIndex);
-                deployedSlots[i].UpdateDisplay();
             }
         }
     }
@@ -791,37 +797,76 @@ public class UI_SpiritPanel : MonoBehaviour
         if (slot == null)
             return;
 
+        var spiritData = slot.GetSpiritData();
+        if (spiritData == null)
+            return;
+
         // 尝试从BattleController获取运行时数据（包括未激活的）
         BattleController battleController = FindObjectOfType<BattleController>(true);
         if (battleController != null)
         {
-            // 获取该槽位的运行时数据
-            SpiritRuntimeData runtimeData = battleController.GetSpiritRuntimeData(slotIndex);
+            // 关键修复：不能直接用UI槽位索引(slotIndex)，而要找到spiritData在部署列表中的实际索引
+            // 因为用户可能交换了Spirit的位置，导致slotIndex与实际部署顺序不一致
+            var deployedSpirits = battleController.GetDeployedSpirits();
+            int actualIndex = -1;
 
-            // 更新槽位显示
-            slot.UpdateRuntimeData(
-                runtimeData.CurrentHP,
-                runtimeData.MaxHP,
-                runtimeData.CurrentMP,
-                runtimeData.MaxMP
-            );
-
-            Debug.Log($"[UI_SpiritPanel] Updated slot {slotIndex} runtime data: HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}, MP={runtimeData.CurrentMP}/{runtimeData.MaxMP}");
-        }
-        else
-        {
-            // 战斗外，使用Spirit的最大值
-            var spiritData = slot.GetSpiritData();
-            if (spiritData != null)
+            if (deployedSpirits != null)
             {
+                actualIndex = deployedSpirits.IndexOf(spiritData);
+            }
+
+            if (actualIndex >= 0)
+            {
+                // 使用Spirit在部署列表中的实际索引查询runtime data
+                SpiritRuntimeData runtimeData = battleController.GetSpiritRuntimeData(actualIndex);
+
+                // 检查返回的数据是否有效（MaxHP > 0 说明是有效数据）
+                if (runtimeData.MaxHP > 0)
+                {
+                    // 使用BattleController中的运行时数据
+                    slot.UpdateRuntimeData(
+                        runtimeData.CurrentHP,
+                        runtimeData.MaxHP,
+                        runtimeData.CurrentMP,
+                        runtimeData.MaxMP
+                    );
+
+                    Debug.Log($"[UI_SpiritPanel] Updated slot {slotIndex} ({spiritData.DisplayName}) runtime data from BattleController index {actualIndex}: HP={runtimeData.CurrentHP}/{runtimeData.MaxHP}, MP={runtimeData.CurrentMP}/{runtimeData.MaxMP}");
+                }
+                else
+                {
+                    // BattleController返回了无效数据（0/0/0/0），使用Spirit的最大值
+                    slot.UpdateRuntimeData(
+                        spiritData.MaxHP,
+                        spiritData.MaxHP,
+                        spiritData.MaxMana,
+                        spiritData.MaxMana
+                    );
+                    Debug.Log($"[UI_SpiritPanel] BattleController returned invalid data for {spiritData.DisplayName} at index {actualIndex}, using max values");
+                }
+            }
+            else
+            {
+                // Spirit不在BattleController的部署列表中（可能刚部署还未进战斗），使用最大值
                 slot.UpdateRuntimeData(
                     spiritData.MaxHP,
                     spiritData.MaxHP,
                     spiritData.MaxMana,
                     spiritData.MaxMana
                 );
-                Debug.Log($"[UI_SpiritPanel] No BattleController found, using max values for slot {slotIndex}");
+                Debug.Log($"[UI_SpiritPanel] {spiritData.DisplayName} not found in BattleController deployed list, using max values");
             }
+        }
+        else
+        {
+            // 战斗外，使用Spirit的最大值
+            slot.UpdateRuntimeData(
+                spiritData.MaxHP,
+                spiritData.MaxHP,
+                spiritData.MaxMana,
+                spiritData.MaxMana
+            );
+            Debug.Log($"[UI_SpiritPanel] No BattleController found, using max values for {spiritData.DisplayName}");
         }
     }
 

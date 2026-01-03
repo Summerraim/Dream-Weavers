@@ -65,6 +65,24 @@ public class SpiritSlot : MonoBehaviour
         spiritData = data;
         onClickCallback = onClick;
 
+        // 如果有 spiritData，初始化 HP/MP 为最大值（默认满血满蓝）
+        if (spiritData != null)
+        {
+            currentHP = spiritData.MaxHP;
+            maxHP = spiritData.MaxHP;
+            currentMP = spiritData.MaxMana;
+            maxMP = spiritData.MaxMana;
+            isAlive = true;
+        }
+        else
+        {
+            currentHP = 0;
+            maxHP = 0;
+            currentMP = 0;
+            maxMP = 0;
+            isAlive = false;
+        }
+
         // 确保Button组件正确配置
         EnsureButtonSetup();
 
@@ -273,7 +291,16 @@ public class SpiritSlot : MonoBehaviour
         maxMP = maxMp;
         isAlive = alive;
 
+        // 调用UpdateDisplay()来刷新UI显示（包括图标、名称、HP/MP等）
         UpdateDisplay();
+    }
+
+    /// <summary>
+    /// 获取当前槽位的SpiritData
+    /// </summary>
+    public SpiritData GetSpiritData()
+    {
+        return spiritData;
     }
 
     /// <summary>

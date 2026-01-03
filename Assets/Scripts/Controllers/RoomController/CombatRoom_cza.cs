@@ -11,7 +11,7 @@ namespace DreamWeavers.Rooms
     {
         [Header("敌人选择")]
         [SerializeField] private EnemyData enemyData; // 备用：当对象池不可用时使用
-        [SerializeField] private PlayerData playerData; // 当前玩家数据（用于传递到战斗）
+        // PlayerData 现在从 PlayerManager 获取，无需手动赋予
 
         [Header("对象池与随机配置")]
         [SerializeField] private EnemyPool enemyPool; // 敌人对象池（含敌人与对应精灵）
@@ -59,8 +59,9 @@ namespace DreamWeavers.Rooms
         public override void EnterRoom()
         {
             Debug.Log("[CombatRoom] ========== EnterRoom 被调用 ==========");
+            var playerData = GetPlayerData();
             Debug.Log($"[CombatRoom] spawned={spawned}, enemyPool={(enemyPool != null ? "已配置" : "未配置")}, playerData={(playerData != null ? playerData.name : "null")}");
-            
+
             // 每次进入房间都重新选择敌人（重置spawned标志）
             // 这样每次进入新的战斗房间都会从pool随机获取敌人
             ResetRoom();
@@ -150,6 +151,20 @@ namespace DreamWeavers.Rooms
         }
 
         /// <summary>
+        /// 获取PlayerData（优先从PlayerManager，降级到本地引用）
+        /// </summary>
+        private PlayerData GetPlayerData()
+        {
+            if (PlayerManager.Instance != null && PlayerManager.Instance.CurrentPlayerData != null)
+            {
+                return PlayerManager.Instance.CurrentPlayerData;
+            }
+
+            Debug.LogWarning("[CombatRoom] PlayerManager.Instance 或 CurrentPlayerData 为 null，无法获取 PlayerData");
+            return null;
+        }
+
+        /// <summary>
         /// 从对象池随机选择敌人和对应精灵
         /// </summary>
         private void SelectEnemyFromPool()
@@ -227,7 +242,7 @@ namespace DreamWeavers.Rooms
         private void StartBattle()
         {
             Debug.Log("[CombatRoom] StartBattle 开始...");
-            
+
             // 使用已缓存的引用，如果没有则查找
             var bc = battleController;
             if (bc == null)
@@ -245,19 +260,20 @@ namespace DreamWeavers.Rooms
                 }
                 battleController = bc; // 缓存引用
             }
-            
+
             if (bc == null)
             {
                 Debug.LogError("[CombatRoom] 未找到 BattleController！请确保场景中存在 BattleController");
                 return;
             }
-            
+
             Debug.Log($"[CombatRoom] 找到 BattleController: {bc.gameObject.name}, active={bc.gameObject.activeInHierarchy}");
 
             // 检查必要数据
+            var playerData = GetPlayerData();
             if (playerData == null)
             {
-                Debug.LogError("[CombatRoom] PlayerData 未配置！请在 Inspector 中配置 PlayerData");
+                Debug.LogError("[CombatRoom] PlayerData 未配置！请确保 PlayerManager 已初始化");
                 return;
             }
             if (selectedEnemy == null)
@@ -373,15 +389,16 @@ namespace DreamWeavers.Rooms
         /// <returns>捕捉成功返回(true, SpiritData)，失败返回(false, null)</returns>
         public (bool success, SpiritData spirit) AttemptCapture(bool earlyCapture = false)
         {
+            var playerData = GetPlayerData();
             Debug.Log($"[CombatRoom] AttemptCapture 开始: earlyCapture={earlyCapture}, IsCleared={IsCleared()}, spiritCaptured={spiritCaptured}, selectedSpirit={(selectedSpirit != null ? selectedSpirit.name : "null")}, playerData={(playerData != null ? playerData.name : "null")}");
-            
+
             // 检查是否已经捕捉过，避免重复捕捉
             if (spiritCaptured)
             {
                 Debug.Log("[CombatRoom] 已经捕捉过精灵，跳过重复捕捉");
                 return (false, null);
             }
-            
+
             // 检查房间是否已清理（或是否为提前捕捉）
             if (!earlyCapture && !IsCleared())
             {
@@ -455,6 +472,7 @@ namespace DreamWeavers.Rooms
             DestroyDropPickupInstance();
 
             // 捕捉精灵：离开房间时，如果已清理敌人，则将对应SpiritData添加到玩家拥有列表
+            var playerData = GetPlayerData();
             if (playerData == null)
             {
                 Debug.LogWarning("[CombatRoom] PlayerData 未配置，无法捕捉精灵");
@@ -548,6 +566,7 @@ namespace DreamWeavers.Rooms
 
         private void RecordDropToPlayerData(ItemData item, int quantity)
         {
+            var playerData = GetPlayerData();
             if (playerData == null)
             {
                 Debug.LogWarning("[CombatRoom] PlayerData 未配置，掉落无法写入玩家已有道具");
