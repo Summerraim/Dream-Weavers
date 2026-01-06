@@ -32,7 +32,8 @@ public class Beginner : Synergy
         if (battleModel == null)
             return;
 
-        var beginnerBuff = new BeginnerBuff(model.Owner);
+        bool hasUsed = battleModel.HasUsedBeginnerFirstSkill(model.Owner);
+        var beginnerBuff = new BeginnerBuff(model.Owner, hasUsed);
         battleModel.AddBuff(beginnerBuff);
 
         Debug.Log($"Beginner: Applied to {model.Owner.DisplayName}");

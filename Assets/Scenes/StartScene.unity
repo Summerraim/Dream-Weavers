@@ -622,7 +622,7 @@ Camera:
   far clip plane: 1000
   field of view: 62
   orthographic: 1
-  orthographic size: 120.5
+  orthographic size: 120
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -8888,7 +8888,7 @@ GameObject:
   - component: {fileID: 640245463}
   - component: {fileID: 640245462}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: RoomUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11242,7 +11242,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 0
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -12911,7 +12911,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1340888260}
-  m_Father: {fileID: 1183017441}
+  m_Father: {fileID: 1999060658}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -14641,7 +14641,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 0
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -14670,7 +14670,7 @@ Transform:
   m_GameObject: {fileID: 1159765904}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 205.31467, y: 121.825066, z: -1.2860149}
+  m_LocalPosition: {x: 0, y: 0, z: -1.2860149}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -15042,20 +15042,19 @@ Transform:
   m_GameObject: {fileID: 1183017440}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 205.31467, y: 121.825066, z: -1.2860149}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 173027786}
-  - {fileID: 26834313}
-  - {fileID: 805715236}
   - {fileID: 640245461}
   - {fileID: 423236442}
   - {fileID: 1897228317}
   - {fileID: 1229280660}
   - {fileID: 1592990901}
   - {fileID: 1433784123}
-  - {fileID: 962572688}
+  - {fileID: 26834313}
+  - {fileID: 805715236}
   - {fileID: 1538996221269922013}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -15615,8 +15614,14 @@ PrefabInstance:
         type: 2}
     - target: {fileID: 2709214004547520435, guid: 181580a6f83b934458bb88b4bc9ce824,
         type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 5337665444318944786, guid: 84e652de4b2962049ac351f03c722c0f,
+        type: 2}
+    - target: {fileID: 2709214004547520435, guid: 181580a6f83b934458bb88b4bc9ce824,
+        type: 3}
       propertyPath: m_hasFontAssetChanged
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4638610993879855976, guid: 181580a6f83b934458bb88b4bc9ce824,
         type: 3}
@@ -15737,7 +15742,7 @@ PrefabInstance:
     - target: {fileID: 5843288048546909038, guid: 181580a6f83b934458bb88b4bc9ce824,
         type: 3}
       propertyPath: m_hasFontAssetChanged
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -17383,7 +17388,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 0
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -19530,7 +19535,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bf67987cdeb1a6428532948bdf52a69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _currentGameState: 0
+  _currentGameState: 1
   _currentSceneType: 0
   currentLevel: 1
   isNewGame: 1
@@ -25611,7 +25616,7 @@ Transform:
   m_GameObject: {fileID: 1965023124}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 205.31467, y: 121.825066, z: -1.2860149}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -26079,12 +26084,13 @@ Transform:
   m_GameObject: {fileID: 1999060657}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 205.31467, y: 121.825066, z: -1.2860149}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1293764797}
   - {fileID: 1935229196}
+  - {fileID: 962572688}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2000861171

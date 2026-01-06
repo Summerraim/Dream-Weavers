@@ -803,6 +803,32 @@ public class BattleModel
         return spiritStates.TryGetValue(spiritData, out SpiritBattleState state) ? state : null;
     }
 
+    public bool HasUsedBeginnerFirstSkill(IBattleUnit unit)
+    {
+        var spirit = unit as Spirit;
+        var data = spirit?.Data;
+        if (data == null)
+            return false;
+
+        return spiritStates.TryGetValue(data, out SpiritBattleState state) && state.HasUsedBeginnerFirstSkill;
+    }
+
+    public void MarkBeginnerFirstSkillUsed(IBattleUnit unit)
+    {
+        var spirit = unit as Spirit;
+        var data = spirit?.Data;
+        if (data == null)
+            return;
+
+        if (!spiritStates.TryGetValue(data, out SpiritBattleState state))
+        {
+            state = new SpiritBattleState();
+            spiritStates[data] = state;
+        }
+
+        state.HasUsedBeginnerFirstSkill = true;
+    }
+
     /// <summary>
     /// 保存当前Spirit的战斗状态
     /// </summary>
@@ -843,6 +869,17 @@ public class BattleModel
         foreach (var kvp in skillUsageCount)
         {
             state.SkillUsageCount[kvp.Key] = kvp.Value;
+        }
+
+        // Beginner：保存“首次免费施放”是否已触发（用于切换 Spirit 时不重置）
+        var buffs = GetBuffsForUnit(spirit);
+        for (int i = 0; i < buffs.Count; i++)
+        {
+            if (buffs[i] is BeginnerBuff beginnerBuff)
+            {
+                state.HasUsedBeginnerFirstSkill = beginnerBuff.HasUsedFirstSkill;
+                break;
+            }
         }
 
         Debug.Log($"BattleModel: Saved state for {spirit.DisplayName} - {state.SelectedSkills.Count} skills, {state.SkillCooldowns.Count} cooldowns");

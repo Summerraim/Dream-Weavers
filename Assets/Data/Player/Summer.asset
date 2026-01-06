@@ -52,11 +52,12 @@ MonoBehaviour:
     Count: 1
   - Item: {fileID: 11400000, guid: 4cb97d005f6441847948ff3d30c0efe9, type: 2}
     Count: 1
+  - Item: {fileID: 11400000, guid: 89c8b40518a88764e9b59db959cf0534, type: 2}
+    Count: 1
   initialOwnedSpirits: []
   initialDeployedSpirits: []
   OwnedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
-  - {fileID: 11400000, guid: a1556eb8c27c3b0419fee5d9c91805f7, type: 2}
   DeployedSpirits:
   - {fileID: 11400000, guid: 2473e25096877e24d891e94d27e8cfe5, type: 2}
   MaxDeployedSpirits: 6

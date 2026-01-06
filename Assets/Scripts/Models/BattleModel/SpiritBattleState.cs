@@ -20,11 +20,18 @@ public class SpiritBattleState
     /// </summary>
     public Dictionary<int, int> SkillUsageCount { get; private set; }
 
+    /// <summary>
+    /// Beginner 羁绊：是否已在本场战斗使用过“首次免费施放”
+    /// 用于在 Spirit 切换时保持状态不被重置。
+    /// </summary>
+    public bool HasUsedBeginnerFirstSkill { get; set; }
+
     public SpiritBattleState()
     {
         SelectedSkills = new List<ISkill>();
         SkillCooldowns = new Dictionary<int, int>();
         SkillUsageCount = new Dictionary<int, int>();
+        HasUsedBeginnerFirstSkill = false;
     }
 
     /// <summary>
@@ -35,6 +42,7 @@ public class SpiritBattleState
         SelectedSkills = new List<ISkill>(selectedSkills);
         SkillCooldowns = new Dictionary<int, int>();
         SkillUsageCount = new Dictionary<int, int>();
+        HasUsedBeginnerFirstSkill = false;
     }
 
     /// <summary>
@@ -46,6 +54,7 @@ public class SpiritBattleState
         clone.SelectedSkills = new List<ISkill>(SelectedSkills);
         clone.SkillCooldowns = new Dictionary<int, int>(SkillCooldowns);
         clone.SkillUsageCount = new Dictionary<int, int>(SkillUsageCount);
+        clone.HasUsedBeginnerFirstSkill = HasUsedBeginnerFirstSkill;
         return clone;
     }
 }

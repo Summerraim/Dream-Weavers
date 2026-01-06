@@ -15,6 +15,7 @@ MonoBehaviour:
   displayName: "\u65E0\u7528\u5927\u5251\uFF08\u9053\u5177\u6548\u679C\uFF09"
   description: "\u9E7F\u9A91\u58EB\u8FDB\u5316\u4E3A\u9E7F\u957F\u5B98"
   image: {fileID: 0}
+  requiredDisplayName: "\u9E7F\u9A91\u58EB"
   targetSpirit: {fileID: 11400000, guid: 6943564877024184684df88806fe822a, type: 2}
   applyToCaster: 1
   dummyDuration: 1
