@@ -1088,15 +1088,39 @@ public class BattleController : MonoBehaviour
             $"BattleController: {caster.DisplayName} using skill: {skill.DisplayName}, ManaCost={skill.ManaCost}"
         );
 
+        // Beginner：判定本场战斗是否触发“首次免费施放”
+        bool beginnerFreeSkillTriggered = false;
+        BeginnerBuff beginnerBuff = null;
+        int casterManaBefore = caster != null ? caster.Mana : 0;
+        if (isPlayerSkill && model != null && caster != null)
+        {
+            var buffs = model.GetBuffsForUnit(caster);
+            for (int i = 0; i < buffs.Count; i++)
+            {
+                if (buffs[i] is BeginnerBuff b && b.CanTriggerFreeSkill())
+                {
+                    beginnerBuff = b;
+                    beginnerFreeSkillTriggered = true;
+                    break;
+                }
+            }
+        }
+
         // 扣除蓝量
         if (caster is Spirit spirit)
         {
-            spirit.ConsumeMana(skill.ManaCost);
+            if (!beginnerFreeSkillTriggered)
+            {
+                spirit.ConsumeMana(skill.ManaCost);
+            }
             Debug.Log($"BattleController: Mana consumed. Remaining: {spirit.Mana}");
         }
         else if (caster is Enemy enemyUnit)
         {
-            enemyUnit.ConsumeMana(skill.ManaCost);
+            if (!beginnerFreeSkillTriggered)
+            {
+                enemyUnit.ConsumeMana(skill.ManaCost);
+            }
         }
 
         // 如果有动画，播放动画并等待
@@ -1186,24 +1210,6 @@ public class BattleController : MonoBehaviour
         Debug.Log($"BattleController: Executing skill effects...");
 
         // 初心者：记录是否触发首次免费技能（用于：释放后返还MP + 不进入冷却 + 标记已触发）
-        bool beginnerFreeSkillTriggered = false;
-        BeginnerBuff beginnerBuff = null;
-        int casterManaBefore = 0;
-        if (isPlayerSkill && model != null && caster != null)
-        {
-            var buffs = model.GetBuffsForUnit(caster);
-            for (int i = 0; i < buffs.Count; i++)
-            {
-                if (buffs[i] is BeginnerBuff b && b.CanTriggerFreeSkill())
-                {
-                    beginnerBuff = b;
-                    beginnerFreeSkillTriggered = true;
-                    casterManaBefore = caster.Mana;
-                    break;
-                }
-            }
-        }
-
         skill.Execute(caster, target);
         Debug.Log($"BattleController: Target HP after skill: {target.HP}");
 
@@ -1220,6 +1226,7 @@ public class BattleController : MonoBehaviour
                 caster.RestoreMana(spent);
             }
             beginnerBuff.MarkFirstSkillUsed();
+            model?.MarkBeginnerFirstSkillUsed(caster);
         }
 
         // 记录技能使用次数和冷却（玩家和敌人都需要）
@@ -2276,6 +2283,17 @@ public class BattleController : MonoBehaviour
         SpiritData oldOwnedSpiritData = (ownedSpirits != null && targetSpiritIndex < ownedSpirits.Count)
             ? ownedSpirits[targetSpiritIndex]
             : null;
+
+        // 检查目标精灵的 DisplayName 是否符合进化要求
+        if (oldOwnedSpiritData != null)
+        {
+            if (!evo.CanEvolve(oldOwnedSpiritData.DisplayName))
+            {
+                Debug.Log($"[BattleController] 进化失败：目标精灵 '{oldOwnedSpiritData.DisplayName}' 不符合进化条件");
+                return;
+            }
+            Debug.Log($"[BattleController] 进化检查通过：目标精灵 '{oldOwnedSpiritData.DisplayName}' 符合进化条件");
+        }
 
         // 更新PlayerManager拥有列表
         if (PlayerManager.Instance != null)

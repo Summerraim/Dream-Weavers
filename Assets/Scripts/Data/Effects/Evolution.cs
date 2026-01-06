@@ -6,6 +6,11 @@ using UnityEngine;
 /// </summary>
 public class Evolution : Effect
 {
+    [Header("目标名称检查（可选）")]
+    [Tooltip("若设置，则只对 DisplayName 匹配的目标生效；留空则对所有目标生效")]
+    [SerializeField]
+    private string requiredDisplayName = "";
+
     [Header("单一目标（可选，若使用映射则忽略）")]
     [SerializeField]
     private SpiritData targetSpirit;
@@ -33,6 +38,21 @@ public class Evolution : Effect
 
     public SpiritData TargetSpirit => targetSpirit;
 
+    /// <summary>
+    /// 检查指定目标是否可以进化（基于 DisplayName 匹配）
+    /// </summary>
+    /// <param name="targetDisplayName">目标的 DisplayName</param>
+    /// <returns>如果可以进化返回 true，否则返回 false</returns>
+    public bool CanEvolve(string targetDisplayName)
+    {
+        // 如果没有设置 requiredDisplayName，则允许所有目标
+        if (string.IsNullOrEmpty(requiredDisplayName))
+            return true;
+
+        // 检查 DisplayName 是否匹配
+        return targetDisplayName == requiredDisplayName;
+    }
+
     public override void Apply(IBattleUnit caster, IBattleUnit target)
     {
         if (CurrentBattle == null)
@@ -58,6 +78,17 @@ public class Evolution : Effect
                 Debug.LogWarning("Evolution: receiver is null and PlayerUnit is null");
                 return;
             }
+        }
+
+        // 检查目标的 DisplayName 是否匹配（如果设置了 requiredDisplayName）
+        if (!string.IsNullOrEmpty(requiredDisplayName))
+        {
+            if (receiver.DisplayName != requiredDisplayName)
+            {
+                Debug.Log($"Evolution: 目标 DisplayName '{receiver.DisplayName}' 不匹配要求的 '{requiredDisplayName}'，跳过进化");
+                return;
+            }
+            Debug.Log($"Evolution: 目标 DisplayName '{receiver.DisplayName}' 匹配，执行进化");
         }
 
         var buff = new EvolutionBuff(receiver, dummyDuration, CurrentBattle, resolvedTarget, this);

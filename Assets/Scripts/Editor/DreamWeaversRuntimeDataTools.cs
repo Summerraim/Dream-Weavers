@@ -11,6 +11,13 @@ public static class DreamWeaversRuntimeDataTools
         Debug.Log("[DreamWeavers] Cleared SpiritRuntimeSkills (runtime-only skill overrides).");
     }
 
+    [MenuItem("Tools/Dream Weavers/Runtime/Clear Runtime Audio Settings")]
+    private static void ClearRuntimeAudioSettings()
+    {
+        AudioRuntimeSettings.ClearAll();
+        Debug.Log("[DreamWeavers] Cleared AudioRuntimeSettings (runtime-only audio settings).");
+    }
+
     [MenuItem("Tools/Dream Weavers/Runtime/Reset Player (Initial) + Clear Runtime", true)]
     private static bool ValidateResetPlayerAndClearRuntime()
     {
@@ -21,8 +28,9 @@ public static class DreamWeaversRuntimeDataTools
     private static void ResetPlayerAndClearRuntime()
     {
         SpiritRuntimeSkills.ClearAll();
+        AudioRuntimeSettings.ClearAll();
         PlayerManager.Instance.ResetToInitialState();
-        Debug.Log("[DreamWeavers] Reset player to initial state and cleared runtime overrides.");
+        Debug.Log("[DreamWeavers] Reset player to initial state and cleared all runtime overrides (skills + audio).");
     }
 }
 #endif

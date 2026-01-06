@@ -32,6 +32,7 @@ public class AudioManager : MonoBehaviour
 
         audioSource.playOnAwake = false;
         audioSource.loop = true;
+        audioSource.volume = 0.5f; // 初始音量设置为50%
     }
     
     // Start is called before the first frame update

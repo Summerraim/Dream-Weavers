@@ -9,7 +9,7 @@ public class UI_MainMenuView : MonoBehaviour
     [Header("主按钮")]
     [SerializeField]
     private Button startGameButton;
-    const string TargetScene = "StartScenetest";
+    public static string TargetScene = "StartScene";
 
     [SerializeField]
     private Slider ProgressBar;
@@ -234,25 +234,18 @@ public class UI_MainMenuView : MonoBehaviour
 
     private void SaveCurrentVolumeToTemp()
     {
-        // 保存当前音量到临时变量
-        if (audioManager != null)
-        {
-            // 从PlayerPrefs读取保存的音量设置
-            tempMasterVolume = PlayerPrefs.GetFloat("MasterVolume", masterVolumeSlider.value);
-            tempMusicVolume = PlayerPrefs.GetFloat("MusicVolume", musicVolumeSlider.value);
-            tempSfxVolume = PlayerPrefs.GetFloat("SFXVolume", sfxVolumeSlider.value);
-        }
-        else
-        {
-            tempMasterVolume = masterVolumeSlider.value;
-            tempMusicVolume = musicVolumeSlider.value;
-            tempSfxVolume = sfxVolumeSlider.value;
-        }
+        // 保存当前运行时音量到临时变量
+        tempMasterVolume = AudioRuntimeSettings.MasterVolume;
+        tempMusicVolume = AudioRuntimeSettings.MusicVolume;
+        tempSfxVolume = AudioRuntimeSettings.SFXVolume;
 
         // 更新滑块显示
-        masterVolumeSlider.value = tempMasterVolume;
-        musicVolumeSlider.value = tempMusicVolume;
-        sfxVolumeSlider.value = tempSfxVolume;
+        if (masterVolumeSlider != null)
+            masterVolumeSlider.value = tempMasterVolume;
+        if (musicVolumeSlider != null)
+            musicVolumeSlider.value = tempMusicVolume;
+        if (sfxVolumeSlider != null)
+            sfxVolumeSlider.value = tempSfxVolume;
     }
 
     private void RestoreVolumeFromTemp()
@@ -334,10 +327,10 @@ public class UI_MainMenuView : MonoBehaviour
 
     private void LoadVolumeSettings()
     {
-        // 从PlayerPrefs加载保存的音量设置
-        float masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
-        float musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
-        float sfxVolume = PlayerPrefs.GetFloat("SFXVolume", 1f);
+        // 从运行时设置加载音量
+        float masterVolume = AudioRuntimeSettings.MasterVolume;
+        float musicVolume = AudioRuntimeSettings.MusicVolume;
+        float sfxVolume = AudioRuntimeSettings.SFXVolume;
 
         // 更新UI滑块
         if (masterVolumeSlider != null)
@@ -354,6 +347,8 @@ public class UI_MainMenuView : MonoBehaviour
             audioManager.SetBGMVolume(musicVolume);
             audioManager.SetSFXVolume(sfxVolume);
         }
+
+        Debug.Log($"[UI_MainMenuView] 加载运行时音量设置: {AudioRuntimeSettings.GetDebugInfo()}");
     }
 
     private void SaveVolumeSettings()
@@ -363,11 +358,10 @@ public class UI_MainMenuView : MonoBehaviour
         float musicVolume = musicVolumeSlider.value;
         float sfxVolume = sfxVolumeSlider.value;
 
-        // 保存到PlayerPrefs
-        PlayerPrefs.SetFloat("MasterVolume", masterVolume);
-        PlayerPrefs.SetFloat("MusicVolume", musicVolume);
-        PlayerPrefs.SetFloat("SFXVolume", sfxVolume);
-        PlayerPrefs.Save();
+        // 保存到运行时设置
+        AudioRuntimeSettings.MasterVolume = masterVolume;
+        AudioRuntimeSettings.MusicVolume = musicVolume;
+        AudioRuntimeSettings.SFXVolume = sfxVolume;
 
         // 应用音量设置到音频管理器（确保设置被应用）
         if (audioManager != null)
@@ -376,6 +370,8 @@ public class UI_MainMenuView : MonoBehaviour
             audioManager.SetBGMVolume(musicVolume);
             audioManager.SetSFXVolume(sfxVolume);
         }
+
+        Debug.Log($"[UI_MainMenuView] 保存运行时音量设置: {AudioRuntimeSettings.GetDebugInfo()}");
     }
 
     #endregion
