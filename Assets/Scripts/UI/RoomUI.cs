@@ -459,7 +459,19 @@ public class RoomUIActions_cza : MonoBehaviour
     {
         if (TryGetRoomNode(roomId, out var node) && node != null)
         {
-            return node.Type.ToString();
+            switch (node.Type)
+            {
+                case RoomType_cza.Combat:
+                    return "战斗";
+                case RoomType_cza.Rest:
+                    return "休息";
+                case RoomType_cza.Skill:
+                    return "领悟";
+                case RoomType_cza.Props:
+                    return "遗物";
+                default:
+                    return node.Type.ToString();
+            }
         }
         return "未知";
     }

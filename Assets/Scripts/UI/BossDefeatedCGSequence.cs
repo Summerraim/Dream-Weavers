@@ -111,12 +111,10 @@ public class BossDefeatedCGSequence : MonoBehaviour
     // 是否正在播放
     private bool isPlaying = false;
 
-    private void Start()
+    private void Awake()
     {
-        // 确保所有CG物体初始状态为隐藏
-        InitializeCGObjects();
-
-        // 设置所有Animator使用Unscaled Time，这样CG播放不受Time.timeScale影响
+        // 在对象首次激活时就完成初始化，避免 Start() 与首次播放竞争状态
+        ResetSequenceState(hideCgPanel: cgPanel != gameObject);
         SetAnimatorsToUnscaledTime();
     }
 
@@ -160,7 +158,7 @@ public class BossDefeatedCGSequence : MonoBehaviour
     /// <summary>
     /// 初始化所有CG物体为隐藏状态
     /// </summary>
-    private void InitializeCGObjects()
+    private void ResetSequenceState(bool hideCgPanel)
     {
         if (cgObject1 != null) cgObject1.SetActive(false);
         if (cgObject2 != null) cgObject2.SetActive(false);
@@ -168,7 +166,7 @@ public class BossDefeatedCGSequence : MonoBehaviour
         if (cgObject4 != null) cgObject4.SetActive(false);
         if (cgObject5 != null) cgObject5.SetActive(false);
 
-        if (cgPanel != null)
+        if (hideCgPanel && cgPanel != null)
         {
             cgPanel.SetActive(false);
         }
@@ -198,7 +196,10 @@ public class BossDefeatedCGSequence : MonoBehaviour
             return;
         }
 
-        // 确保Animator使用UnscaledTime（以防Start()未执行）
+        // 每次播放前都重置一次可见状态，避免上次播放残留或首次激活状态竞争
+        ResetSequenceState(hideCgPanel: false);
+
+        // 确保Animator使用UnscaledTime
         SetAnimatorsToUnscaledTime();
 
         Debug.Log("[BossDefeatedCGSequence] 开始播放Boss击败CG序列");
@@ -420,12 +421,6 @@ public class BossDefeatedCGSequence : MonoBehaviour
         }
 
         // 隐藏CG容器Panel
-        if (cgPanel != null)
-        {
-            cgPanel.SetActive(false);
-            Debug.Log("[BossDefeatedCGSequence] 隐藏CG Panel");
-        }
-
         // 激活完成后的Panel
         if (panelToActivateAfterCG != null)
         {
@@ -438,6 +433,13 @@ public class BossDefeatedCGSequence : MonoBehaviour
         // 触发完成回调
         Debug.Log("[BossDefeatedCGSequence] CG序列播放完成，触发回调");
         OnSequenceComplete?.Invoke();
+
+        // 最后再隐藏CG Panel，避免当 cgPanel 就是脚本宿主对象时中断后续逻辑
+        if (cgPanel != null)
+        {
+            cgPanel.SetActive(false);
+            Debug.Log("[BossDefeatedCGSequence] 隐藏CG Panel");
+        }
     }
 
     /// <summary>
@@ -579,7 +581,7 @@ public class BossDefeatedCGSequence : MonoBehaviour
         if (isPlaying)
         {
             StopAllCoroutines();
-            InitializeCGObjects();
+            ResetSequenceState(hideCgPanel: true);
             isPlaying = false;
             Debug.Log("[BossDefeatedCGSequence] CG序列已强制停止");
         }

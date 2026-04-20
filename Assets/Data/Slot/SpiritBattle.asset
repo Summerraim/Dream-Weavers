@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6f4f81e6a984d57a3d0fe4f9a17b2c1, type: 3}
+  m_Name: SpiritBattle
+  m_EditorClassIdentifier: 
+  entries:
+  - spiritName: "\u773C\u7403\u53F2\u83B1\u59C6"
+    iconSize: {x: 104, y: 72}
+  - spiritName: "\u8611\u83C7\u67AA\u5175"
+    iconSize: {x: 77, y: 108}
+  - spiritName: "\u9E7F\u9A91\u58EB"
+    iconSize: {x: 103, y: 90}
+  - spiritName: "\u68EE\u6797\u8725"
+    iconSize: {x: 105, y: 100}
+  - spiritName: "\u8611\u83C7\u76FE\u5175"
+    iconSize: {x: 95, y: 95}
+  - spiritName: "\u7EF4\u4EAC\u718A"
+    iconSize: {x: 99, y: 112}
+  - spiritName: "\u5FB7\u82AC\u65AF"
+    iconSize: {x: 100, y: 90}
+  - spiritName: "\u51B0\u6DC7\u6DCB"
+    iconSize: {x: 99, y: 112}
+  - spiritName: "\u9738\u738B\u9F99\u89D2\u6597\u58EB"
+    iconSize: {x: 102, y: 102}
+  - spiritName: "\u6392\u961F\u718A"
+    iconSize: {x: 88, y: 100}
+  - spiritName: "\u5DF4\u752B\u6D1B\u592B"
+    iconSize: {x: 105, y: 90}
+  - spiritName: "\u9ED8\u5FB7\u62C9\u65AF"
+    iconSize: {x: 105, y: 90}
+  - spiritName: "\u96D5\u5851"
+    iconSize: {x: 84, y: 105}
+  - spiritName: "\u98DE\u9CB8"
+    iconSize: {x: 90, y: 100}
+  - spiritName: "\u96F7\u514B"
+    iconSize: {x: 80, y: 80}

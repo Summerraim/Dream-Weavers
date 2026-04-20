@@ -244,6 +244,11 @@ public class SpiritPanelController : MonoBehaviour
         }
     }
 
+    public bool IsPanelVisible()
+    {
+        return spiritPanel != null && spiritPanel.IsVisible();
+    }
+
     /// <summary>
     /// 切换面板显示/隐藏
     /// </summary>

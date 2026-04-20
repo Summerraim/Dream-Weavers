@@ -90,10 +90,16 @@ public class UI_BattleView : MonoBehaviour
     private Image spiritImage2;
 
     [SerializeField]
+    private SpiritIconSizeTable spiritImageSizeTable;
+
+    [SerializeField]
     private Image enemyImage1;
 
     [SerializeField]
     private Image enemyImage2;
+
+    [SerializeField]
+    private SpiritIconSizeTable enemyImageSizeTable;
 
     [Header("Unit Names")]
     [SerializeField]
@@ -238,12 +244,19 @@ public class UI_BattleView : MonoBehaviour
     private ItemUseSlot[] itemUseSlots;
     private List<EffectSlot> playerEffectSlots = new List<EffectSlot>();
     private List<EffectSlot> enemyEffectSlots = new List<EffectSlot>();
+    private Vector2 defaultSpiritImage2Size;
+    private bool hasDefaultSpiritImage2Size;
+    private Vector2 defaultEnemyImage2Size;
+    private bool hasDefaultEnemyImage2Size;
 
     // 道具目标选择模式
     private bool isSelectingItemTarget = false;
 
     private void Awake()
     {
+        CacheSpiritImageDefaultSize();
+        CacheEnemyImageDefaultSize();
+
         // 确保战斗面板初始状态为隐藏
         if (battlePanel != null)
         {
@@ -276,6 +289,28 @@ public class UI_BattleView : MonoBehaviour
             RoomStateMachine_cza.Instance.OnFloorInitialized -= OnFloorChanged;
             Debug.Log("[UI_BattleView] 已取消订阅楼层初始化事件");
         }
+    }
+
+    private void CacheSpiritImageDefaultSize()
+    {
+        if (spiritImage2 == null || spiritImage2.rectTransform == null)
+        {
+            return;
+        }
+
+        defaultSpiritImage2Size = spiritImage2.rectTransform.sizeDelta;
+        hasDefaultSpiritImage2Size = true;
+    }
+
+    private void CacheEnemyImageDefaultSize()
+    {
+        if (enemyImage2 == null || enemyImage2.rectTransform == null)
+        {
+            return;
+        }
+
+        defaultEnemyImage2Size = enemyImage2.rectTransform.sizeDelta;
+        hasDefaultEnemyImage2Size = true;
     }
 
     /// <summary>
@@ -442,6 +477,7 @@ public class UI_BattleView : MonoBehaviour
 
         controller = ctrl;
         model = m;
+        SubscribeControllerEvents();
 
         // 激活战斗主面板
         if (battlePanel != null)
@@ -545,6 +581,8 @@ public class UI_BattleView : MonoBehaviour
 
     public void Unbind()
     {
+        UnsubscribeControllerEvents();
+
         if (endTurnButton != null)
             endTurnButton.onClick.RemoveListener(OnEndTurnClicked);
 
@@ -583,6 +621,39 @@ public class UI_BattleView : MonoBehaviour
 
         controller = null;
         model = null;
+    }
+
+    private void SubscribeControllerEvents()
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        controller.OnBattleStarted += HandleControllerRefreshEvent;
+        controller.OnTurnChanged += HandleControllerRefreshEvent;
+        controller.OnUnitStateChanged += HandleControllerRefreshEvent;
+        controller.OnSpiritSwitched += HandleControllerRefreshEvent;
+        controller.OnBattleEnded += HandleControllerRefreshEvent;
+    }
+
+    private void UnsubscribeControllerEvents()
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        controller.OnBattleStarted -= HandleControllerRefreshEvent;
+        controller.OnTurnChanged -= HandleControllerRefreshEvent;
+        controller.OnUnitStateChanged -= HandleControllerRefreshEvent;
+        controller.OnSpiritSwitched -= HandleControllerRefreshEvent;
+        controller.OnBattleEnded -= HandleControllerRefreshEvent;
+    }
+
+    private void HandleControllerRefreshEvent()
+    {
+        Refresh();
     }
 
     private void OnEndTurnClicked()
@@ -1264,9 +1335,9 @@ public class UI_BattleView : MonoBehaviour
             }
             else
             {
-                // 主动切换：结束玩家回合
-                controller.EndPlayerTurn();
-                Debug.Log("UI_BattleView: Voluntary switch completed, ending player turn.");
+                // 主动切换：延迟1秒再进入敌方回合
+                controller.EndPlayerTurnAfterDelay(1f);
+                Debug.Log("UI_BattleView: Voluntary switch completed, delaying enemy turn by 1 second.");
             }
         }
         else
@@ -2069,30 +2140,9 @@ public class UI_BattleView : MonoBehaviour
     {
         Debug.Log("[UI_BattleView] 继续按钮被点击，准备离开房间");
 
-        // 隐藏敌人死亡面板
-        HideEnemyDeathPanel();
-
-        // 隐藏捕捉结果面板
-        HideCapturePanel();
-
         if (controller != null)
         {
-            controller.CleanupCombatDropVisual();
-            controller.EndBattleAndDeactivate();
-        }
-
-        // 隐藏主战斗面板
-        HideBattlePanel();
-
-        // 通知 RoomStateMachine 完成当前房间，触发路线选择
-        if (RoomStateMachine_cza.Instance != null)
-        {
-            Debug.Log("[UI_BattleView] 通知 RoomStateMachine 完成房间");
-            RoomStateMachine_cza.Instance.CompleteCurrentRoom();
-        }
-        else
-        {
-            Debug.LogWarning("[UI_BattleView] RoomStateMachine_cza.Instance 为 null，无法触发路线选择");
+            controller.ContinueAfterVictory();
         }
     }
 
@@ -2174,93 +2224,19 @@ public class UI_BattleView : MonoBehaviour
         if (rectTransform == null)
             return;
 
-        // 特殊处理：阿斯蒙蒂斯的图片大小设置为150x150
-        
-        // 可以在这里添加其他特殊敌人的尺寸处理
-        // else if (displayName == "其他Boss名称")
-        // {
-        //     rectTransform.sizeDelta = new Vector2(width, height);
-        // }
-        if (displayName == "霸王龙角斗士")
+        if (!hasDefaultEnemyImage2Size)
         {
-            rectTransform.sizeDelta = new Vector2(100, 100);
-            Debug.Log($"[UI_BattleView] 调整霸王龙角斗士图片大小为100x100");
+            CacheEnemyImageDefaultSize();
         }
-        if (displayName == "维京熊")
+
+        Vector2 targetSize = hasDefaultEnemyImage2Size ? defaultEnemyImage2Size : rectTransform.sizeDelta;
+        SpiritIconSizeTable sizeTable = enemyImageSizeTable != null ? enemyImageSizeTable : spiritImageSizeTable;
+        if (sizeTable != null && sizeTable.TryGetSize(displayName, out Vector2 mappedSize))
         {
-            rectTransform.sizeDelta = new Vector2(98, 112);
-            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为98x112");
+            targetSize = mappedSize;
         }
-        if (displayName == "蘑菇盾兵")
-        {
-            rectTransform.sizeDelta = new Vector2(95, 95);
-            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为95x95");
-        }
-        if (displayName == "派对熊")
-        {
-            rectTransform.sizeDelta = new Vector2(90, 103);
-            Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
-        }
-        if (displayName == "巴甫洛夫")
-        {
-            rectTransform.sizeDelta = new Vector2(105, 90);
-            Debug.Log($"[UI_BattleView] 调整巴甫洛夫图片大小为105x90");
-        }
-        if (displayName == "默德拉斯")
-        {
-            rectTransform.sizeDelta = new Vector2(105, 90);
-            Debug.Log($"[UI_BattleView] 调整默德拉斯图片大小为105x90");
-        }
-        if (displayName == "雕塑")
-        {
-            rectTransform.sizeDelta = new Vector2(85, 105);
-            Debug.Log($"[UI_BattleView] 调整雕塑图片大小为85x105");
-        }
-        if (displayName == "飞鲸")
-        {
-            rectTransform.sizeDelta = new Vector2(90, 100);
-            Debug.Log($"[UI_BattleView] 调整飞鲸图片大小为90x100");
-        }
-        if (displayName == "鹿骑士")
-        {
-            rectTransform.sizeDelta = new Vector2(102, 90);
-            Debug.Log($"[UI_BattleView] 调整鹿骑士图片大小为102x90");
-        }
-        if (displayName == "德芬斯")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 90);
-            Debug.Log($"[UI_BattleView] 调整德芬斯图片大小为100x90");
-        }
-        if (displayName == "眼球史莱姆")
-        {
-            rectTransform.sizeDelta = new Vector2(104, 75);
-            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为104x75");
-        }
-        if (displayName == "蘑菇枪兵")
-        {
-            rectTransform.sizeDelta = new Vector2(78, 105);
-            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为78x105");
-        }
-        if (displayName == "破坏者雷克")
-        {
-            rectTransform.sizeDelta = new Vector2(120, 115);
-            Debug.Log($"[UI_BattleView] 调整破坏者雷克图片大小为120x115");
-        }
-        if (displayName == "阿斯蒙蒂斯")
-        {
-            rectTransform.sizeDelta = new Vector2(165, 165);
-            Debug.Log($"[UI_BattleView] 调整阿斯蒙蒂斯图片大小为165x165");
-        }
-        if (displayName == "森林蜥")
-        {
-            rectTransform.sizeDelta = new Vector2(105, 100);
-            Debug.Log($"[UI_BattleView] 调整森林蜥图片大小为105x100");
-        }
-        if (displayName == "冰淇淋")
-        {
-            rectTransform.sizeDelta = new Vector2(96, 108);
-            Debug.Log($"[UI_BattleView] 调整冰淇淋图片大小为96x108");
-        }
+
+        rectTransform.sizeDelta = targetSize;
     }
 
     /// <summary>
@@ -2274,104 +2250,19 @@ public class UI_BattleView : MonoBehaviour
         var rectTransform = spiritImage.GetComponent<RectTransform>();
         if (rectTransform == null)
             return;
-        if (displayName == "霸王龙角斗士")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 100);
-            Debug.Log($"[UI_BattleView] 调整霸王龙角斗士图片大小为100x100");
-        }
-        if (displayName == "维京熊")
-        {
-            rectTransform.sizeDelta = new Vector2(90, 110);
-            Debug.Log($"[UI_BattleView] 调整维京熊图片大小为90x110");
-        }
-        if (displayName == "寒冰大炮手")
-        {
-            rectTransform.sizeDelta = new Vector2(87, 87);
-            Debug.Log($"[UI_BattleView] 调整寒冰大炮手图片大小为87x87");
-        }
-        if (displayName == "森林大炮手")
-        {
-            rectTransform.sizeDelta = new Vector2(87, 87);
-            Debug.Log($"[UI_BattleView] 调整森林大炮手图片大小为87x87");
-        }
-        if (displayName == "糖果大炮手")
-        {
-            rectTransform.sizeDelta = new Vector2(87, 87);
-            Debug.Log($"[UI_BattleView] 调整糖果大炮手图片大小为87x87");
-        }
-        if (displayName == "派对熊")
-        {
-            rectTransform.sizeDelta = new Vector2(90, 102);
-            Debug.Log($"[UI_BattleView] 调整派对熊图片大小为90x100");
-        }
-        if (displayName == "巴甫洛夫")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 87);
-            Debug.Log($"[UI_BattleView] 调整巴甫洛夫图片大小为100x87");
-        }
-        if (displayName == "默德拉斯")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 87);
-            Debug.Log($"[UI_BattleView] 调整默德拉斯图片大小为100x87");
-        }
-        if (displayName == "雕塑")
-        {
-            rectTransform.sizeDelta = new Vector2(85, 105);
-            Debug.Log($"[UI_BattleView] 调整雕塑图片大小为85x105");
-        }
-        if (displayName == "飞鲸")
-        {
-            rectTransform.sizeDelta = new Vector2(90, 100);
-            Debug.Log($"[UI_BattleView] 调整飞鲸图片大小为90x100");
-        }
-        if (displayName == "鹿骑士")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 88);
-            Debug.Log($"[UI_BattleView] 调整鹿骑士图片大小为100x88");
-        }
-        if (displayName == "鹿长官")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 88);
-            Debug.Log($"[UI_BattleView] 调整鹿长官图片大小为100x88");
-        }
-        if (displayName == "德芬斯")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 90);
-            Debug.Log($"[UI_BattleView] 调整德芬斯图片大小为100x90");
-        }
-        if (displayName == "眼球史莱姆")
-        {
-            rectTransform.sizeDelta = new Vector2(100, 76);
-            Debug.Log($"[UI_BattleView] 调整眼球史莱姆图片大小为100x76");
-        }
-        if (displayName == "蘑菇枪兵")
-        {
-            rectTransform.sizeDelta = new Vector2(77, 96);
-            Debug.Log($"[UI_BattleView] 调整蘑菇枪兵图片大小为77x96");
-        }
-        if (displayName == "雷克")
-        {
-            rectTransform.sizeDelta = new Vector2(70, 70);
-            Debug.Log($"[UI_BattleView] 调整德芬斯图片大小为70x70");
-        }
-        if (displayName == "冰淇淋")
-        {
-            rectTransform.sizeDelta = new Vector2(88, 92);
-            Debug.Log($"[UI_BattleView] 调整冰淇淋图片大小为88x92");
-        }
-        // 特殊处理：根据Spirit的DisplayName调整图片大小
-        // 示例：如果Spirit名为"巨型守护者"，设置为180x180
-        // if (displayName == "巨型守护者")
-        // {
-        //     rectTransform.sizeDelta = new Vector2(180, 180);
-        //     Debug.Log($"[UI_BattleView] 调整{displayName}图片大小为180x180");
-        // }
 
-        // 可以在这里添加特殊Spirit的尺寸处理
-        // else if (displayName == "其他Spirit名称")
-        // {
-        //     rectTransform.sizeDelta = new Vector2(width, height);
-        // }
+        if (!hasDefaultSpiritImage2Size)
+        {
+            CacheSpiritImageDefaultSize();
+        }
+
+        Vector2 targetSize = hasDefaultSpiritImage2Size ? defaultSpiritImage2Size : rectTransform.sizeDelta;
+        if (spiritImageSizeTable != null && spiritImageSizeTable.TryGetSize(displayName, out Vector2 mappedSize))
+        {
+            targetSize = mappedSize;
+        }
+
+        rectTransform.sizeDelta = targetSize;
     }
 
     // ========== Capture UI功能 ==========
@@ -2481,15 +2372,6 @@ public class UI_BattleView : MonoBehaviour
         else
         {
             Debug.Log($"[UI_BattleView] Boss名称不匹配。期望:'阿斯蒙蒂斯'，实际:'{bossName}'");
-
-            // 打印字符对比
-            string expected = "阿斯蒙蒂斯";
-            if (!string.IsNullOrEmpty(normalizedBossName) && normalizedBossName != expected)
-            {
-                Debug.Log($"[UI_BattleView] 字符对比分析:");
-                Debug.Log($"[UI_BattleView] 期望字符: {string.Join(" ", expected.Select(c => $"[{c}({(int)c})]"))}");
-                Debug.Log($"[UI_BattleView] 实际字符: {string.Join(" ", normalizedBossName.Select(c => $"[{c}({(int)c})]"))}");
-            }
         }
 
         // 其他Boss返回false，使用普通死亡面板

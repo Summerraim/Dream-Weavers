@@ -20,11 +20,11 @@ MonoBehaviour:
     portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"
     dialogueText: "\u6CA1\u9519\uFF0C\u6211\u4EEC\u9A6C\u4E0A\u5C31\u63A5\u8FD1\u673D\u751F\u4E4B\u68EE\u7684\u6C61\u67D3\u4E2D\u5FC3\u4E86\u3002"
-    portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
+    portrait: {fileID: 13815757, guid: b7a844a897365a2419c9465a8ad29663, type: 3}
     portraitPosition: 0
   - speakerName: "\u585E\u52D2\u65AF"
     dialogueText: "\u53EA\u8981\u6211\u4EEC\u51FB\u8D25\u8FD9\u7247\u6C61\u67D3\u68EE\u6797\u7684\u9886\u4E3B\uFF0C\u6211\u4EEC\u5C31\u53EF\u4EE5\u7EE7\u7EED\u524D\u5F80\u4E0B\u4E00\u7247\u533A\u57DF\u4E86\u3002"
-    portrait: {fileID: 1330059778, guid: 14bbfaacd1a74c64182bddecc8d9faf0, type: 3}
+    portrait: {fileID: 13815757, guid: b7a844a897365a2419c9465a8ad29663, type: 3}
     portraitPosition: 0
   associatedEnemy: {fileID: 11400000, guid: d84f2f69082ee2b4aa8d0adeb3031706, type: 2}
   enemyNameFilter: "\u68EE\u6797\u8725"

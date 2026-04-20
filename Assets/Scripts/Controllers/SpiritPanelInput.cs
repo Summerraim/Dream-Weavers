@@ -1,32 +1,34 @@
 using UnityEngine;
 
-/// <summary>
-/// Spirit管理面板输入控制器
-/// 负责处理打开Spirit管理面板的快捷键
-/// </summary>
 public class SpiritPanelInput : MonoBehaviour
 {
-    [Header("面板控制器引用")]
+    [Header("Panel Controller")]
     [SerializeField]
     private SpiritPanelController spiritPanelController;
 
-    [Header("快捷键设置")]
+    [Header("Hotkey")]
     [SerializeField]
-    private KeyCode toggleKey = KeyCode.Space; // 默认按空格键
+    private KeyCode toggleKey = KeyCode.Space;
 
     private void Update()
     {
-        // 按下快捷键时切换面板显示/隐藏
-        if (Input.GetKeyDown(toggleKey))
+        if (!Input.GetKeyDown(toggleKey))
         {
-            if (spiritPanelController != null)
-            {
-                spiritPanelController.TogglePanel();
-            }
-            else
-            {
-                Debug.LogWarning("[SpiritPanelInput] SpiritPanelController is not assigned!");
-            }
+            return;
         }
+
+        if (spiritPanelController == null)
+        {
+            Debug.LogWarning("[SpiritPanelInput] SpiritPanelController is not assigned!");
+            return;
+        }
+
+        DialogController dialogController = FindObjectOfType<DialogController>(true);
+        if (dialogController != null && dialogController.IsDialogueActive())
+        {
+            return;
+        }
+
+        spiritPanelController.TogglePanel();
     }
 }

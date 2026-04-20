@@ -2,9 +2,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// 已出场Spirit槽位组件（用于Spirit管理面板）
-/// </summary>
 public class SpiritDeployedSlot : MonoBehaviour
 {
     [Header("UI Components")]
@@ -18,21 +15,24 @@ public class SpiritDeployedSlot : MonoBehaviour
     private TMP_Text nameText;
 
     [SerializeField]
-    private TMP_Text statsText; // 显示HP/MP/ATK等
+    private TMP_Text statsText;
 
     [SerializeField]
-    private GameObject selectedIndicator; // 选中指示器
+    private GameObject selectedIndicator;
+
+    [SerializeField]
+    private SpiritIconSizeTable iconSizeTable;
 
     private Button button;
     private int slotIndex;
     private SpiritData spiritData;
     private System.Action<int> onClickCallback;
-
-    // 运行时数据
     private int currentHP;
     private int maxHP;
     private int currentMP;
     private int maxMP;
+    private Vector2 defaultIconSize;
+    private bool hasDefaultIconSize;
 
     private void Awake()
     {
@@ -40,7 +40,6 @@ public class SpiritDeployedSlot : MonoBehaviour
         if (button == null)
             button = gameObject.AddComponent<Button>();
 
-        // 自动查找子组件
         if (spiritIcon == null)
             spiritIcon = transform.Find("Icon")?.GetComponent<Image>();
 
@@ -55,18 +54,16 @@ public class SpiritDeployedSlot : MonoBehaviour
 
         if (selectedIndicator == null)
             selectedIndicator = transform.Find("SelectedIndicator")?.gameObject;
+
+        CacheDefaultIconSize();
     }
 
-    /// <summary>
-    /// 初始化槽位
-    /// </summary>
     public void Initialize(int index, SpiritData data, System.Action<int> onClick)
     {
         slotIndex = index;
         spiritData = data;
         onClickCallback = onClick;
 
-        // 初始化运行时数据为最大值
         if (spiritData != null)
         {
             currentHP = spiritData.MaxHP;
@@ -75,27 +72,20 @@ public class SpiritDeployedSlot : MonoBehaviour
             maxMP = spiritData.MaxMana;
         }
 
-        // 确保Button组件正确配置
         EnsureButtonSetup();
 
-        // 设置按钮点击事件
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(OnClick);
         }
 
-        // 初始时不显示选中指示器
         if (selectedIndicator != null)
             selectedIndicator.SetActive(false);
 
-        // 更新显示
         UpdateDisplay();
     }
 
-    /// <summary>
-    /// 更新运行时数据（HP/MP）
-    /// </summary>
     public void UpdateRuntimeData(int currentHp, int maxHp, int currentMp, int maxMp)
     {
         currentHP = currentHp;
@@ -105,9 +95,6 @@ public class SpiritDeployedSlot : MonoBehaviour
         UpdateDisplay();
     }
 
-    /// <summary>
-    /// 确保Button组件正确设置
-    /// </summary>
     private void EnsureButtonSetup()
     {
         if (button == null)
@@ -123,7 +110,7 @@ public class SpiritDeployedSlot : MonoBehaviour
             if (background == null)
             {
                 background = gameObject.AddComponent<Image>();
-                background.color = new Color(0.3f, 0.5f, 0.3f, 0.8f); // 绿色表示已出场
+                background.color = new Color(0.3f, 0.5f, 0.3f, 0.8f);
             }
         }
 
@@ -131,19 +118,42 @@ public class SpiritDeployedSlot : MonoBehaviour
         button.targetGraphic = background;
     }
 
-    /// <summary>
-    /// 更新槽位显示
-    /// </summary>
+    private void CacheDefaultIconSize()
+    {
+        if (spiritIcon == null || spiritIcon.rectTransform == null)
+            return;
+
+        defaultIconSize = spiritIcon.rectTransform.sizeDelta;
+        hasDefaultIconSize = true;
+    }
+
+    private void ApplyIconSize(string displayName)
+    {
+        if (spiritIcon == null || spiritIcon.rectTransform == null)
+            return;
+
+        if (!hasDefaultIconSize)
+            CacheDefaultIconSize();
+
+        Vector2 targetSize = hasDefaultIconSize ? defaultIconSize : spiritIcon.rectTransform.sizeDelta;
+        if (iconSizeTable != null && iconSizeTable.TryGetSize(displayName, out Vector2 mappedSize))
+        {
+            targetSize = mappedSize;
+        }
+
+        spiritIcon.rectTransform.sizeDelta = targetSize;
+    }
+
     public void UpdateDisplay()
     {
         if (spiritData != null)
         {
-            // 有Spirit数据
             if (spiritIcon != null)
             {
                 spiritIcon.enabled = true;
                 spiritIcon.sprite = spiritData.Image;
                 spiritIcon.color = Color.white;
+                ApplyIconSize(spiritData.DisplayName);
             }
 
             if (nameText != null)
@@ -161,7 +171,7 @@ public class SpiritDeployedSlot : MonoBehaviour
             if (background != null)
             {
                 background.enabled = true;
-                background.color = new Color(0.3f, 0.5f, 0.3f, 0.8f); // 绿色
+                background.color = new Color(0.3f, 0.5f, 0.3f, 0.8f);
             }
 
             if (button != null)
@@ -171,11 +181,11 @@ public class SpiritDeployedSlot : MonoBehaviour
         }
         else
         {
-            // 空槽位
             if (spiritIcon != null)
             {
                 spiritIcon.sprite = null;
                 spiritIcon.enabled = false;
+                ApplyIconSize(string.Empty);
             }
 
             if (nameText != null)
@@ -194,7 +204,7 @@ public class SpiritDeployedSlot : MonoBehaviour
             if (background != null)
             {
                 background.enabled = true;
-                background.color = new Color(0.2f, 0.2f, 0.2f, 0.5f); // 灰色
+                background.color = new Color(0.2f, 0.2f, 0.2f, 0.5f);
             }
 
             if (button != null)
@@ -204,9 +214,6 @@ public class SpiritDeployedSlot : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 设置选中状态
-    /// </summary>
     public void SetSelected(bool isSelected)
     {
         if (selectedIndicator != null)
@@ -217,30 +224,21 @@ public class SpiritDeployedSlot : MonoBehaviour
         if (background != null && spiritData != null)
         {
             background.color = isSelected
-                ? new Color(1f, 0.8f, 0.3f, 0.8f) // 黄色高亮
-                : new Color(0.3f, 0.5f, 0.3f, 0.8f); // 绿色
+                ? new Color(1f, 0.8f, 0.3f, 0.8f)
+                : new Color(0.3f, 0.5f, 0.3f, 0.8f);
         }
     }
 
-    /// <summary>
-    /// 获取当前Spirit数据
-    /// </summary>
     public SpiritData GetSpiritData()
     {
         return spiritData;
     }
 
-    /// <summary>
-    /// 获取槽位索引
-    /// </summary>
     public int GetSlotIndex()
     {
         return slotIndex;
     }
 
-    /// <summary>
-    /// 按钮点击回调
-    /// </summary>
     private void OnClick()
     {
         Debug.Log($"SpiritDeployedSlot {slotIndex}: OnClick, spirit={spiritData?.DisplayName ?? "null"}");
