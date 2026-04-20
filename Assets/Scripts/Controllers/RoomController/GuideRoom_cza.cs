@@ -77,6 +77,7 @@ namespace DreamWeavers.Rooms
 			{
 				confirmButton.onClick.RemoveListener(OnClickConfirm);
 				confirmButton.onClick.AddListener(OnClickConfirm);
+				confirmButton.interactable = false;
 			}
 		}
 
@@ -133,6 +134,14 @@ namespace DreamWeavers.Rooms
 			{
 				selectionPanel.SetActive(true);
 			}
+			chosenIndex = -1;
+			chosenSpiritPending = null;
+			unchosenSpirit = null;
+			enemyPending = null;
+			if (confirmButton != null)
+			{
+				confirmButton.interactable = false;
+			}
 
 			// 如果没有UI按钮，默认选择第0个
 			if (option0Button == null && option1Button == null)
@@ -151,6 +160,12 @@ namespace DreamWeavers.Rooms
 		private void OnClickOption1() => SelectOption(1);
 		private void OnClickConfirm()
 		{
+			if (chosenIndex < 0)
+			{
+				Debug.LogWarning("[GuideRoom] 未选择精灵时，确认无效。");
+				return;
+			}
+
 			if (chosenIndex < 0)
 			{
 				if (candidateSpirits.Length >= 1 && enemyMappings.Length >= 1)
@@ -234,6 +249,11 @@ namespace DreamWeavers.Rooms
 			else if (index == 1 && option1Button != null)
 			{
 				option1Button.interactable = false;
+			}
+
+			if (confirmButton != null)
+			{
+				confirmButton.interactable = true;
 			}
 
 			bool deferStart = confirmButton != null || selectionPanel != null;

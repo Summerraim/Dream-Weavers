@@ -7,7 +7,6 @@ public enum RoomType_cza
     Combat,
     Rest,
     Props,
-    // Events,
     Boss,
     Skill,
     Guide,

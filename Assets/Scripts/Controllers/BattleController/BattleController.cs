@@ -47,21 +47,27 @@ public class BattleController : MonoBehaviour
     private DreamWeavers.Rooms.BossRoom_cza bossRoom; // Boss房间引用
 
     private BattleModel model;
+    private readonly BattleService battleService = new BattleService();
 
     // Spirit队列系统
     private System.Collections.Generic.List<SpiritData> spiritQueue;
     private int currentSpiritIndex = 0;
     private System.Collections.Generic.Dictionary<SpiritData, bool> spiritAliveStatus; // 跟踪每个Spirit的存活状态（按SpiritData）
-    private System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData> spiritRuntimeData; // 跟踪每个Spirit的运行时数据（HP/MP）（按SpiritData）
     private bool isForcedSwitchDueToDefeat = false; // 标记是否因心兽死亡而强制切换
 
     // 缓存的 HP/Mana 值，用于检测变化
+    private bool isEnemyTurnDelayPending = false;
     private int lastPlayerHP;
     private int lastPlayerMana;
     private int lastEnemyHP;
     private int lastEnemyMana;
 
     public BattleState State { get; private set; } = BattleState.None;
+    public event System.Action OnBattleStarted;
+    public event System.Action OnTurnChanged;
+    public event System.Action OnUnitStateChanged;
+    public event System.Action OnSpiritSwitched;
+    public event System.Action OnBattleEnded;
 
     // 提供UI层读取PlayerData（从PlayerManager获取）
     public PlayerData PlayerData => GetPlayerData();
@@ -81,6 +87,31 @@ public class BattleController : MonoBehaviour
     }
 
     // 道具使用状态机
+    private void NotifyBattleStarted()
+    {
+        OnBattleStarted?.Invoke();
+    }
+
+    private void NotifyTurnChanged()
+    {
+        OnTurnChanged?.Invoke();
+    }
+
+    private void NotifyUnitStateChanged()
+    {
+        OnUnitStateChanged?.Invoke();
+    }
+
+    private void NotifySpiritSwitched()
+    {
+        OnSpiritSwitched?.Invoke();
+    }
+
+    private void NotifyBattleEnded()
+    {
+        OnBattleEnded?.Invoke();
+    }
+
     private BattleInputState inputState = BattleInputState.Normal;
     private ItemData pendingItem; // 待使用的道具
 
@@ -176,14 +207,15 @@ public class BattleController : MonoBehaviour
 
         // 初始化Spirit存活状态和运行时数据
         // 如果是首次初始化，创建新字典；否则保留现有数据
+
         if (spiritAliveStatus == null)
         {
             spiritAliveStatus = new System.Collections.Generic.Dictionary<SpiritData, bool>();
         }
 
-        if (spiritRuntimeData == null)
+        if (model == null)
         {
-            spiritRuntimeData = new System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData>();
+            model = new BattleModel();
         }
 
         for (int i = 0; i < spiritQueue.Count; i++)
@@ -197,36 +229,35 @@ public class BattleController : MonoBehaviour
             }
 
             // 初始化运行时数据（仅在首次初始化时设置为满血满蓝）
-            if (!spiritRuntimeData.ContainsKey(spiritData))
+            if (!model.HasSpiritRuntimeData(spiritData))
             {
-                spiritRuntimeData[spiritData] = new SpiritRuntimeData
-                {
-                    CurrentHP = spiritData.MaxHP,
-                    MaxHP = spiritData.MaxHP,
-                    CurrentMP = spiritData.MaxMana,
-                    MaxMP = spiritData.MaxMana,
-                };
+                model.SetSpiritRuntimeData(
+                    spiritData,
+                    spiritData.MaxHP,
+                    spiritData.MaxMana,
+                    spiritData.MaxHP,
+                    spiritData.MaxMana
+                );
                 Debug.Log(
                     $"BattleController: Spirit {i} ({spiritData.DisplayName}) initialized with full HP/MP"
                 );
             }
             else
             {
+                var runtimeData = model.GetSpiritRuntimeData(spiritData);
                 Debug.Log(
-                    $"BattleController: Spirit {i} ({spiritData.DisplayName}) retaining previous HP/MP: {spiritRuntimeData[spiritData].CurrentHP}/{spiritRuntimeData[spiritData].MaxHP} HP, {spiritRuntimeData[spiritData].CurrentMP}/{spiritRuntimeData[spiritData].MaxMP} MP"
+                    $"BattleController: Spirit {i} ({spiritData.DisplayName}) retaining previous HP/MP: {runtimeData.CurrentHP}/{runtimeData.MaxHP} HP, {runtimeData.CurrentMP}/{runtimeData.MaxMP} MP"
                 );
             }
 
             // 同步存活标记（以运行时 HP 为准，避免出现 HP=0 但标记仍为存活）
-            if (spiritRuntimeData.ContainsKey(spiritData))
-            {
-                spiritAliveStatus[spiritData] = spiritRuntimeData[spiritData].CurrentHP > 0;
-            }
+            var spiritRuntime = model.GetSpiritRuntimeData(spiritData);
+            spiritAliveStatus[spiritData] = spiritRuntime.CurrentHP > 0;
 
             // 找到第一个存活的心兽（HP > 0）
-            if (currentSpiritIndex == -1 && spiritRuntimeData.ContainsKey(spiritData))
+            if (currentSpiritIndex == -1)
             {
-                if (spiritRuntimeData[spiritData].CurrentHP > 0)
+                if (spiritRuntime.CurrentHP > 0)
                 {
                     currentSpiritIndex = i;
                     Debug.Log($"BattleController: Found first alive spirit at index {i} ({spiritData.DisplayName})");
@@ -239,12 +270,6 @@ public class BattleController : MonoBehaviour
         {
             Debug.LogWarning("BattleController: No alive spirit found, defaulting to index 0");
             currentSpiritIndex = 0;
-        }
-
-        // 先创建BattleModel（但不初始化），以便查询保存的Spirit状态
-        if (model == null)
-        {
-            model = new BattleModel();
         }
 
         // 新战斗开始时，重置所有技能冷却和使用次数
@@ -264,9 +289,9 @@ public class BattleController : MonoBehaviour
 
         // 恢复第一个Spirit的运行时数据（HP/MP）
         var firstSpirit = spiritQueue[currentSpiritIndex];
-        if (spiritRuntimeData.ContainsKey(firstSpirit))
+        if (model.HasSpiritRuntimeData(firstSpirit))
         {
-            var runtimeData = spiritRuntimeData[firstSpirit];
+            var runtimeData = model.GetSpiritRuntimeData(firstSpirit);
             player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
 
             Debug.Log(
@@ -328,17 +353,8 @@ public class BattleController : MonoBehaviour
             if (index >= 0 && index < spiritQueue.Count)
             {
                 var spiritData = spiritQueue[index];
-                if (spiritRuntimeData.ContainsKey(spiritData))
-                {
-                    var data = spiritRuntimeData[spiritData];
-                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
-                    {
-                        CurrentHP = currentHP,
-                        MaxHP = maxHP,
-                        CurrentMP = data.CurrentMP,
-                        MaxMP = data.MaxMP
-                    };
-                }
+                var data = model.GetSpiritRuntimeData(spiritData);
+                model.SetSpiritRuntimeData(spiritData, currentHP, data.CurrentMP, maxHP, data.MaxMP);
             }
         };
 
@@ -351,17 +367,8 @@ public class BattleController : MonoBehaviour
             if (index >= 0 && index < spiritQueue.Count)
             {
                 var spiritData = spiritQueue[index];
-                if (spiritRuntimeData.ContainsKey(spiritData))
-                {
-                    var data = spiritRuntimeData[spiritData];
-                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
-                    {
-                        CurrentHP = currentHP,
-                        MaxHP = maxHP,
-                        CurrentMP = data.CurrentMP,
-                        MaxMP = data.MaxMP
-                    };
-                }
+                var data = model.GetSpiritRuntimeData(spiritData);
+                model.SetSpiritRuntimeData(spiritData, currentHP, data.CurrentMP, maxHP, data.MaxMP);
             }
         };
 
@@ -374,17 +381,8 @@ public class BattleController : MonoBehaviour
             if (index >= 0 && index < spiritQueue.Count)
             {
                 var spiritData = spiritQueue[index];
-                if (spiritRuntimeData.ContainsKey(spiritData))
-                {
-                    var data = spiritRuntimeData[spiritData];
-                    spiritRuntimeData[spiritData] = new SpiritRuntimeData
-                    {
-                        CurrentHP = data.CurrentHP,
-                        MaxHP = data.MaxHP,
-                        CurrentMP = currentMP,
-                        MaxMP = maxMP
-                    };
-                }
+                var data = model.GetSpiritRuntimeData(spiritData);
+                model.SetSpiritRuntimeData(spiritData, data.CurrentHP, currentMP, data.MaxHP, maxMP);
             }
         };
 
@@ -467,6 +465,8 @@ public class BattleController : MonoBehaviour
         lastEnemyMana = enemy?.Mana ?? 0;
 
         State = BattleState.PlayerTurn;
+        NotifyBattleStarted();
+        NotifyTurnChanged();
     }
 
     /// <summary>
@@ -594,38 +594,7 @@ public class BattleController : MonoBehaviour
     private void SkipBattleAndContinue()
     {
         Debug.Log("[BattleController] SkipBattleAndContinue: 敌人已被击败，跳过战斗");
-
-        // 标记房间已清理
-        if (combatRoom != null)
-        {
-            combatRoom.MarkAsCleared();
-        }
-        else if (bossRoom != null)
-        {
-            bossRoom.MarkAsCleared();
-        }
-
-        // 隐藏战斗UI
-        if (battleView != null)
-        {
-            battleView.HideBattlePanel();
-        }
-
-        // 跳过战斗也等同于“结束战斗”，避免 BattleController 在非战斗房间中一直保持激活
-        EndBattleAndDeactivate();
-
-        // 通知 RoomStateMachine 完成当前房间
-        if (RoomStateMachine_cza.Instance != null)
-        {
-            Debug.Log("[BattleController] 通知 RoomStateMachine 完成房间");
-            RoomStateMachine_cza.Instance.CompleteCurrentRoom();
-        }
-        else
-        {
-            Debug.LogWarning(
-                "[BattleController] RoomStateMachine_cza.Instance 为 null，无法触发路线选择"
-            );
-        }
+        battleService.SkipBattleAndContinue(combatRoom, bossRoom, battleView, EndBattleAndDeactivate);
     }
 
     /// <summary>
@@ -641,6 +610,7 @@ public class BattleController : MonoBehaviour
         State = BattleState.None;
         inputState = BattleInputState.Normal;
         pendingItem = null;
+        isEnemyTurnDelayPending = false;
 
         Debug.Log("BattleController: Battle state reset for new battle");
     }
@@ -661,7 +631,8 @@ public class BattleController : MonoBehaviour
             battleView.Unbind();
         }
 
-        // 清空当前战斗运行时引用（Spirit 的 HP/MP 已在 Update 中同步进 spiritRuntimeData）
+        // 清空当前战斗运行时引用（Spirit 的 HP/MP 已在 Update 中同步进 BattleModel）
+        player = null;
         player = null;
         enemy = null;
         enemyAI = null;
@@ -674,6 +645,7 @@ public class BattleController : MonoBehaviour
         State = BattleState.None;
         inputState = BattleInputState.Normal;
         pendingItem = null;
+        isEnemyTurnDelayPending = false;
 
         // 重置缓存值
         lastPlayerHP = 0;
@@ -690,7 +662,7 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void ResetAllSpiritsToFull()
     {
-        if (spiritQueue == null || spiritRuntimeData == null)
+        if (spiritQueue == null || model == null)
         {
             Debug.LogWarning(
                 "BattleController: Cannot reset spirits - no spirit queue or runtime data"
@@ -701,13 +673,13 @@ public class BattleController : MonoBehaviour
         for (int i = 0; i < spiritQueue.Count; i++)
         {
             var spiritData = spiritQueue[i];
-            spiritRuntimeData[spiritData] = new SpiritRuntimeData
-            {
-                CurrentHP = spiritData.MaxHP,
-                MaxHP = spiritData.MaxHP,
-                CurrentMP = spiritData.MaxMana,
-                MaxMP = spiritData.MaxMana,
-            };
+            model.SetSpiritRuntimeData(
+                spiritData,
+                spiritData.MaxHP,
+                spiritData.MaxMana,
+                spiritData.MaxHP,
+                spiritData.MaxMana
+            );
 
             // 如果是死亡的Spirit，恢复为存活
             if (spiritAliveStatus != null && spiritAliveStatus.ContainsKey(spiritData))
@@ -727,10 +699,12 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void CleanupCombatDropVisual()
     {
-        if (combatRoom != null)
-        {
-            combatRoom.CleanupDropVisual();
-        }
+        battleService.CleanupCombatDropVisual(combatRoom);
+    }
+
+    public void ContinueAfterVictory()
+    {
+        battleService.ContinueAfterVictory(combatRoom, battleView, EndBattleAndDeactivate);
     }
 
     /// <summary>
@@ -763,9 +737,9 @@ public class BattleController : MonoBehaviour
             return player.HP > 0;
         }
 
-        if (spiritRuntimeData != null && spiritRuntimeData.TryGetValue(spiritData, out var runtimeData))
+        if (model != null)
         {
-            return runtimeData.CurrentHP > 0;
+            return model.GetSpiritRuntimeData(spiritData).CurrentHP > 0;
         }
 
         if (spiritAliveStatus != null && spiritAliveStatus.TryGetValue(spiritData, out var alive))
@@ -799,9 +773,9 @@ public class BattleController : MonoBehaviour
         }
 
         // 检查该Spirit的HP是否大于0
-        if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(spiritData))
+        if (model != null && model.HasSpiritRuntimeData(spiritData))
         {
-            var runtimeData = spiritRuntimeData[spiritData];
+            var runtimeData = model.GetSpiritRuntimeData(spiritData);
             if (runtimeData.CurrentHP > 0)
             {
                 spiritAliveStatus[spiritData] = true;
@@ -850,29 +824,13 @@ public class BattleController : MonoBehaviour
             };
         }
 
-        // 否则返回缓存的数据
-        if (spiritRuntimeData != null && index >= 0 && index < spiritQueue.Count)
+        // 否则返回BattleModel中的运行时数据
+        if (model != null && index >= 0 && index < spiritQueue.Count)
         {
             var spiritData = spiritQueue[index];
-            if (spiritRuntimeData.ContainsKey(spiritData))
-            {
-                return spiritRuntimeData[spiritData];
-            }
-
-            // 如果不在缓存中，但是spiritData存在，返回满血满蓝状态（尚未进入战斗的精灵）
-            if (spiritData != null)
-            {
-                return new SpiritRuntimeData
-                {
-                    CurrentHP = spiritData.MaxHP,
-                    MaxHP = spiritData.MaxHP,
-                    CurrentMP = spiritData.MaxMana,
-                    MaxMP = spiritData.MaxMana,
-                };
-            }
+            return model.GetSpiritRuntimeData(spiritData);
         }
 
-        // 如果没有数据，返回默认值（0/0/0/0）
         return new SpiritRuntimeData();
     }
 
@@ -915,27 +873,21 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void UpdateSpiritRuntimeData(int index, int newHP, int newMP)
     {
-        if (index < 0 || index >= spiritQueue.Count || spiritRuntimeData == null)
+        if (index < 0 || index >= spiritQueue.Count || model == null)
         {
             Debug.LogWarning($"BattleController: Cannot update runtime data for invalid index {index}");
             return;
         }
 
         var spiritData = spiritQueue[index];
-        if (!spiritRuntimeData.ContainsKey(spiritData))
+        if (!model.HasSpiritRuntimeData(spiritData))
         {
             Debug.LogWarning($"BattleController: Spirit {spiritData.DisplayName} not found in runtime data");
             return;
         }
 
-        var currentData = spiritRuntimeData[spiritData];
-        spiritRuntimeData[spiritData] = new SpiritRuntimeData
-        {
-            CurrentHP = newHP,
-            MaxHP = currentData.MaxHP,
-            CurrentMP = newMP,
-            MaxMP = currentData.MaxMP
-        };
+        var currentData = model.GetSpiritRuntimeData(spiritData);
+        model.SetSpiritRuntimeData(spiritData, newHP, newMP, currentData.MaxHP, currentData.MaxMP);
 
         Debug.Log($"BattleController: Updated {spiritData.DisplayName} runtime data: HP={newHP}/{currentData.MaxHP}, MP={newMP}/{currentData.MaxMP}");
 
@@ -957,14 +909,9 @@ public class BattleController : MonoBehaviour
     /// </summary>
     public void RestoreSpiritsToFull(IEnumerable<SpiritData> spirits)
     {
-        if (spirits == null)
+        if (spirits == null || model == null)
         {
             return;
-        }
-
-        if (spiritRuntimeData == null)
-        {
-            spiritRuntimeData = new System.Collections.Generic.Dictionary<SpiritData, SpiritRuntimeData>();
         }
         if (spiritAliveStatus == null)
         {
@@ -979,21 +926,21 @@ public class BattleController : MonoBehaviour
                 continue;
             }
 
-            spiritRuntimeData[spiritData] = new SpiritRuntimeData
-            {
-                CurrentHP = spiritData.MaxHP,
-                MaxHP = spiritData.MaxHP,
-                CurrentMP = spiritData.MaxMana,
-                MaxMP = spiritData.MaxMana,
-            };
+            model.SetSpiritRuntimeData(
+                spiritData,
+                spiritData.MaxHP,
+                spiritData.MaxMana,
+                spiritData.MaxHP,
+                spiritData.MaxMana
+            );
             spiritAliveStatus[spiritData] = true;
             restored++;
         }
 
         // 若当前上场精灵也在恢复列表中，顺便同步一次
-        if (player != null && player.Data != null && spiritRuntimeData.ContainsKey(player.Data))
+        if (player != null && player.Data != null && model.HasSpiritRuntimeData(player.Data))
         {
-            var runtime = spiritRuntimeData[player.Data];
+            var runtime = model.GetSpiritRuntimeData(player.Data);
             player.SetRuntimeHPMP(runtime.CurrentHP, runtime.CurrentMP);
         }
 
@@ -1007,7 +954,13 @@ public class BattleController : MonoBehaviour
 
     private void PlayerUseSkill(ISkill skill, int skillIndex)
     {
-        if (State != BattleState.PlayerTurn || skill == null || player == null || enemy == null)
+        if (
+            State != BattleState.PlayerTurn
+            || isEnemyTurnDelayPending
+            || skill == null
+            || player == null
+            || enemy == null
+        )
         {
             Debug.Log(
                 $"BattleController: PlayerUseSkill failed - State check failed or null units"
@@ -1216,6 +1169,7 @@ public class BattleController : MonoBehaviour
         // 刷新UI显示血条变化
         if (battleView != null)
             battleView.Refresh();
+        NotifyUnitStateChanged();
 
         // 初心者：返还MP并标记已使用首次技能
         if (beginnerFreeSkillTriggered && beginnerBuff != null && caster != null)
@@ -1288,6 +1242,7 @@ public class BattleController : MonoBehaviour
         UpdateBattleStateAfterAction();
         if (battleView != null)
             battleView.Refresh();
+        NotifyUnitStateChanged();
     }
 
     /// <summary>
@@ -1341,9 +1296,28 @@ public class BattleController : MonoBehaviour
         UsePlayerSkill(0);
     }
 
+    public void EndPlayerTurnAfterDelay(float delaySeconds)
+    {
+        if (State != BattleState.PlayerTurn || isEnemyTurnDelayPending)
+        {
+            return;
+        }
+
+        StartCoroutine(EndPlayerTurnAfterDelayCoroutine(delaySeconds));
+    }
+
+    private System.Collections.IEnumerator EndPlayerTurnAfterDelayCoroutine(float delaySeconds)
+    {
+        isEnemyTurnDelayPending = true;
+        NotifyTurnChanged();
+        yield return new WaitForSeconds(delaySeconds);
+        isEnemyTurnDelayPending = false;
+        EndPlayerTurn();
+    }
+
     public void EndPlayerTurn()
     {
-        if (State != BattleState.PlayerTurn)
+        if (State != BattleState.PlayerTurn || isEnemyTurnDelayPending)
             return;
 
         Debug.Log("BattleController: EndPlayerTurn called.");
@@ -1364,10 +1338,8 @@ public class BattleController : MonoBehaviour
         }
 
         State = BattleState.EnemyTurn;
+        NotifyTurnChanged();
         StartCoroutine(EnemyActCoroutine());
-
-        if (battleView != null)
-            battleView.Refresh();
     }
 
     private System.Collections.IEnumerator EnemyActCoroutine()
@@ -1375,6 +1347,7 @@ public class BattleController : MonoBehaviour
         if (enemyAI == null || enemy == null || player == null)
         {
             State = BattleState.PlayerTurn;
+            NotifyTurnChanged();
             yield break;
         }
 
@@ -1399,8 +1372,7 @@ public class BattleController : MonoBehaviour
 
             // 敌人被控制，跳过行动，直接返回玩家回合
             State = BattleState.PlayerTurn;
-            if (battleView != null)
-                battleView.Refresh();
+            NotifyTurnChanged();
             yield break;
         }
 
@@ -1421,6 +1393,7 @@ public class BattleController : MonoBehaviour
             }
 
             State = BattleState.PlayerTurn;
+            NotifyTurnChanged();
             yield break;
         }
 
@@ -1448,9 +1421,7 @@ public class BattleController : MonoBehaviour
         // 敌人回合结束
         if (State == BattleState.EnemyTurn)
             State = BattleState.PlayerTurn;
-
-        if (battleView != null)
-            battleView.Refresh();
+        NotifyTurnChanged();
     }
 
     private void UpdateBattleStateAfterAction()
@@ -1461,165 +1432,19 @@ public class BattleController : MonoBehaviour
         }
 
         // 检查狩猎大师羁绊的诱捕条件（在敌人完全死亡前）
-        if (player != null && enemy != null && !enemy.IsDead && model != null && combatRoom != null)
+        if (battleService.TryHandleEarlyCapture(player, enemy, model, combatRoom, bossRoom, battleView))
         {
-            // 检查玩家是否有诱捕Buff
-            var buffs = model.GetBuffsForUnit(player);
-            foreach (var buff in buffs)
-            {
-                if (buff is HunterMasterBuff hunterBuff)
-                {
-                    // 检查是否满足诱捕条件
-                    if (hunterBuff.CanCaptureEnemy(enemy))
-                    {
-                        State = BattleState.Victory;
-                        Debug.Log(
-                            "BattleController: HunterMaster trap activated! Enemy can be captured early."
-                        );
-
-                        // 显示敌人死亡后的面板
-                        if (battleView != null)
-                        {
-                            battleView.ShowEnemyDeathPanel();
-                        }
-
-                        // 立即尝试捕捉精灵（提前捕捉）
-                        bool success = false;
-                        SpiritData capturedSpirit = null;
-
-                        if (combatRoom != null)
-                        {
-                            (success, capturedSpirit) = combatRoom.AttemptCapture(earlyCapture: true);
-                        }
-                        else if (bossRoom != null)
-                        {
-                            (success, capturedSpirit) = bossRoom.AttemptCapture(earlyCapture: true);
-                        }
-
-                        if (battleView != null)
-                        {
-                            if (success && capturedSpirit != null)
-                            {
-                                battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
-                            }
-                            else
-                            {
-                                battleView.ShowCaptureFailed();
-                            }
-                        }
-
-                        return;
-                    }
-                    break;
-                }
-            }
+            State = BattleState.Victory;
+            NotifyBattleEnded();
+            return;
         }
 
         if (enemy != null && enemy.IsDead)
         {
             State = BattleState.Victory;
             Debug.Log("BattleController: Enemy defeated. Victory!");
-
-            // 显示敌人死亡后的面板
-            if (battleView != null)
-            {
-                battleView.ShowEnemyDeathPanel();
-            }
-
-            // 先尝试捕捉精灵（在移除数据之前）
-            if (combatRoom != null)
-            {
-                // 先标记房间已清理，这样 AttemptCapture 中的 IsCleared 检查才能通过
-                combatRoom.MarkAsCleared();
-
-                var (success, capturedSpirit) = combatRoom.AttemptCapture();
-                if (battleView != null)
-                {
-                    if (success && capturedSpirit != null)
-                    {
-                        battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
-                    }
-                    else
-                    {
-                        battleView.ShowCaptureFailed();
-                    }
-                }
-
-                // 捕捉完成后，从对象池中移除已击败的敌人和精灵数据
-                combatRoom.RemoveCurrentEnemyFromPool();
-
-                // 不再自动切换房间，由玩家点击"继续"按钮后触发
-                Debug.Log("BattleController: 战斗胜利，等待玩家点击继续按钮离开房间");
-            }
-            else if (bossRoom != null)
-            {
-                // Boss房间：标记已清理
-                bossRoom.MarkAsCleared();
-
-                // 获取Boss名称
-                string bossName = enemy?.DisplayName ?? "";
-                Debug.Log($"[BattleController] ===== Boss被击败！=====");
-                Debug.Log($"[BattleController] Boss DisplayName: '{bossName}' (长度: {bossName.Length})");
-
-                // 详细打印每个字符（用于检测隐藏字符、全角半角等问题）
-                if (!string.IsNullOrEmpty(bossName))
-                {
-                    string charDebug = "字符分析: ";
-                    foreach (char c in bossName)
-                    {
-                        charDebug += $"[{c}({(int)c})] ";
-                    }
-                    Debug.Log($"[BattleController] {charDebug}");
-                }
-
-                // 尝试显示特殊Boss CG
-                bool usedSpecialCG = false;
-                if (battleView != null)
-                {
-                    Debug.Log($"[BattleController] 调用 battleView.ShowSpecialBossCG...");
-                    usedSpecialCG = battleView.ShowSpecialBossCG(bossName, () =>
-                    {
-                        // CG播放完成后的回调：显示捕捉结果
-                        Debug.Log("[BattleController] CG播放完成回调被触发");
-                        HandleBossCaptureAfterCG(bossRoom);
-                    });
-                    Debug.Log($"[BattleController] ShowSpecialBossCG 返回值: {usedSpecialCG}");
-                }
-                else
-                {
-                    Debug.LogWarning("[BattleController] ⚠️ battleView 为 null！无法显示CG");
-                }
-
-                // 如果没有使用特殊CG，使用普通流程
-                if (!usedSpecialCG)
-                {
-                    Debug.Log("[BattleController] 使用普通敌人死亡流程（没有特殊CG）");
-
-                    // 显示普通的敌人死亡面板
-                    if (battleView != null)
-                    {
-                        battleView.ShowEnemyDeathPanel();
-                    }
-
-                    // 直接执行捕捉逻辑
-                    HandleBossCaptureAfterCG(bossRoom);
-                }
-
-                Debug.Log("BattleController: Boss战斗胜利，等待玩家点击继续按钮离开房间");
-            }
-            else
-            {
-                Debug.LogWarning(
-                    "BattleController: combatRoom and bossRoom references are both null"
-                );
-            }
-
-            // 标记敌人为已击败（作为备用机制）
-            if (enemyData != null)
-            {
-                EnemyPool.MarkEnemyAsDefeated(enemyData);
-            }
-
+            battleService.HandleVictory(enemy, enemyData, combatRoom, bossRoom, battleView);
+            NotifyBattleEnded();
             return;
         }
 
@@ -1635,16 +1460,16 @@ public class BattleController : MonoBehaviour
                     spiritAliveStatus[currentSpiritData] = false;
                 }
 
-                if (spiritRuntimeData != null && spiritRuntimeData.ContainsKey(currentSpiritData))
+                if (model != null && model.HasSpiritRuntimeData(currentSpiritData))
                 {
-                    var data = spiritRuntimeData[currentSpiritData];
-                    spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
-                    {
-                        CurrentHP = 0,
-                        MaxHP = data.MaxHP,
-                        CurrentMP = player.Mana,
-                        MaxMP = data.MaxMP
-                    };
+                    var data = model.GetSpiritRuntimeData(currentSpiritData);
+                    model.SetSpiritRuntimeData(
+                        currentSpiritData,
+                        0,
+                        player.Mana,
+                        data.MaxHP,
+                        data.MaxMP
+                    );
                 }
             }
 
@@ -1681,6 +1506,7 @@ public class BattleController : MonoBehaviour
                     {
                         battleView.Refresh();
                     }
+                    NotifySpiritSwitched();
 
                     // 重置强制切换标志（因为已经完成切换）
                     ResetForcedSwitchFlag();
@@ -1694,6 +1520,7 @@ public class BattleController : MonoBehaviour
                         battleView.ShowSpiritSwitcherPanel();
                         battleView.Refresh();
                     }
+                    NotifyUnitStateChanged();
                 }
             }
             else
@@ -1714,39 +1541,9 @@ public class BattleController : MonoBehaviour
                     GameManagerService.Instance.SetGameState(GameState.GameOver);
                     Debug.Log("BattleController: Game state set to GameOver");
                 }
-            }
-        }
-    }
 
-    /// <summary>
-    /// Boss CG播放完成后处理捕捉逻辑
-    /// </summary>
-    /// <param name="bossRoom">Boss房间引用</param>
-    private void HandleBossCaptureAfterCG(BossRoom_cza bossRoom)
-    {
-        if (bossRoom == null)
-        {
-            Debug.LogWarning("[BattleController] HandleBossCaptureAfterCG: bossRoom为null");
-            return;
-        }
-
-        // 尝试捕捉Boss对应的精灵
-        var (success, capturedSpirit) = bossRoom.AttemptCapture();
-        if (battleView != null)
-        {
-            if (success && capturedSpirit != null)
-            {
-                battleView.ShowCaptureSuccess(capturedSpirit.DisplayName);
-                Debug.Log($"[BattleController] Boss捕捉成功: {capturedSpirit.DisplayName}");
+                NotifyBattleEnded();
             }
-            else
-            {
-                battleView.ShowCaptureFailed();
-                Debug.Log("[BattleController] Boss捕捉失败");
-            }
-
-            // 显示普通的敌人死亡面板（显示继续按钮）
-            battleView.ShowEnemyDeathPanel();
         }
     }
 
@@ -1838,13 +1635,13 @@ public class BattleController : MonoBehaviour
         if (player != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
         {
             var currentSpiritData = spiritQueue[currentSpiritIndex];
-            spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
-            {
-                CurrentHP = player.HP,
-                MaxHP = player.MaxHP,
-                CurrentMP = player.Mana,
-                MaxMP = player.MaxMana,
-            };
+            model.SetSpiritRuntimeData(
+                currentSpiritData,
+                player.HP,
+                player.Mana,
+                player.MaxHP,
+                player.MaxMana
+            );
         }
 
         // 保存旧的Spirit索引
@@ -1866,9 +1663,9 @@ public class BattleController : MonoBehaviour
         }
 
         // 恢复目标Spirit的运行时数据
-        if (spiritRuntimeData.ContainsKey(nextSpiritData))
+        if (model.HasSpiritRuntimeData(nextSpiritData))
         {
-            var runtimeData = spiritRuntimeData[nextSpiritData];
+            var runtimeData = model.GetSpiritRuntimeData(nextSpiritData);
             // 直接恢复之前记录的HP/MP（不走伤害减伤逻辑）
             player.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
         }
@@ -1891,6 +1688,8 @@ public class BattleController : MonoBehaviour
         // 刷新UI
         if (battleView != null)
             battleView.Refresh();
+        NotifyUnitStateChanged();
+        NotifySpiritSwitched();
 
         return true;
     }
@@ -1908,16 +1707,16 @@ public class BattleController : MonoBehaviour
                 changed = true;
 
                 // 更新当前Spirit的运行时数据
-                if (spiritRuntimeData != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
+                if (model != null && currentSpiritIndex >= 0 && currentSpiritIndex < spiritQueue.Count)
                 {
                     var currentSpiritData = spiritQueue[currentSpiritIndex];
-                    spiritRuntimeData[currentSpiritData] = new SpiritRuntimeData
-                    {
-                        CurrentHP = player.HP,
-                        MaxHP = player.MaxHP,
-                        CurrentMP = player.Mana,
-                        MaxMP = player.MaxMana,
-                    };
+                    model.SetSpiritRuntimeData(
+                        currentSpiritData,
+                        player.HP,
+                        player.Mana,
+                        player.MaxHP,
+                        player.MaxMana
+                    );
 
                     bool wasDead =
                         spiritAliveStatus != null
@@ -1960,6 +1759,8 @@ public class BattleController : MonoBehaviour
 
         if (changed && battleView != null)
             battleView.Refresh();
+        if (changed)
+            NotifyUnitStateChanged();
     }
 
     /// <summary>
@@ -2017,7 +1818,7 @@ public class BattleController : MonoBehaviour
             return;
         }
 
-        if (State != BattleState.PlayerTurn)
+        if (State != BattleState.PlayerTurn || isEnemyTurnDelayPending)
         {
             Debug.LogWarning("BattleController: Cannot use item, not player turn");
             return;
@@ -2231,6 +2032,7 @@ public class BattleController : MonoBehaviour
         // 刷新UI
         if (battleView != null)
             battleView.Refresh();
+        NotifyUnitStateChanged();
 
         // 处理进化/替换类道具：在使用后替换玩家拥有/部署列表中的目标精灵
         TryApplyEvolutionReplacement(item, targetSpiritIndex);
@@ -2332,8 +2134,9 @@ public class BattleController : MonoBehaviour
                 carryHp = player.HP;
                 carryMp = player.Mana;
             }
-            else if (spiritRuntimeData != null && oldSpiritData != null && spiritRuntimeData.TryGetValue(oldSpiritData, out var oldRuntime))
+            else if (model != null && oldSpiritData != null && model.HasSpiritRuntimeData(oldSpiritData))
             {
+                var oldRuntime = model.GetSpiritRuntimeData(oldSpiritData);
                 carryHp = oldRuntime.CurrentHP;
                 carryMp = oldRuntime.CurrentMP;
             }
@@ -2344,20 +2147,20 @@ public class BattleController : MonoBehaviour
             spiritQueue[queueIndex] = newSpiritData;
 
             // 从旧精灵数据移除运行时数据，添加新精灵数据
-            if (spiritRuntimeData != null)
+            if (model != null)
             {
-                if (spiritRuntimeData.ContainsKey(oldSpiritData))
+                if (oldSpiritData != null)
                 {
-                    spiritRuntimeData.Remove(oldSpiritData);
+                    model.RemoveSpiritRuntimeData(oldSpiritData);
                 }
 
-                spiritRuntimeData[newSpiritData] = new SpiritRuntimeData
-                {
-                    CurrentHP = clampedHp,
-                    MaxHP = newSpiritData.MaxHP,
-                    CurrentMP = clampedMp,
-                    MaxMP = newSpiritData.MaxMana,
-                };
+                model.SetSpiritRuntimeData(
+                    newSpiritData,
+                    clampedHp,
+                    clampedMp,
+                    newSpiritData.MaxHP,
+                    newSpiritData.MaxMana
+                );
             }
 
             if (spiritAliveStatus != null)
@@ -2398,6 +2201,7 @@ public class BattleController : MonoBehaviour
             battleView.RefreshItemUseSlots(true); // 重新加载精灵数据
             battleView.Refresh();
         }
+        NotifyUnitStateChanged();
 
         Debug.Log($"BattleController: Evolution replacement applied at index {targetSpiritIndex} -> {newSpiritData.DisplayName}");
     }
@@ -2449,9 +2253,9 @@ public class BattleController : MonoBehaviour
         }
 
         // 如果在spiritQueue中，恢复运行时数据
-        if (queueIndex >= 0 && spiritRuntimeData != null && spiritRuntimeData.ContainsKey(spiritData))
+        if (queueIndex >= 0 && model != null && model.HasSpiritRuntimeData(spiritData))
         {
-            var runtimeData = spiritRuntimeData[spiritData];
+            var runtimeData = model.GetSpiritRuntimeData(spiritData);
             tempSpirit.SetRuntimeHPMP(runtimeData.CurrentHP, runtimeData.CurrentMP);
         }
 
@@ -2467,20 +2271,20 @@ public class BattleController : MonoBehaviour
     /// </summary>
     private void SaveSpiritRuntimeDataAfterItem(int spiritIndex, Spirit spirit)
     {
-        if (spirit == null || spiritRuntimeData == null)
+        if (spirit == null || model == null)
             return;
 
         if (spiritIndex < 0 || spiritIndex >= spiritQueue.Count)
             return;
 
         var spiritData = spiritQueue[spiritIndex];
-        spiritRuntimeData[spiritData] = new SpiritRuntimeData
-        {
-            CurrentHP = spirit.HP,
-            MaxHP = spirit.MaxHP,
-            CurrentMP = spirit.Mana,
-            MaxMP = spirit.MaxMana,
-        };
+        model.SetSpiritRuntimeData(
+            spiritData,
+            spirit.HP,
+            spirit.Mana,
+            spirit.MaxHP,
+            spirit.MaxMana
+        );
 
         Debug.Log(
             $"BattleController: Saved Spirit {spiritIndex} runtime data after item use: HP={spirit.HP}/{spirit.MaxHP}, MP={spirit.Mana}/{spirit.MaxMana}"

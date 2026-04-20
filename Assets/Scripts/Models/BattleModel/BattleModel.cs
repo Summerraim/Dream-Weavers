@@ -49,6 +49,8 @@ public class BattleModel
     private readonly List<Buff> activeBuffs; // 所有活跃的Buff
     private readonly Dictionary<SpiritData, SpiritBattleState> spiritStates; // 每个Spirit的战斗状态
 
+    private readonly Dictionary<SpiritData, SpiritRuntimeData> spiritRuntimeData;
+
     public BattleModel()
     {
         CurrentTurn = 0;
@@ -59,6 +61,7 @@ public class BattleModel
         skillUsageCount = new Dictionary<int, int>();
         activeBuffs = new List<Buff>();
         spiritStates = new Dictionary<SpiritData, SpiritBattleState>();
+        spiritRuntimeData = new Dictionary<SpiritData, SpiritRuntimeData>();
     }
 
     /// <summary>
@@ -335,6 +338,7 @@ public class BattleModel
         skillUsageCount.Clear();
         activeBuffs.Clear();
         spiritStates.Clear();
+        spiritRuntimeData.Clear();
         if (ReferenceEquals(ActiveBattle, this))
         {
             ActiveBattle = null;
@@ -795,6 +799,88 @@ public class BattleModel
     /// <summary>
     /// 获取指定SpiritData的战斗状态
     /// </summary>
+    public SpiritRuntimeData GetSpiritRuntimeData(SpiritData spiritData)
+    {
+        if (spiritData == null)
+        {
+            return new SpiritRuntimeData();
+        }
+
+        if (spiritRuntimeData.TryGetValue(spiritData, out SpiritRuntimeData data))
+        {
+            return data;
+        }
+
+        return new SpiritRuntimeData
+        {
+            CurrentHP = spiritData.MaxHP,
+            MaxHP = spiritData.MaxHP,
+            CurrentMP = spiritData.MaxMana,
+            MaxMP = spiritData.MaxMana,
+        };
+    }
+
+    public bool HasSpiritRuntimeData(SpiritData spiritData)
+    {
+        return spiritData != null && spiritRuntimeData.ContainsKey(spiritData);
+    }
+
+    public void SetSpiritRuntimeData(
+        SpiritData spiritData,
+        int currentHp,
+        int currentMp,
+        int? maxHp = null,
+        int? maxMp = null
+    )
+    {
+        if (spiritData == null)
+        {
+            return;
+        }
+
+        spiritRuntimeData[spiritData] = new SpiritRuntimeData
+        {
+            CurrentHP = currentHp,
+            MaxHP = maxHp ?? spiritData.MaxHP,
+            CurrentMP = currentMp,
+            MaxMP = maxMp ?? spiritData.MaxMana,
+        };
+    }
+
+    public void RemoveSpiritRuntimeData(SpiritData spiritData)
+    {
+        if (spiritData == null)
+        {
+            return;
+        }
+
+        spiritRuntimeData.Remove(spiritData);
+    }
+
+    public void RestoreSpiritsToFull(IEnumerable<SpiritData> spirits)
+    {
+        if (spirits == null)
+        {
+            return;
+        }
+
+        foreach (var spiritData in spirits)
+        {
+            if (spiritData == null)
+            {
+                continue;
+            }
+
+            SetSpiritRuntimeData(
+                spiritData,
+                spiritData.MaxHP,
+                spiritData.MaxMana,
+                spiritData.MaxHP,
+                spiritData.MaxMana
+            );
+        }
+    }
+
     public SpiritBattleState GetSpiritState(SpiritData spiritData)
     {
         if (spiritData == null)
@@ -923,4 +1009,12 @@ public class BattleModel
             Debug.Log($"BattleModel: Created new state for {newPlayer.DisplayName} - {state2.SelectedSkills.Count} skills");
         }
     }
+}
+
+public struct SpiritRuntimeData
+{
+    public int CurrentHP;
+    public int MaxHP;
+    public int CurrentMP;
+    public int MaxMP;
 }
